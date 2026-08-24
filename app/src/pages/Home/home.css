@@ -1,0 +1,122 @@
+.shell {
+  display: flex;
+  min-height: 100%;
+}
+
+.sidebar {
+  flex: 0 0 232px;
+  background: var(--forest);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px 14px;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 16px;
+  padding: 0 8px 14px;
+}
+
+.sidebar-store {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--forest-tint);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: #d8e6d5;
+  margin-bottom: 10px;
+}
+.sidebar-store .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--leaf);
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  color: #b7c9b4;
+  font-weight: 500;
+  padding: 0 10px;
+  text-align: left;
+  border-radius: 8px;
+}
+.nav-item .nav-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  background: #4e7d66;
+}
+.nav-item.active {
+  background: var(--leaf);
+  color: var(--leaf-ink);
+  font-weight: 600;
+}
+.nav-item.active .nav-icon { background: var(--forest); }
+
+.sidebar-user {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 8px 0;
+}
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--forest-tint);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+.sidebar-user-name { font-size: 13px; font-weight: 500; }
+.sidebar-user-role {
+  font-size: 11px;
+  color: #9fb89c;
+  text-transform: capitalize;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.empty-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 48px;
+  max-width: 460px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.empty-card p {
+  color: var(--ink-3);
+  line-height: 1.5;
+  margin: 0;
+}

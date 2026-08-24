@@ -1,0 +1,90 @@
+/* Brand tokens — from the AGRICOPE brand guidelines (May 2025) and the Figma
+   design file. Deep Forest carries structure, Fresh Leaf is the living accent,
+   Sunset Orange is reserved for calls to action, Soft Earth keeps screens calm. */
+:root {
+  --forest: #0a5038;
+  --forest-deep: #083d2b;
+  --forest-tint: #11543c;
+  --leaf: #66bb6a;
+  --leaf-ink: #06301f;
+  --leaf-pale: #a8d8a6;
+  --beige: #f1eddc;
+  --surface: #ffffff;
+  --surface-warm: #f8f5e8;
+  --border: #e4dfcb;
+  --ink: #0f172a;
+  --ink-2: #575649;
+  --ink-3: #6e6c5c;
+  --hint: #9c998a;
+  --cta: #d94720;
+  --cta-tint: #fbe0d6;
+  --gold: #ffd85e;
+  --gold-tint: #fff1c2;
+  --success-tint: #dfefdb;
+
+  --font-head: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-body: 'Roboto', system-ui, -apple-system, sans-serif;
+
+  /* Touch-first: no interactive control below this height */
+  --touch: 48px;
+  --radius: 10px;
+  --radius-lg: 16px;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background: var(--beige);
+  color: var(--ink);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 { font-family: var(--font-head); margin: 0; }
+
+button {
+  font-family: var(--font-body);
+  font-size: 14px;
+  min-height: var(--touch);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+input, select {
+  font-family: var(--font-body);
+  font-size: 15px;
+  min-height: var(--touch);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0 14px;
+  background: var(--surface);
+  color: var(--ink);
+  width: 100%;
+}
+
+input:focus, select:focus, button:focus-visible {
+  outline: 2px solid var(--leaf);
+  outline-offset: 1px;
+}
+
+.btn-primary {
+  background: var(--forest);
+  color: #fff;
+  font-weight: 600;
+  font-family: var(--font-head);
+}
+.btn-primary:active { background: var(--forest-deep); }
+.btn-primary:disabled { opacity: 0.6; cursor: default; }
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--ink-2);
+  border: 1px solid var(--border);
+  font-weight: 500;
+}

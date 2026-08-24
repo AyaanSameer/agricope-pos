@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orders — Agricope POS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/pos.css">
+<style>
+  .detail-items { padding: 4px 0; }
+  .di { display: flex; justify-content: space-between; padding: 8px 16px; font-size: 13px; }
+  .di .q { color: var(--slate-400); margin-right: 6px; }
+  .di .amt { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .pay-line { display: flex; align-items: center; gap: 8px; padding: 8px 16px; font-size: 12px; }
+  .pay-line .amt { margin-left: auto; font-weight: 600; font-variant-numeric: tabular-nums; font-size: 13px; }
+  .receipt-link { display: flex; align-items: center; gap: 8px; margin: 0 16px 14px; background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: 8px; padding: 8px 10px; font-size: 11px; color: var(--slate-500); }
+  .receipt-link code { font-family: ui-monospace, monospace; font-size: 10px; color: var(--slate-600); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <a class="brand" href="index.html">
+      <div class="brand-mark">A</div>
+      <div>
+        <div class="brand-name">AGRICOPE</div>
+        <div class="brand-sub">AL RAYYAN STORE</div>
+      </div>
+    </a>
+    <nav class="nav">
+      <div class="nav-section">Sell</div>
+      <a href="register.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>Register</a>
+      <a href="floor.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>Floor</a>
+      <a class="active" href="orders.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3.5h12v17l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4z"/><path d="M9 8h6M9 11.5h6"/></svg>Orders</a>
+      <a href="customers.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8.5" r="3"/><path d="M3.5 19c.7-3 2.9-4.5 5.5-4.5s4.8 1.5 5.5 4.5"/><circle cx="16.5" cy="9.5" r="2.4"/><path d="M16 14.6c2.3.2 3.9 1.6 4.5 4.4"/></svg>Customers</a>
+      <div class="nav-section">Manage</div>
+      <a href="products.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg>Products</a>
+      <a href="shifts.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6.5" width="18" height="11" rx="2"/><circle cx="12" cy="12" r="2.6"/></svg>Shifts</a>
+      <a href="kds.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3.5c1 2.8 4.5 4.6 4.5 8.3A4.6 4.6 0 0 1 12 16.5a4.6 4.6 0 0 1-4.5-4.7c0-1.6.7-2.8 1.6-4 .2 1 .8 1.8 1.6 2.3-.2-2.5.5-4.7 1.4-6.6z"/><path d="M7 20.5h10"/></svg>Kitchen</a>
+      <a href="dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5h16"/><rect x="6" y="11" width="3" height="6" rx="0.8"/><rect x="11" y="7" width="3" height="10" rx="0.8"/><rect x="16" y="13.5" width="3" height="3.5" rx="0.8"/></svg>Dashboard</a>
+    </nav>
+    <div class="spacer"></div>
+    <div class="shift-pill"><span class="dot"></span><span>Shift open · Till 1 · since 09:12</span></div>
+    <div class="user-card">
+      <div class="avatar">SA</div>
+      <div class="who"><b>Sara</b><span>Cashier</span></div>
+      <a class="pin" href="login.html">PIN</a>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <div class="page-head">
+      <h1>Orders</h1>
+      <div class="grow"></div>
+      <div class="input placeholder" style="width:260px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        Order # or amount…
+      </div>
+      <span class="chip">Al Rayyan ▾</span>
+    </div>
+
+    <div class="chips">
+      <span class="chip on-dark">Today</span>
+      <span class="chip">Yesterday</span>
+      <span class="chip">Date range…</span>
+      <span class="chip" style="margin-left:10px">All statuses</span>
+      <span class="chip on-green">Completed</span>
+      <span class="chip">Open</span>
+      <span class="chip">Refunded / Void</span>
+    </div>
+
+    <div class="row" style="flex:1; min-height:0; align-items:flex-start">
+
+      <div class="card grow" style="overflow:hidden">
+        <table class="tbl">
+          <thead>
+            <tr><th>Order #</th><th>Time</th><th>Cashier</th><th>Type</th><th>Payment</th><th>Status</th><th class="num">Total</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="strong">S1-0042</td><td class="muted">14:32</td><td>Sara</td><td>Counter</td><td class="muted">Cash 10.00 · partial</td><td><span class="badge b-open">OPEN</span></td><td class="num strong">24.00</td></tr>
+            <tr><td class="strong">S1-0041</td><td class="muted">14:18</td><td>Sara</td><td>Counter</td><td class="muted">Cash</td><td><span class="badge b-completed">COMPLETED</span></td><td class="num strong">100.00</td></tr>
+            <tr class="sel"><td class="strong">S1-0040</td><td class="muted">13:55</td><td>Yusuf</td><td>Dine-in · T3</td><td class="muted">Card + Cash</td><td><span class="badge b-completed">COMPLETED</span></td><td class="num strong">214.50</td></tr>
+            <tr><td class="strong">S1-0039</td><td class="muted">13:41</td><td>Sara</td><td>Takeaway</td><td class="muted">Card</td><td><span class="badge b-completed">COMPLETED</span></td><td class="num strong">36.00</td></tr>
+            <tr><td class="strong">S1-0038</td><td class="muted">13:22</td><td>Amal</td><td>Counter</td><td class="muted">Credit · M. Al-Kuwari</td><td><span class="badge b-completed">COMPLETED</span></td><td class="num strong">480.00</td></tr>
+            <tr><td class="strong">S1-0037</td><td class="muted">12:58</td><td>Yusuf</td><td>Dine-in · T1</td><td class="muted">Cash</td><td><span class="badge b-refunded">REFUNDED</span></td><td class="num strong">182.00</td></tr>
+            <tr><td class="strong">S1-0036</td><td class="muted">12:47</td><td>Sara</td><td>Counter</td><td class="muted">—</td><td><span class="badge b-void">VOID</span></td><td class="num strong">12.50</td></tr>
+            <tr><td class="strong">S1-0035</td><td class="muted">12:31</td><td>Amal</td><td>Counter</td><td class="muted">Online · ref 8841</td><td><span class="badge b-completed">COMPLETED</span></td><td class="num strong">89.75</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="right-rail col" style="gap:14px">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h3>S1-0040</h3>
+              <div class="note">13:55 · Yusuf · Dine-in · Table T3 · 4 guests</div>
+            </div>
+            <span class="badge b-completed">COMPLETED</span>
+          </div>
+          <div class="detail-items">
+            <div class="di"><span><span class="q">2×</span>Mixed Grill</span><span class="amt">116.00</span></div>
+            <div class="di"><span><span class="q">1×</span>Chicken Shawarma</span><span class="amt">28.00</span></div>
+            <div class="di"><span><span class="q">1×</span>Grilled Halloumi</span><span class="amt">23.00</span></div>
+            <div class="di"><span><span class="q">4×</span>Karak Tea</span><span class="amt">16.00</span></div>
+            <div class="di"><span><span class="q">1×</span>Fattoush</span><span class="amt">12.00</span></div>
+          </div>
+          <div style="border-top:1px solid var(--slate-100); padding:12px 16px; display:flex; flex-direction:column; gap:7px">
+            <div class="trow"><span>Subtotal</span><b>195.00</b></div>
+            <div class="trow"><span>Service 10% (dine-in)</span><b>19.50</b></div>
+            <div class="trow total"><span>Total</span><b>QAR 214.50</b></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>Payments</h3><span class="note">split</span></div>
+          <div class="pay-line"><span class="badge b-open">CARD</span><span class="muted">ref A1B2C3</span><span class="amt">150.00</span></div>
+          <div class="pay-line"><span class="badge b-completed">CASH</span><span class="muted">tendered 70.00 · change 5.50</span><span class="amt">64.50</span></div>
+        </div>
+
+        <div class="card col" style="gap:0">
+          <div class="card-head"><h3>Receipt</h3><span class="note">80&nbsp;mm print + share</span></div>
+          <div class="receipt-link">Public link&nbsp;<code>/r/3f9a1c…</code>&nbsp;· QR · WhatsApp</div>
+          <div style="display:flex; gap:8px; padding:0 16px 16px">
+            <a class="btn grow" href="#">Print</a>
+            <a class="btn grow" href="#">Share</a>
+            <a class="btn btn-danger-soft grow" href="pin.html" title="Manager PIN required">Refund</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+</body>
+</html>

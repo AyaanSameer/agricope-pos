@@ -1,0 +1,118 @@
+.login {
+  display: flex;
+  min-height: 100%;
+}
+
+.login-brand {
+  flex: 0 0 46%;
+  background: var(--forest-deep);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 56px;
+  position: relative;
+  overflow: hidden;
+}
+.login-brand::after {
+  content: '';
+  position: absolute;
+  right: -140px;
+  bottom: -160px;
+  width: 440px;
+  height: 440px;
+  border-radius: 50%;
+  background: rgba(102, 187, 106, 0.2);
+}
+
+.login-brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.login-brand-name {
+  font-family: var(--font-head);
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+.login-brand-sub {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--leaf-pale);
+}
+
+.login-headline {
+  font-size: 40px;
+  line-height: 1.15;
+  font-weight: 700;
+}
+.login-blurb {
+  margin-top: 16px;
+  max-width: 400px;
+  color: var(--leaf-pale);
+  line-height: 1.5;
+}
+.login-footer {
+  font-size: 12px;
+  color: var(--leaf-pale);
+}
+
+.login-side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 32px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: 0 8px 24px rgba(8, 61, 43, 0.08);
+}
+.login-card-sub {
+  margin: 6px 0 0;
+  color: var(--ink-3);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field span {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.login-error {
+  background: var(--cta-tint);
+  color: var(--cta);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-weight: 500;
+}
+
+.login-hint {
+  font-size: 12px;
+  color: var(--hint);
+  text-align: center;
+}
+.login-version {
+  font-size: 12px;
+  color: var(--hint);
+}
+
+@media (max-width: 900px) {
+  .login-brand { display: none; }
+}
