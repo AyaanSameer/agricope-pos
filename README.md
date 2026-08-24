@@ -16,9 +16,10 @@ npm run dev
 ```
 The app runs against **MSW mocks** by default (no backend needed).
 Demo logins (password `demo123`):
-- `sara@alrayyan-market.qa` — cashier, Al Rayyan Store
-- `yusuf@karakcorner.qa` — cashier, Karak Corner (restaurant)
-- `owner@agricope.qa` — owner, all stores
+- `sara@alrayyan-market.qa` — cashier, Al Rayyan Store (till PIN 1234; Amal 2345)
+- `yusuf@karakcorner.qa` — cashier, Karak Corner restaurant (till PIN 3456)
+- `maryam@alrayyan-market.qa` — manager, Al Rayyan Store (PIN 9999)
+- `owner@agricope.qa` — owner, all stores (PIN 0000)
 
 To point at the real API set `VITE_USE_MOCKS=false` in `app/.env.local`.
 
@@ -27,5 +28,5 @@ React 19 · Vite · TypeScript · TanStack Query · React Router · MSW · big.j
 
 ## Phase status (see frontend-workflow doc)
 - [x] Phase 0 — foundations & contract: auth against mock, routing, brand theming, `money.ts`, conventions written down
-- [ ] Phase 1 — auth & org (PIN switch, store picker, users admin)
+- [x] Phase 1 — auth & org: PIN cashier switch, owner store picker, users admin (owner/manager), role-guarded routes
 - [ ] Phase 2 — catalog · Phase 3 — register & payments ★ · …

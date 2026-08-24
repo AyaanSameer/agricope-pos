@@ -1,0 +1,18 @@
+.pinpad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.pinpad-key {
+  min-height: 56px;
+  font-size: 20px;
+  font-weight: 500;
+  font-family: var(--font-head);
+  background: var(--surface-warm);
+  border: 1px solid var(--border);
+  color: var(--ink);
+}
+.pinpad-key:active {
+  background: var(--success-tint);
+}

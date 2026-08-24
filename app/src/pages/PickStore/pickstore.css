@@ -1,0 +1,69 @@
+.pickstore {
+  min-height: 100%;
+  background: var(--forest-deep);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  padding: 32px;
+}
+
+.pickstore-head {
+  text-align: center;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.pickstore-head h1 { font-size: 28px; }
+.pickstore-head p { color: var(--leaf-pale); max-width: 440px; margin: 0; line-height: 1.5; }
+
+.pickstore-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+  max-width: 760px;
+}
+
+.pickstore-tile {
+  width: 230px;
+  min-height: 130px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+  padding: 20px;
+  text-align: left;
+}
+.pickstore-tile:active { outline: 3px solid var(--leaf); }
+.pickstore-tile.all {
+  background: var(--forest-tint);
+  color: #fff;
+}
+.pickstore-tile.all .pickstore-addr { color: #9fb89c; }
+
+.pickstore-type {
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 99px;
+  padding: 3px 9px;
+}
+.pickstore-type.retail { background: var(--success-tint); color: var(--forest); }
+.pickstore-type.restaurant { background: var(--gold-tint); color: #9a7200; }
+
+.pickstore-name { font-family: var(--font-head); font-weight: 600; font-size: 17px; }
+.pickstore-addr { font-size: 12px; color: var(--ink-3); }
+
+.pickstore-loading { color: var(--leaf-pale); }
+
+.pickstore-signout {
+  background: transparent;
+  color: var(--leaf-pale);
+  font-weight: 500;
+}

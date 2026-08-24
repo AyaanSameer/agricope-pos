@@ -15,7 +15,10 @@ export function LoginPage() {
 
   const login = useMutation({
     mutationFn: () => signIn(email, password),
-    onSuccess: () => navigate('/', { replace: true }),
+    onSuccess: (user) => {
+      // Store staff land straight on their till; owners pick where to work first.
+      navigate(user.store_id ? '/' : '/pick-store', { replace: true })
+    },
   })
 
   const errorMessage =

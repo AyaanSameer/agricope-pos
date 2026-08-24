@@ -25,6 +25,12 @@ through Swagger PRs, never just chat.
 | Code | Status | Introduced |
 |---|---|---|
 | `INVALID_CREDENTIALS` | 401 | Phase 0 |
+| `UNAUTHENTICATED` | 401 | Phase 1 (missing/expired token) |
+| `INVALID_PIN` | 401 | Phase 1 (switch-cashier) |
+| `INVALID_TOKEN` | 401 | Phase 1 (refresh) |
+| `FORBIDDEN` | 403 | Phase 1 (role guard) |
+| `VALIDATION_ERROR` | 400 | Phase 1 |
+| `NOT_FOUND` | 404 | Phase 1 |
 | `APPROVAL_REQUIRED` | 403 | Phase 7 (discounts; retried with `X-Approval-Pin`) |
 | `CREDIT_LIMIT_EXCEEDED` | 403 | Phase 5 |
 | `NO_OPEN_SHIFT` | 409 | Phase 6 (cash payments & cash repayments) |
@@ -48,6 +54,16 @@ Lists take `?page=1&limit=50` and return `{ "data": [...], "total": n, "page": n
 }
 // → 401 { "error": { "code": "INVALID_CREDENTIALS", "message": "…" } }
 ```
+
+## Cashier switch (Phase 1, implemented in MSW, to mirror in Swagger)
+```jsonc
+// POST /api/v1/auth/switch-cashier   (requires a valid session — the till is already signed in)
+{ "store_id": "…", "pin": "1234" }
+// → 200 same shape as /auth/login (the till keeps its store; the person changes)
+// → 401 { "error": { "code": "INVALID_PIN", … } }
+```
+PINs are write-only: `GET /users` returns `has_pin`, never the PIN itself.
+Users CRUD (`GET/POST /users`, `PATCH /users/:id`) is owner/manager only → `403 FORBIDDEN`.
 
 ## Totals — the one agreed order of operations (both sides compute identically)
 ```
