@@ -10,6 +10,8 @@ import { CatalogPage } from './pages/Catalog/CatalogPage'
 import { ChargePage } from './pages/Charge/ChargePage'
 import { OrdersPage } from './pages/Orders/OrdersPage'
 import { ReceiptPage, PublicReceiptPage } from './pages/Receipt/ReceiptPage'
+import { CustomersPage } from './pages/Customers/CustomersPage'
+import { ShiftsPage } from './pages/Shifts/ShiftsPage'
 import type { Role } from './api/types'
 
 function RequireAuth() {
@@ -37,6 +39,8 @@ export default function App() {
           <Route path="/charge/:id" element={<ChargePage />} />
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/receipt/:id" element={<ReceiptPage />} />
+          <Route path="/customers" element={<CustomersPage />} />
+          <Route path="/shifts" element={<ShiftsPage />} />
           <Route
             path="/catalog"
             element={

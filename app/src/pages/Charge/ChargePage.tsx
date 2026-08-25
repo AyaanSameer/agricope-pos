@@ -7,6 +7,7 @@ import type { PaymentMethod } from '../../api/orders'
 import { ApiError } from '../../api/client'
 import { MoneyPad } from '../../components/MoneyPad'
 import { CustomerPicker } from '../../components/CustomerPicker'
+import { DiscountModal } from '../../components/DiscountModal'
 import { fmt, fmtQAR } from '../../lib/money'
 import './charge.css'
 
@@ -26,6 +27,7 @@ export function ChargePage() {
   const [reference, setReference] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [pickingCustomer, setPickingCustomer] = useState(false)
+  const [discounting, setDiscounting] = useState(false)
 
   const orderQuery = useQuery({
     queryKey: ['order', id],
@@ -157,6 +159,16 @@ export function ChargePage() {
         <button type="button" className="charge-cust" onClick={() => setPickingCustomer(true)}>
           {order.customer_name ? `Customer: ${order.customer_name}` : '+ Attach customer (for credit)'}
         </button>
+        <button
+          type="button"
+          className="charge-cust"
+          disabled={order.payments.length > 0}
+          onClick={() => setDiscounting(true)}
+        >
+          {order.discount_type
+            ? `Discount: ${order.discount_type === 'percent' ? `${Number(order.discount_value)}%` : `QAR ${order.discount_value}`} — tap to change`
+            : '% Order discount'}
+        </button>
       </aside>
 
       <div className="charge-pay card">
@@ -231,6 +243,7 @@ export function ChargePage() {
         </p>
       </div>
 
+      {discounting && <DiscountModal order={order} onClose={() => setDiscounting(false)} />}
       {pickingCustomer && (
         <CustomerPicker
           onPick={(c) => {
