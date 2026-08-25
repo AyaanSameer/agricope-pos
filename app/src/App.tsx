@@ -7,6 +7,9 @@ import { RegisterPage } from './pages/Register/RegisterPage'
 import { PickStorePage } from './pages/PickStore/PickStorePage'
 import { UsersPage } from './pages/Users/UsersPage'
 import { CatalogPage } from './pages/Catalog/CatalogPage'
+import { ChargePage } from './pages/Charge/ChargePage'
+import { OrdersPage } from './pages/Orders/OrdersPage'
+import { ReceiptPage, PublicReceiptPage } from './pages/Receipt/ReceiptPage'
 import type { Role } from './api/types'
 
 function RequireAuth() {
@@ -26,10 +29,14 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/r/:token" element={<PublicReceiptPage />} />
       <Route element={<RequireAuth />}>
         <Route path="/pick-store" element={<PickStorePage />} />
         <Route element={<AppShell />}>
           <Route path="/" element={<RegisterPage />} />
+          <Route path="/charge/:id" element={<ChargePage />} />
+          <Route path="/orders" element={<OrdersPage />} />
+          <Route path="/receipt/:id" element={<ReceiptPage />} />
           <Route
             path="/catalog"
             element={

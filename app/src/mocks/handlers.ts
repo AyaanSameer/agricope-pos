@@ -2,6 +2,9 @@ import { http, HttpResponse, delay } from 'msw'
 import type { Role } from '../api/types'
 import { categories, products, requester, sessionFor, stations, stores, storeName, toPublicProduct, toUserRecord, users } from './db'
 import type { DbProduct } from './db'
+import { posHandlers } from './posHandlers'
+import { posHandlers2 } from './posHandlers2'
+import { posHandlers3 } from './posHandlers3'
 import type { DbUser } from './db'
 
 function apiError(status: number, code: string, message: string) {
@@ -215,6 +218,9 @@ export const handlers = [
     if (!requester(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
     return HttpResponse.json({ data: stations, total: stations.length, page: 1, limit: 50 })
   }),
+  ...posHandlers,
+  ...posHandlers2,
+  ...posHandlers3,
 ]
 
 export { storeName }

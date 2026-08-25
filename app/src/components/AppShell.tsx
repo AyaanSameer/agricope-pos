@@ -16,7 +16,7 @@ interface NavEntry {
 /** Role-lean navigation: each role sees only what it needs. */
 const NAV: NavEntry[] = [
   { label: 'Register', to: '/', roles: ['cashier', 'manager', 'owner'] },
-  { label: 'Orders', to: null, phase: 'P3', roles: ['cashier', 'manager', 'owner'] },
+  { label: 'Orders', to: '/orders', roles: ['cashier', 'manager', 'owner'] },
   { label: 'Customers', to: null, phase: 'P5', roles: ['cashier', 'manager', 'owner'] },
   { label: 'Catalog', to: '/catalog', roles: ['manager', 'owner'] },
   { label: 'Shifts', to: null, phase: 'P6', roles: ['cashier', 'manager', 'owner'] },

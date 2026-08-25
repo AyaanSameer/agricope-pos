@@ -1,0 +1,138 @@
+.charge {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  max-width: 980px;
+  align-items: flex-start;
+}
+.charge-note { padding: 24px; color: var(--ink-3); }
+
+.charge-summary {
+  flex: 0 0 340px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--surface-warm);
+}
+.charge-sum-head { display: flex; justify-content: space-between; align-items: center; }
+.badge-open {
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--gold-tint);
+  color: #9a7200;
+  border-radius: 99px;
+  padding: 3px 9px;
+}
+.charge-sum-line { display: flex; justify-content: space-between; font-size: 13px; }
+.charge-sum-line.muted { color: var(--ink-3); }
+.charge-sum-sep { border-top: 1px solid var(--border); margin: 6px 0; }
+.charge-sum-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 16px;
+  padding: 4px 0;
+}
+.charge-paid-label { font-size: 10px; letter-spacing: 1px; color: var(--hint); font-weight: 600; }
+.charge-paid {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  background: var(--success-tint);
+  border-radius: 8px;
+  padding: 8px 10px;
+  text-transform: capitalize;
+}
+.charge-due {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--gold-tint);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-weight: 700;
+  color: #7a5a00;
+  font-family: var(--font-head);
+}
+.charge-cust {
+  background: transparent;
+  border: 1px dashed var(--border);
+  color: var(--ink-3);
+  font-size: 13px;
+}
+
+.charge-pay { flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.charge-pay-head { display: flex; justify-content: space-between; align-items: center; }
+.charge-back { background: transparent; color: var(--hint); min-width: 44px; font-size: 16px; }
+.charge-methods { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.method {
+  min-height: 52px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-weight: 500;
+}
+.method.active {
+  border: 2px solid var(--forest);
+  background: var(--success-tint);
+  color: var(--forest);
+  font-weight: 600;
+}
+.charge-amount, .charge-changerow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface-warm);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+.charge-amount span, .charge-changerow span { color: var(--ink-3); font-size: 13px; }
+.charge-amount strong { font-family: var(--font-head); font-size: 24px; }
+.charge-changerow { background: var(--success-tint); border-color: var(--leaf-pale); }
+.charge-changerow strong { font-family: var(--font-head); font-size: 18px; color: var(--forest); }
+.charge-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.charge-error { background: var(--cta-tint); color: var(--cta); border-radius: var(--radius); padding: 12px 14px; font-weight: 500; }
+.charge-record { min-height: 56px; font-size: 15px; }
+.charge-note-sub { font-size: 12px; color: var(--hint); margin: 0; text-align: center; }
+
+.charge-done {
+  max-width: 440px;
+  margin: 48px auto;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+.charge-done-check {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--success-tint);
+  color: var(--forest);
+  font-size: 30px;
+  display: grid;
+  place-items: center;
+}
+.charge-done-num { color: var(--ink-3); margin: 0; }
+.charge-change {
+  background: var(--gold-tint);
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-size: 15px;
+}
+.charge-done-actions { display: flex; gap: 10px; margin-top: 8px; }
+.charge-newsale, .charge-receipt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--touch);
+  padding: 0 26px;
+  border-radius: var(--radius);
+  text-decoration: none;
+}
