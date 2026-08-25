@@ -1,0 +1,91 @@
+/* The KDS runs in its own dark world — glanceable across a hot kitchen. */
+.kds {
+  position: fixed;
+  inset: 0;
+  left: 232px; /* sidebar stays for navigation back */
+  background: #05261a;
+  display: flex;
+  flex-direction: column;
+  z-index: 5;
+}
+.kds-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 22px;
+  background: #0a5038;
+}
+.kds-head h2 { color: #fff; font-size: 18px; }
+.kds-stations { display: flex; gap: 6px; }
+.kds-station {
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 99px;
+  background: #11543c;
+  color: #b7c9b4;
+  font-weight: 500;
+}
+.kds-station.active { background: var(--leaf); color: #06301f; font-weight: 600; }
+.kds-clock { margin-left: auto; color: #fff; font-family: var(--font-head); font-weight: 700; font-size: 20px; }
+
+.kds-board {
+  flex: 1;
+  display: flex;
+  gap: 14px;
+  padding: 18px 22px;
+  align-items: flex-start;
+  overflow-x: auto;
+}
+.kds-quiet { color: #9fb89c; padding: 20px; }
+
+.kds-ticket {
+  flex: 0 0 240px;
+  background: #11543c;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.kds-ticket-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 13px;
+  background: #176048;
+}
+.kds-ticket-head strong { color: #fff; font-size: 14px; display: block; }
+.kds-table { color: #9fb89c; font-size: 11px; }
+.kds-elapsed { font-weight: 700; font-size: 12px; border-radius: 99px; padding: 4px 9px; }
+.kds-elapsed.ok { background: #06301f; color: var(--leaf); }
+.kds-elapsed.warn { background: #4a3a00; color: var(--gold); }
+.kds-elapsed.late { background: #450a0a; color: #f87171; }
+.kds-status { font-size: 9px; font-weight: 700; letter-spacing: 1px; padding: 6px 13px 2px; }
+.kds-status.new { color: var(--gold); }
+.kds-status.in_progress { color: #f2c94c; }
+.kds-items { padding: 6px 13px 12px; display: flex; flex-direction: column; gap: 7px; }
+.kds-item { display: flex; gap: 7px; color: #e8f0e6; font-size: 14px; align-items: center; }
+.kds-item.cancelled { text-decoration: line-through; color: #6f8f7c; }
+.kds-qty { color: var(--leaf); font-weight: 700; }
+.kds-cancel { font-size: 9px; color: #f87171; font-weight: 700; }
+.kds-btn { min-height: 46px; border-radius: 0; font-weight: 600; }
+.kds-btn.start { background: var(--cta); color: #fff; }
+.kds-btn.done { background: var(--leaf); color: #06301f; }
+
+.kds-recent {
+  flex: 0 0 200px;
+  background: #0a3a29;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.kds-recent-head { font-size: 10px; letter-spacing: 1px; color: #6f8f7c; font-weight: 700; }
+.kds-recent-row { display: flex; gap: 8px; color: #d8e6d5; font-size: 13px; align-items: center; }
+.kds-check { color: var(--leaf); font-weight: 700; }
+.kds-foot {
+  padding: 8px 22px;
+  color: #6f8f7c;
+  font-size: 11px;
+  background: #0a3a29;
+}
