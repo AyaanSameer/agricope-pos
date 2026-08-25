@@ -12,6 +12,10 @@ import { OrdersPage } from './pages/Orders/OrdersPage'
 import { ReceiptPage, PublicReceiptPage } from './pages/Receipt/ReceiptPage'
 import { CustomersPage } from './pages/Customers/CustomersPage'
 import { ShiftsPage } from './pages/Shifts/ShiftsPage'
+import { FloorPage } from './pages/Floor/FloorPage'
+import { TabPage } from './pages/Tab/TabPage'
+import { KdsPage } from './pages/Kds/KdsPage'
+import { ReportsPage } from './pages/Reports/ReportsPage'
 import type { Role } from './api/types'
 
 function RequireAuth() {
@@ -41,6 +45,17 @@ export default function App() {
           <Route path="/receipt/:id" element={<ReceiptPage />} />
           <Route path="/customers" element={<CustomersPage />} />
           <Route path="/shifts" element={<ShiftsPage />} />
+          <Route path="/floor" element={<FloorPage />} />
+          <Route path="/tab/:id" element={<TabPage />} />
+          <Route path="/kds" element={<KdsPage />} />
+          <Route
+            path="/reports"
+            element={
+              <RequireRole roles={['owner', 'manager']}>
+                <ReportsPage />
+              </RequireRole>
+            }
+          />
           <Route
             path="/catalog"
             element={

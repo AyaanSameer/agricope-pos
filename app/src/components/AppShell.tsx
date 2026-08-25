@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { listStores } from '../api/org'
 import { useAuth } from '../auth/AuthContext'
 import { Logomark } from './Logomark'
 import { PinSwitchOverlay } from './PinSwitchOverlay'
@@ -14,22 +16,29 @@ interface NavEntry {
 }
 
 /** Role-lean navigation: each role sees only what it needs. */
-const NAV: NavEntry[] = [
+const NAV: (NavEntry & { restaurantOnly?: boolean })[] = [
   { label: 'Register', to: '/', roles: ['cashier', 'manager', 'owner'] },
+  { label: 'Tables', to: '/floor', roles: ['cashier', 'manager', 'owner'], restaurantOnly: true },
   { label: 'Orders', to: '/orders', roles: ['cashier', 'manager', 'owner'] },
   { label: 'Customers', to: '/customers', roles: ['cashier', 'manager', 'owner'] },
+  { label: 'Kitchen', to: '/kds', roles: ['cashier', 'manager', 'owner'], restaurantOnly: true },
   { label: 'Catalog', to: '/catalog', roles: ['manager', 'owner'] },
   { label: 'Shifts', to: '/shifts', roles: ['cashier', 'manager', 'owner'] },
-  { label: 'Reports', to: null, phase: 'P10', roles: ['manager', 'owner'] },
+  { label: 'Reports', to: '/reports', roles: ['manager', 'owner'] },
   { label: 'Users', to: '/users', roles: ['manager', 'owner'] },
 ]
 
 export function AppShell() {
   const { session, activeStore, signOut } = useAuth()
   const [pinOpen, setPinOpen] = useState(false)
+  const storesQuery = useQuery({ queryKey: ['stores'], queryFn: listStores, enabled: !!session })
   if (!session) return null
   const { user } = session
-  const nav = NAV.filter((n) => n.roles.includes(user.role))
+  const isRestaurant =
+    storesQuery.data?.data.find((s) => s.id === activeStore?.id)?.type === 'restaurant'
+  const nav = NAV.filter(
+    (n) => n.roles.includes(user.role) && (!n.restaurantOnly || isRestaurant),
+  )
 
   return (
     <div className="shell">
