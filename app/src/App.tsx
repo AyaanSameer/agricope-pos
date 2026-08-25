@@ -6,6 +6,7 @@ import { LoginPage } from './pages/Login/LoginPage'
 import { RegisterPage } from './pages/Register/RegisterPage'
 import { PickStorePage } from './pages/PickStore/PickStorePage'
 import { UsersPage } from './pages/Users/UsersPage'
+import { CatalogPage } from './pages/Catalog/CatalogPage'
 import type { Role } from './api/types'
 
 function RequireAuth() {
@@ -29,6 +30,14 @@ export default function App() {
         <Route path="/pick-store" element={<PickStorePage />} />
         <Route element={<AppShell />}>
           <Route path="/" element={<RegisterPage />} />
+          <Route
+            path="/catalog"
+            element={
+              <RequireRole roles={['owner', 'manager']}>
+                <CatalogPage />
+              </RequireRole>
+            }
+          />
           <Route
             path="/users"
             element={

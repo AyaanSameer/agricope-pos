@@ -18,7 +18,7 @@ const NAV: NavEntry[] = [
   { label: 'Register', to: '/', roles: ['cashier', 'manager', 'owner'] },
   { label: 'Orders', to: null, phase: 'P3', roles: ['cashier', 'manager', 'owner'] },
   { label: 'Customers', to: null, phase: 'P5', roles: ['cashier', 'manager', 'owner'] },
-  { label: 'Catalog', to: null, phase: 'P2', roles: ['manager', 'owner'] },
+  { label: 'Catalog', to: '/catalog', roles: ['manager', 'owner'] },
   { label: 'Shifts', to: null, phase: 'P6', roles: ['cashier', 'manager', 'owner'] },
   { label: 'Reports', to: null, phase: 'P10', roles: ['manager', 'owner'] },
   { label: 'Users', to: '/users', roles: ['manager', 'owner'] },
