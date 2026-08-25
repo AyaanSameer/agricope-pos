@@ -63,7 +63,7 @@ export function shiftReport(shift: DbShift) {
   }
 }
 
-function todays(list: { created_at: string }[]) {
+function todays<T extends { created_at: string }>(list: T[]): T[] {
   const today = new Date().toISOString().slice(0, 10)
   return list.filter((x) => x.created_at.slice(0, 10) === today)
 }
@@ -179,7 +179,7 @@ export const posHandlers3 = [
     if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
     const url = new URL(request.url)
     const storeId = url.searchParams.get('store_id')
-    let scope = todays(orders) as typeof orders
+    let scope = todays(orders)
     if (storeId) scope = scope.filter((o) => o.store_id === storeId)
     const completed = scope.filter((o) => o.status === 'completed')
     const gross = completed.reduce((a, o) => a.plus(o.total), new Big(0))
@@ -230,7 +230,7 @@ export const posHandlers3 = [
     if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
     const url = new URL(request.url)
     const storeId = url.searchParams.get('store_id')
-    let scope = todays(orders) as typeof orders
+    let scope = todays(orders)
     if (storeId) scope = scope.filter((o) => o.store_id === storeId)
     const byName = new Map<string, { qty: Big; revenue: Big }>()
     for (const o of scope) {

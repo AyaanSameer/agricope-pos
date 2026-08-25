@@ -5,26 +5,20 @@ import {
   amountDue,
   approverForPin,
   businessSettings,
-  cashMovements,
   currentShift,
   customerBalance,
   customers,
-  expectedCash,
   iso,
   ledger,
   makeOrder,
   orders,
   paymentsSum,
   recomputeOrder,
-  shifts,
-  snapshotItem,
-  tables,
   tickets,
   toPublicOrder,
   uid,
-  userName,
 } from './posdb'
-import type { DbOrder, DbShift } from './posdb'
+import type { DbOrder } from './posdb'
 import { seedWorld } from './seed'
 
 seedWorld()
@@ -368,5 +362,4 @@ export function receiptPayload(order: DbOrder) {
   }
 }
 
-export { apiError, auth, findOrder, approval, APPROVAL_REQUIRED }
-export type { DbShift }
+export { apiError, findOrder, approval, APPROVAL_REQUIRED }

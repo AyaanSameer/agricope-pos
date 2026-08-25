@@ -31,6 +31,17 @@ through Swagger PRs, never just chat.
 | `FORBIDDEN` | 403 | Phase 1 (role guard) |
 | `VALIDATION_ERROR` | 400 | Phase 1 |
 | `NOT_FOUND` | 404 | Phase 1 |
+| `CUSTOMER_REQUIRED` | 400 | Phase 5 (credit without a customer) |
+| `CREDIT_LIMIT_EXCEEDED` | 403 | Phase 5 |
+| `NO_OPEN_SHIFT` | 409 | Phase 6 (cash sales, refunds & repayments) |
+| `SHIFT_ALREADY_OPEN` | 409 | Phase 6 (one open shift per store) |
+| `SHIFT_CLOSED` | 409 | Phase 6 |
+| `APPROVAL_REQUIRED` | 403 | Phase 7 (discount/void/refund/pull — retry with `X-Approval-Pin`) |
+| `PAYMENTS_STARTED` | 409 | Phase 7 (discount after payments) |
+| `ORDER_NOT_OPEN` / `ORDER_NOT_COMPLETED` | 409 | Phase 3 |
+| `TABLE_OCCUPIED` | 409 | Phase 8 |
+| `ITEM_ALREADY_SENT` | 409 | Phase 8 (edit a fired line) |
+| `NOTHING_TO_SEND` | 409 | Phase 9 |
 | `APPROVAL_REQUIRED` | 403 | Phase 7 (discounts; retried with `X-Approval-Pin`) |
 | `CREDIT_LIMIT_EXCEEDED` | 403 | Phase 5 |
 | `NO_OPEN_SHIFT` | 409 | Phase 6 (cash payments & cash repayments) |
@@ -75,6 +86,20 @@ tax_total      = Σ per-line tax on discounted amounts
 total          = subtotal − discount_total + service_charge + tax_total
 ```
 The server recomputes every total from database prices; client-sent totals are ignored.
+
+## Endpoints implemented in MSW (mirror = her Swagger checklist)
+Auth: login · refresh · switch-cashier — Org: stores · users CRUD — Catalog:
+categories · products (+`?barcode=`/`?search=`) · kitchen/stations — Orders:
+create (full or empty) · list · get · patch (customer) · payments · discount
+(+approval) · void · refund · items add/edit/remove · split · merge · send —
+Receipts: `/orders/:id/receipt` · public `/r/:token` — Customers: CRUD ·
+statement · repayments · balances — Shifts: open · current · movements ·
+close · report · list — Tables: `/tables/floor` — Kitchen: tickets list ·
+ticket status — Reports: summary · top-items · credit-aging.
+
+The frontend's `computeTotals` unit tests (`app/src/lib/totals.test.ts`) are
+the executable spec for the totals formula — copy the cases into the
+backend's suite so both sides round identically.
 
 ## Open questions for the next contract sync
 1. How does an order-level discount apportion across lines for per-line tax?

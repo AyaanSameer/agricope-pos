@@ -30,7 +30,15 @@ React 19 · Vite · TypeScript · TanStack Query · React Router · MSW · big.j
 - [x] Phase 0 — foundations & contract: auth against mock, routing, brand theming, `money.ts`, conventions written down
 - [x] Phase 1 — auth & org: PIN cashier switch, owner store picker, users admin (owner/manager), role-guarded routes
 - [x] Phase 2 — catalog: categories & products admin (CRUD, soft-delete, barcode, kitchen-station field), live register grid
-- [ ] Phase 3 — register & payments ★ (cart, charge, split payments) · …
+- [x] Phase 3 — counter sales & payments ★: cart, charge screen, cash tendered/change, split payments, orders history
+- [x] Phase 4 — receipts & barcode: 80mm print stylesheet, public `/r/:token` e-receipt, QR + WhatsApp share, scan listener
+- [x] Phase 5 — customers & credit: statements with running balance, receive payment, credit as a payment method with limits
+- [x] Phase 6 — shifts & cash drawer: open/close with server-computed expected cash, X/Z reports, paid in/out, cash gating
+- [x] Phase 7 — discounts & approvals: threshold from settings, 403 APPROVAL_REQUIRED → manager-PIN retry, void/refund PIN
+- [x] Phase 8 — tables & tabs: floor view, seat guests, rounds, sent-item locks, split bill, merge, service charge
+- [x] Phase 9 — kitchen & KDS: send groups by station, dark KDS board with elapsed coloring and bumping, 5s polling
+- [x] Phase 10 — dashboard & reports: KPIs, sales by hour, payment mix, top items, FIFO credit aging
+- [x] Phase 11 — hardening: production build clean, 17 unit tests (money + the pinned totals formula), walkthroughs below
 
 
 ## Testing
@@ -58,7 +66,23 @@ Start `npm run dev`, open http://localhost:5173, then:
 3. Create a category with *+ New category* and file a product under it.
 4. *Users*: add a cashier with a till PIN, then hand the till to them via *Switch cashier · PIN*.
 
+**A retail day (Sara at Al Rayyan)**
+1. Ring a sale: tap products, adjust quantities, Charge → take cash with tendered/change, or split cash + card.
+2. Attach a customer and pay part or all with *Credit* — watch the limit block when it should.
+3. *Customers* → open a statement → *Receive payment* on the keypad.
+4. *Shifts* → watch the live X report absorb every cash move → close the drawer and read the Z report over/short.
+5. Close the shift, then try a cash sale: `NO_OPEN_SHIFT` locks the drawer until a new float is counted.
+6. Give a 20% discount on the charge screen: it demands a manager PIN (`9999`); 5% sails through.
+
+**A restaurant service (Yusuf at Karak Corner)**
+1. *Tables* → tap a free table, seat guests → the tab opens empty.
+2. Add a round from the menu, *Send to kitchen* → *Kitchen* shows the ticket per station; bump it Start → Done.
+3. Add a second round — it fires as a new ticket ("fire the mains" for free). Fired lines lock; pulling one needs a PIN.
+4. *Split bill* moves lines to a new order that pays on the normal charge screen — service charge (10%) rides along.
+5. *Reports* shows the day: payment mix, top items, credit aging.
+
 **Designed error paths worth seeing**: wrong password on login, wrong PIN on switch,
-duplicate barcode or PIN, cashier hitting a manager URL.
+duplicate barcode or PIN, cashier hitting a manager URL, cash without an open shift,
+credit past the limit, a discount above the threshold, editing a fired kitchen line.
 
 Note: mock data lives in memory — restarting the dev server resets it to the seed world.

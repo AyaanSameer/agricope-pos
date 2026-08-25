@@ -2,18 +2,14 @@ import { http, HttpResponse, delay } from 'msw'
 import Big from 'big.js'
 import { products, requester } from './db'
 import {
-  amountDue,
-  cashMovements,
   currentShift,
   customerBalance,
   customers,
-  expectedCash,
   iso,
   ledger,
   makeOrder,
   orders,
   recomputeOrder,
-  shifts,
   snapshotItem,
   tables,
   tickets,
@@ -21,7 +17,6 @@ import {
   uid,
   userName,
 } from './posdb'
-import type { DbOrder, DbShift } from './posdb'
 import { apiError, approval, APPROVAL_REQUIRED, findOrder } from './posHandlers'
 
 function auth(request: Request) {

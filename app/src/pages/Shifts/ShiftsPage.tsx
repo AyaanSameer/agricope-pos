@@ -42,7 +42,7 @@ function useMoneyEntry() {
 }
 
 export function ShiftsPage() {
-  const { activeStore, session } = useAuth()
+  const { activeStore } = useAuth()
   const queryClient = useQueryClient()
   const [movementOpen, setMovementOpen] = useState(false)
   const [closing, setClosing] = useState(false)
