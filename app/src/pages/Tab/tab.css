@@ -1,0 +1,103 @@
+.tab-page { display: flex; gap: 16px; width: 100%; align-items: flex-start; }
+.tab-note { padding: 24px; color: var(--ink-3); }
+.tab-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+.tab-head { display: flex; align-items: center; gap: 10px; }
+.tab-back { padding: 0 14px; }
+.tab-title { flex: 1; }
+.tab-title h2 { font-size: 20px; }
+
+.tab-items { overflow: hidden; }
+.tab-items-head {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--surface-warm);
+  font-weight: 600;
+  font-size: 14px;
+}
+.tab-empty { padding: 24px; color: var(--ink-3); }
+.tab-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--beige);
+}
+.tab-badge { font-size: 9px; font-weight: 700; border-radius: 6px; padding: 3px 7px; }
+.tab-badge.sent { background: #e7e2d2; color: var(--ink-3); }
+.tab-badge.new { background: var(--gold-tint); color: #9a7200; }
+.tab-item-info { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+.tab-pull { background: transparent; color: var(--cta); font-size: 12px; min-height: 40px; }
+.tab-item-total { font-weight: 600; min-width: 60px; text-align: right; }
+.tab-add {
+  width: 100%;
+  background: transparent;
+  color: var(--forest);
+  font-weight: 600;
+  min-height: 52px;
+}
+
+.tab-side {
+  flex: 0 0 300px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: sticky;
+  top: 24px;
+  min-height: 340px;
+}
+.tab-perguest { font-size: 12px; color: var(--ink-3); background: var(--surface-warm); border-radius: 8px; padding: 8px 10px; }
+.tab-side-grow { flex: 1; }
+.tab-send {
+  background: var(--gold);
+  color: #4a3a00;
+  font-weight: 600;
+  min-height: 52px;
+}
+.tab-send:disabled { opacity: 0.5; }
+.tab-charge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 54px;
+  border-radius: var(--radius);
+  text-decoration: none;
+  font-size: 15px;
+}
+
+.tab-additems { position: fixed; inset: 0; background: rgba(8,61,43,0.55); display: flex; align-items: center; justify-content: center; z-index: 40; padding: 24px; }
+.tab-additems-card { width: 100%; max-width: 720px; max-height: 90vh; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.tab-additems-head { display: flex; gap: 10px; align-items: center; }
+.tab-additems-head h3 { margin-right: auto; }
+.tab-additems-head input { max-width: 220px; }
+.tab-additems-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  overflow-y: auto;
+  padding: 2px;
+}
+.tile.picked { outline: 3px solid var(--leaf); position: relative; }
+.tile-qty {
+  position: absolute;
+  top: 8px; right: 8px;
+  background: var(--forest);
+  color: #fff;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 8px;
+}
+
+.tab-split { width: 100%; max-width: 420px; padding: 22px; display: flex; flex-direction: column; gap: 10px; max-height: 90vh; overflow-y: auto; }
+.tab-split-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.tab-split-name { font-size: 14px; }
+.tab-merge-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface-warm);
+  border: 1px solid var(--border);
+  padding: 12px 14px;
+}
