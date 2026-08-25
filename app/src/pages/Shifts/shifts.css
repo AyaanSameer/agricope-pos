@@ -1,0 +1,57 @@
+.shifts-empty { padding: 32px; color: var(--ink-3); }
+.shifts-actions { display: flex; gap: 8px; }
+.shifts-close { padding: 0 18px; }
+
+.shifts-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; align-items: start; }
+.xreport, .movements { padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.xrows { display: flex; flex-direction: column; }
+.xrow {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--beige);
+  font-size: 14px;
+}
+.xrow:last-child { border-bottom: none; }
+.xsign {
+  width: 24px; height: 24px;
+  display: grid; place-items: center;
+  border-radius: 6px;
+  font-weight: 600;
+  background: var(--surface-warm);
+  color: var(--ink-3);
+}
+.xsign.plus { background: var(--success-tint); color: var(--forest); }
+.xsign.minus { background: var(--cta-tint); color: var(--cta); }
+.xsign.eq { background: var(--forest); color: #fff; }
+.xrow.xtotal { font-weight: 700; font-family: var(--font-head); font-size: 15px; background: var(--success-tint); border-radius: 8px; padding: 12px 8px; margin-top: 6px; }
+.xrow.xtotal.counted { background: var(--gold-tint); }
+
+.movement { display: flex; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--beige); }
+.movement:last-child { border-bottom: none; }
+.movement-info { flex: 1; display: flex; flex-direction: column; }
+
+.shifts-history { overflow: hidden; }
+.shifts-history-head { background: var(--surface-warm); padding: 10px 16px; font-size: 12px; font-weight: 500; color: var(--ink-3); }
+.shifts-hrow {
+  display: grid;
+  grid-template-columns: 90px 1fr 1.4fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--beige);
+  font-size: 13px;
+}
+.shifts-hrow:last-child { border-bottom: none; }
+.st-gold { background: var(--gold-tint); color: #9a7200; }
+
+.openshift { max-width: 420px; padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+.openshift-pad { max-width: 340px; }
+.overshort { border-radius: 10px; padding: 12px 14px; font-weight: 600; text-align: center; }
+.ok-bg { background: var(--success-tint); color: var(--forest); }
+.bad-bg { background: var(--cta-tint); color: var(--cta); }
+
+.zreport { max-width: 520px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.zreport-head { display: flex; justify-content: space-between; align-items: center; }
