@@ -1,13 +1,17 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { listCategories, listProducts } from '../../api/catalog'
+import type { Product } from '../../api/catalog'
 import { createOrder } from '../../api/orders'
+import { listStores } from '../../api/org'
 import { useAuth } from '../../auth/AuthContext'
 import { useCart } from '../../cart/CartContext'
 import { Logomark } from '../../components/Logomark'
 import { CustomerPicker } from '../../components/CustomerPicker'
+import { OptionPicker } from '../../components/OptionPicker'
 import { fmt, fmtQAR } from '../../lib/money'
+import { resolveUnitPrice } from '../../lib/pricing'
 import { useBarcodeScanner } from '../../lib/useBarcodeScanner'
 import './register.css'
 
@@ -20,9 +24,19 @@ export function RegisterPage() {
   const [search, setSearch] = useState('')
   const [categoryId, setCategoryId] = useState<string | null>(null)
   const [pickingCustomer, setPickingCustomer] = useState(false)
+  const [pickingOptions, setPickingOptions] = useState<Product | null>(null)
   const [chargeError, setChargeError] = useState<string | null>(null)
 
   const categoriesQuery = useQuery({ queryKey: ['categories'], queryFn: listCategories, enabled: !!activeStore })
+  const storesQuery = useQuery({ queryKey: ['stores'], queryFn: listStores, enabled: !!activeStore })
+  const store = storesQuery.data?.data.find((s) => s.id === activeStore?.id)
+  const isRestaurant = store?.type === 'restaurant'
+
+  // Keep the cart preview's service charge in step with this branch.
+  const serviceChargeRate = store?.service_charge_rate ?? '0'
+  useEffect(() => {
+    cart.setServiceChargeRate(serviceChargeRate)
+  }, [serviceChargeRate, cart.setServiceChargeRate]) // eslint-disable-line react-hooks/exhaustive-deps
   const productsQuery = useQuery({
     queryKey: ['products', { search, categoryId, showInactive: false }],
     queryFn: () => listProducts({ search: search || undefined, category_id: categoryId ?? undefined }),
@@ -35,20 +49,32 @@ export function RegisterPage() {
         store_id: activeStore!.id,
         order_type: cart.orderType,
         customer_id: cart.customerId,
-        items: cart.lines.map((l) => ({ product_id: l.product_id, quantity: l.quantity })),
+        items: cart.lines.map((l) => ({
+          product_id: l.product_id,
+          quantity: l.quantity,
+          option_ids: l.options.map((o) => o.choice_id),
+        })),
       }),
     onSuccess: (order) => {
       cart.clear()
-      navigate(`/charge/${order.id}`)
+      // Dine-in orders open as a tab: the guest orders first, a table is
+      // optional and can be assigned there; counter/takeaway/online pay now.
+      navigate(order.order_type === 'dine_in' ? `/tab/${order.id}` : `/charge/${order.id}`)
     },
     onError: () => setChargeError('Could not start the order — try again.'),
   })
+
+  /** Options ask first; everything else lands straight in the cart. */
+  function ring(p: Product) {
+    if (p.option_groups.length) setPickingOptions(p)
+    else cart.add(p)
+  }
 
   // USB scanners type fast and hit Enter — resolve the code and drop it in the cart.
   useBarcodeScanner(async (code) => {
     const res = await listProducts({ barcode: code })
     const product = res.data[0]
-    if (product) cart.add(product)
+    if (product) ring(product)
   })
 
   const dotFor = useMemo(() => {
@@ -83,16 +109,24 @@ export function RegisterPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
           <div className="register-seg">
-            {(['counter', 'takeaway'] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                className={cart.orderType === t ? 'seg-btn active' : 'seg-btn'}
-                onClick={() => cart.setOrderType(t)}
-              >
-                {t === 'counter' ? 'Counter' : 'Takeaway'}
-              </button>
-            ))}
+            {(['counter', 'dine_in', 'takeaway', 'delivery'] as const)
+              .filter((t) => t !== 'dine_in' || isRestaurant)
+              .map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  className={cart.orderType === t ? 'seg-btn active' : 'seg-btn'}
+                  onClick={() => cart.setOrderType(t)}
+                >
+                  {t === 'counter'
+                    ? 'Counter'
+                    : t === 'dine_in'
+                      ? 'Dine-in'
+                      : t === 'takeaway'
+                        ? 'Takeaway'
+                        : 'Online'}
+                </button>
+              ))}
           </div>
         </div>
 
@@ -118,16 +152,27 @@ export function RegisterPage() {
 
         <div className="register-grid">
           {productsQuery.isPending && <div className="register-note">Loading products…</div>}
-          {productsQuery.data?.data.map((p) => (
-            <button key={p.id} type="button" className="tile" onClick={() => cart.add(p)}>
-              <span className="tile-cat">
-                <span className="tile-dot" style={{ background: dotFor(p.category_id) }} />
-                {p.category_name ?? 'Uncategorised'}
-              </span>
-              <span className="tile-name">{p.name}</span>
-              <span className="tile-price">QAR {fmt(p.price)}</span>
-            </button>
-          ))}
+          {productsQuery.data?.data.map((p) => {
+            const resolved = resolveUnitPrice(p, cart.orderType === 'delivery' ? 'online' : 'store')
+            return (
+              <button key={p.id} type="button" className="tile" onClick={() => ring(p)}>
+                <span className="tile-cat">
+                  <span className="tile-dot" style={{ background: dotFor(p.category_id) }} />
+                  {p.category_name ?? 'Uncategorised'}
+                  {resolved.offer_applied && p.offer && (
+                    <span className="tile-offer">−{p.offer.percent}%</span>
+                  )}
+                </span>
+                <span className="tile-name">{p.name}</span>
+                <span className="tile-price">
+                  QAR {fmt(resolved.price)}
+                  {resolved.offer_applied && (
+                    <s className="tile-was">{fmt(resolved.original)}</s>
+                  )}
+                </span>
+              </button>
+            )
+          })}
           {productsQuery.data && productsQuery.data.data.length === 0 && (
             <div className="register-note">No products match — add them in Catalog.</div>
           )}
@@ -156,15 +201,18 @@ export function RegisterPage() {
             <div className="cart-empty">Tap products to start the sale.</div>
           )}
           {cart.lines.map((l, i) => (
-            <div key={l.product_id} className="cart-line">
+            <div key={l.key} className="cart-line">
               <div className="cart-line-info">
                 <span className="cart-line-name">{l.name}</span>
-                <span className="cart-line-unit">QAR {fmt(l.unit_price)} each</span>
+                {l.options.length > 0 && (
+                  <span className="cart-line-opts">{l.options.map((o) => o.label).join(' · ')}</span>
+                )}
+                <span className="cart-line-unit">QAR {fmt(cart.unitPrice(l))} each</span>
               </div>
               <div className="stepper">
-                <button type="button" onClick={() => cart.decrement(l.product_id)}>−</button>
+                <button type="button" onClick={() => cart.decrement(l.key)}>−</button>
                 <span>{l.quantity}</span>
-                <button type="button" onClick={() => cart.increment(l.product_id)}>+</button>
+                <button type="button" onClick={() => cart.increment(l.key)}>+</button>
               </div>
               <span className="cart-line-total">{fmt(cart.totals.line_totals[i])}</span>
             </div>
@@ -173,7 +221,10 @@ export function RegisterPage() {
 
         <div className="cart-totals">
           <div className="trow"><span>Subtotal</span><span>{fmt(cart.totals.subtotal)}</span></div>
-          <div className="trow"><span>Tax</span><span>{fmt(cart.totals.tax_total)}</span></div>
+          {Number(cart.totals.service_charge_total) > 0 && (
+            <div className="trow"><span>Service charge</span><span>{fmt(cart.totals.service_charge_total)}</span></div>
+          )}
+          <div className="trow"><span>Incl. tax</span><span>{fmt(cart.totals.tax_total)}</span></div>
           <div className="trow total"><span>Total</span><span>{fmtQAR(cart.totals.total)}</span></div>
         </div>
 
@@ -188,7 +239,11 @@ export function RegisterPage() {
             charge.mutate()
           }}
         >
-          {charge.isPending ? 'Starting…' : `Charge · ${fmtQAR(cart.totals.total)}`}
+          {charge.isPending
+            ? 'Starting…'
+            : cart.orderType === 'dine_in'
+              ? `Open tab · ${fmtQAR(cart.totals.total)}`
+              : `Charge · ${fmtQAR(cart.totals.total)}`}
         </button>
         <button
           type="button"
@@ -199,6 +254,17 @@ export function RegisterPage() {
           Clear sale
         </button>
       </aside>
+
+      {pickingOptions && (
+        <OptionPicker
+          product={pickingOptions}
+          onAdd={(selections) => {
+            cart.add(pickingOptions, selections)
+            setPickingOptions(null)
+          }}
+          onClose={() => setPickingOptions(null)}
+        />
+      )}
 
       {pickingCustomer && (
         <CustomerPicker

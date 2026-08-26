@@ -81,3 +81,7 @@
   gap: 10px;
 }
 .users-form-actions button { padding: 0 22px; }
+
+/* ---- Phase 12: owner delete ---- */
+.users-actions { display: flex; gap: 6px; }
+.users-delete { color: var(--danger, #c0392b); }

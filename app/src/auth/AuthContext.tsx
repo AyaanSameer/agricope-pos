@@ -2,7 +2,25 @@ import { createContext, useCallback, useContext, useState } from 'react'
 import type { ReactNode } from 'react'
 import { setAccessToken } from '../api/client'
 import { login as apiLogin, switchCashier as apiSwitchCashier } from '../api/auth'
-import type { User } from '../api/types'
+import type { Store, User } from '../api/types'
+
+/**
+ * Three kinds of sign-in share one form:
+ *  - platform ADMIN (Agricope staff) → the /admin console, above every business
+ *  - a BUSINESS (one login for all its branches) → branch picker, then
+ *  - a PERSON, identified by the PIN they type on the till
+ */
+
+interface AdminSession {
+  token: string
+  admin: { id: string; name: string }
+}
+
+interface BusinessSession {
+  token: string
+  business: { id: string; name: string }
+  stores: Store[]
+}
 
 interface Session {
   token: string
@@ -16,16 +34,23 @@ export interface StoreRef {
 }
 
 interface AuthValue {
+  adminSession: AdminSession | null
+  businessSession: BusinessSession | null
   session: Session | null
   /** The store this till/session is acting in. Fixed for store staff, chosen by owners. */
   activeStore: StoreRef | null
-  signIn: (email: string, password: string) => Promise<User>
-  signOut: () => void
-  /** Fast cashier hand-over on the till — keeps the active store, swaps the person. */
+  /** Returns which kind of account signed in, so the login page can route. */
+  signIn: (email: string, password: string) => Promise<'admin' | 'business'>
+  /** PIN → person. Uses the active store as the till context (null = back office). */
+  identify: (pin: string, storeId: string | null) => Promise<User>
+  /** Fast user hand-over on the till — keeps the active store, swaps the person. */
   switchByPin: (pin: string) => Promise<User>
+  signOut: () => void
   setActiveStore: (store: StoreRef | null) => void
 }
 
+const ADMIN_KEY = 'agricope.admin'
+const BUSINESS_KEY = 'agricope.business'
 const SESSION_KEY = 'agricope.session'
 const STORE_KEY = 'agricope.activeStore'
 
@@ -46,11 +71,22 @@ function initialSession(): Session | null {
   return session
 }
 
-function storeForUser(user: User): StoreRef | null {
-  return user.store_id ? { id: user.store_id, name: user.store_name ?? '' } : null
+function initialBusiness(): BusinessSession | null {
+  const business = loadJson<BusinessSession>(BUSINESS_KEY)
+  // A user session's token wins; the business token only carries the PIN stage.
+  if (business && !localStorage.getItem(SESSION_KEY)) setAccessToken(business.token)
+  return business
+}
+
+function initialAdmin(): AdminSession | null {
+  const admin = loadJson<AdminSession>(ADMIN_KEY)
+  if (admin) setAccessToken(admin.token)
+  return admin
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const [adminSession, setAdminSession] = useState<AdminSession | null>(initialAdmin)
+  const [businessSession, setBusinessSession] = useState<BusinessSession | null>(initialBusiness)
   const [session, setSession] = useState<Session | null>(initialSession)
   const [activeStore, setActiveStoreState] = useState<StoreRef | null>(() =>
     loadJson<StoreRef>(STORE_KEY),
@@ -62,22 +98,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setActiveStoreState(store)
   }, [])
 
-  const adoptSession = useCallback(
-    (token: string, refreshToken: string, user: User, keepStore: boolean) => {
-      const next: Session = { token, refreshToken, user }
-      setAccessToken(token)
-      localStorage.setItem(SESSION_KEY, JSON.stringify(next))
-      setSession(next)
-      if (!keepStore) persistStore(storeForUser(user))
-      return user
-    },
-    [persistStore],
-  )
+  const adoptSession = useCallback((token: string, refreshToken: string, user: User) => {
+    const next: Session = { token, refreshToken, user }
+    setAccessToken(token)
+    localStorage.setItem(SESSION_KEY, JSON.stringify(next))
+    setSession(next)
+    return user
+  }, [])
+
+  const clearAll = useCallback(() => {
+    localStorage.removeItem(ADMIN_KEY)
+    localStorage.removeItem(BUSINESS_KEY)
+    localStorage.removeItem(SESSION_KEY)
+    localStorage.removeItem(STORE_KEY)
+    setAdminSession(null)
+    setBusinessSession(null)
+    setSession(null)
+    setActiveStoreState(null)
+  }, [])
 
   const signIn = useCallback(
     async (email: string, password: string) => {
       const res = await apiLogin(email, password)
-      return adoptSession(res.access_token, res.refresh_token, res.user, false)
+      clearAll()
+      if ('admin_token' in res) {
+        const next: AdminSession = { token: res.admin_token, admin: res.admin }
+        setAccessToken(next.token)
+        localStorage.setItem(ADMIN_KEY, JSON.stringify(next))
+        setAdminSession(next)
+        return 'admin' as const
+      }
+      const next: BusinessSession = {
+        token: res.business_token,
+        business: res.business,
+        stores: res.stores,
+      }
+      setAccessToken(next.token)
+      localStorage.setItem(BUSINESS_KEY, JSON.stringify(next))
+      setBusinessSession(next)
+      return 'business' as const
+    },
+    [clearAll],
+  )
+
+  const identify = useCallback(
+    async (pin: string, storeId: string | null) => {
+      const res = await apiSwitchCashier(storeId, pin)
+      return adoptSession(res.access_token, res.refresh_token, res.user)
     },
     [adoptSession],
   )
@@ -87,22 +154,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!activeStore) throw new Error('No active store on this till')
       const res = await apiSwitchCashier(activeStore.id, pin)
       // Same till, same store — only the person changes.
-      return adoptSession(res.access_token, res.refresh_token, res.user, true)
+      return adoptSession(res.access_token, res.refresh_token, res.user)
     },
     [activeStore, adoptSession],
   )
 
   const signOut = useCallback(() => {
     setAccessToken(null)
-    localStorage.removeItem(SESSION_KEY)
-    localStorage.removeItem(STORE_KEY)
-    setSession(null)
-    setActiveStoreState(null)
-  }, [])
+    clearAll()
+  }, [clearAll])
 
   return (
     <AuthContext.Provider
-      value={{ session, activeStore, signIn, signOut, switchByPin, setActiveStore: persistStore }}
+      value={{
+        adminSession,
+        businessSession,
+        session,
+        activeStore,
+        signIn,
+        identify,
+        switchByPin,
+        signOut,
+        setActiveStore: persistStore,
+      }}
     >
       {children}
     </AuthContext.Provider>

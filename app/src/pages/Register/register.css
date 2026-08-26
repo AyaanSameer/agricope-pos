@@ -163,3 +163,25 @@
 .cart-error { background: var(--cta-tint); color: var(--cta); border-radius: var(--radius); padding: 10px 12px; font-weight: 500; }
 .cart-charge { min-height: 56px; font-size: 16px; }
 .cart-clear { min-height: 42px; }
+
+/* ---- Phase 12: offers & options on the grid ---- */
+.tile-offer {
+  margin-left: auto;
+  background: var(--gold-tint, #fdf1d2);
+  color: #9a6206;
+  font-size: 10.5px;
+  font-weight: 700;
+  border-radius: 99px;
+  padding: 2px 7px;
+}
+.tile-was {
+  margin-left: 7px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  font-weight: 400;
+}
+.cart-line-opts {
+  display: block;
+  font-size: 11.5px;
+  color: var(--ink-2);
+}

@@ -4,40 +4,53 @@ import { useQuery } from '@tanstack/react-query'
 import { listStores } from '../api/org'
 import { useAuth } from '../auth/AuthContext'
 import { Logomark } from './Logomark'
+import { NavIcon } from './NavIcon'
+import type { NavIconName } from './NavIcon'
 import { PinSwitchOverlay } from './PinSwitchOverlay'
+import { ConfirmDialog } from './ConfirmDialog'
 import type { Role } from '../api/types'
 import './shell.css'
 
 interface NavEntry {
   label: string
-  to: string | null // null = not built yet
-  phase?: string
+  icon: NavIconName
+  to: string
   roles: Role[]
+  restaurantOnly?: boolean
+  /** hidden when the branch prints kitchen tickets instead of running a KDS */
+  kdsOnly?: boolean
 }
 
 /** Role-lean navigation: each role sees only what it needs. */
-const NAV: (NavEntry & { restaurantOnly?: boolean })[] = [
-  { label: 'Register', to: '/', roles: ['cashier', 'manager', 'owner'] },
-  { label: 'Tables', to: '/floor', roles: ['cashier', 'manager', 'owner'], restaurantOnly: true },
-  { label: 'Orders', to: '/orders', roles: ['cashier', 'manager', 'owner'] },
-  { label: 'Customers', to: '/customers', roles: ['cashier', 'manager', 'owner'] },
-  { label: 'Kitchen', to: '/kds', roles: ['cashier', 'manager', 'owner'], restaurantOnly: true },
-  { label: 'Catalog', to: '/catalog', roles: ['manager', 'owner'] },
-  { label: 'Shifts', to: '/shifts', roles: ['cashier', 'manager', 'owner'] },
-  { label: 'Reports', to: '/reports', roles: ['manager', 'owner'] },
-  { label: 'Users', to: '/users', roles: ['manager', 'owner'] },
+const NAV: NavEntry[] = [
+  { label: 'Register', icon: 'register', to: '/', roles: ['cashier', 'manager', 'owner'] },
+  { label: 'Tables', icon: 'tables', to: '/floor', roles: ['cashier', 'manager', 'owner'], restaurantOnly: true },
+  { label: 'Orders', icon: 'orders', to: '/orders', roles: ['cashier', 'manager', 'owner'] },
+  { label: 'Customers', icon: 'customers', to: '/customers', roles: ['cashier', 'manager', 'owner'] },
+  { label: 'Kitchen', icon: 'kitchen', to: '/kds', roles: ['cashier', 'manager', 'owner'], restaurantOnly: true, kdsOnly: true },
+  { label: 'Catalog', icon: 'catalog', to: '/catalog', roles: ['manager', 'owner'] },
+  { label: 'Shifts', icon: 'shifts', to: '/shifts', roles: ['cashier', 'manager', 'owner'] },
+  { label: 'Reports', icon: 'reports', to: '/reports', roles: ['manager', 'owner'] },
+  { label: 'Staff', icon: 'staff', to: '/staff', roles: ['manager', 'owner'] },
+  { label: 'Users', icon: 'users', to: '/users', roles: ['manager', 'owner'] },
+  { label: 'Settings', icon: 'settings', to: '/settings', roles: ['manager', 'owner'] },
 ]
 
 export function AppShell() {
   const { session, activeStore, signOut } = useAuth()
   const [pinOpen, setPinOpen] = useState(false)
+  const [confirmingLogout, setConfirmingLogout] = useState(false)
   const storesQuery = useQuery({ queryKey: ['stores'], queryFn: listStores, enabled: !!session })
   if (!session) return null
   const { user } = session
-  const isRestaurant =
-    storesQuery.data?.data.find((s) => s.id === activeStore?.id)?.type === 'restaurant'
+  const store = storesQuery.data?.data.find((s) => s.id === activeStore?.id)
+  const isRestaurant = store?.type === 'restaurant'
+  const printsTickets = store?.kitchen_mode === 'printer'
   const nav = NAV.filter(
-    (n) => n.roles.includes(user.role) && (!n.restaurantOnly || isRestaurant),
+    (n) =>
+      n.roles.includes(user.role) &&
+      (!n.restaurantOnly || isRestaurant) &&
+      (!n.kdsOnly || !printsTickets),
   )
 
   return (
@@ -49,32 +62,24 @@ export function AppShell() {
         </div>
         <div className="sidebar-store">
           <span className="dot" />
-          {activeStore ? activeStore.name : 'All stores · Owner view'}
+          {activeStore ? activeStore.name : 'All stores · Back office'}
         </div>
         <nav className="sidebar-nav">
-          {nav.map((item) =>
-            item.to ? (
-              <NavLink
-                key={item.label}
-                to={item.to}
-                end={item.to === '/'}
-                className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}
-              >
-                <span className="nav-icon" />
-                {item.label}
-              </NavLink>
-            ) : (
-              <span key={item.label} className="nav-item disabled" title={`Coming in ${item.phase}`}>
-                <span className="nav-icon" />
-                {item.label}
-                <span className="nav-phase">{item.phase}</span>
-              </span>
-            ),
-          )}
+          {nav.map((item) => (
+            <NavLink
+              key={item.label}
+              to={item.to}
+              end={item.to === '/'}
+              className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}
+            >
+              <NavIcon name={item.icon} />
+              {item.label}
+            </NavLink>
+          ))}
         </nav>
         {activeStore && (
           <button type="button" className="sidebar-switch" onClick={() => setPinOpen(true)}>
-            Switch cashier · PIN
+            Switch user · PIN
           </button>
         )}
         <div className="sidebar-user">
@@ -89,7 +94,12 @@ export function AppShell() {
             <div className="sidebar-user-name">{user.name}</div>
             <div className="sidebar-user-role">{user.role}</div>
           </div>
-          <button type="button" className="sidebar-signout" onClick={signOut} title="Sign out">
+          <button
+            type="button"
+            className="sidebar-signout"
+            onClick={() => setConfirmingLogout(true)}
+            title="Log out"
+          >
             ⎋
           </button>
         </div>
@@ -100,6 +110,16 @@ export function AppShell() {
       </main>
 
       {pinOpen && <PinSwitchOverlay onClose={() => setPinOpen(false)} />}
+
+      {confirmingLogout && (
+        <ConfirmDialog
+          title="Log out?"
+          message={`This signs ${activeStore ? `the till at ${activeStore.name}` : 'this till'} out of the business. The next person signs the business in again and enters their PIN.`}
+          confirmLabel="Log out"
+          onConfirm={signOut}
+          onCancel={() => setConfirmingLogout(false)}
+        />
+      )}
     </div>
   )
 }

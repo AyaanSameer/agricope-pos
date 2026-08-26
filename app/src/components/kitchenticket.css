@@ -1,0 +1,64 @@
+.kticket-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 32, 24, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 70;
+  padding: 20px;
+}
+
+.kticket-frame { display: flex; flex-direction: column; gap: 14px; align-items: center; }
+
+/* 80mm ticket, monospace like the thermal printer it stands in for */
+.kticket {
+  width: 300px;
+  max-height: 70vh;
+  overflow-y: auto;
+  background: #fffdf6;
+  color: #111;
+  font-family: 'Courier New', ui-monospace, monospace;
+  font-size: 14px;
+  line-height: 1.45;
+  padding: 18px 16px;
+  border-radius: 4px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.kticket-head { text-align: center; margin-bottom: 10px; }
+.kticket-order { font-size: 20px; font-weight: 700; letter-spacing: 0.02em; }
+.kticket-meta { font-size: 12.5px; }
+
+.kticket-station { margin-top: 10px; }
+.kticket-station-name { text-align: center; font-weight: 700; margin-bottom: 4px; }
+
+.kticket-line { display: flex; gap: 8px; padding: 2px 0; }
+.kticket-qty { font-weight: 700; min-width: 30px; }
+.kticket-item { flex: 1; }
+.kticket-opts { display: block; font-size: 12px; padding-left: 2px; }
+.kticket-opts::before { content: '» '; }
+
+.kticket-empty { text-align: center; color: #555; padding: 12px 0; }
+.kticket-foot { text-align: center; margin-top: 12px; letter-spacing: 0.4em; }
+
+.kticket-actions { display: flex; gap: 10px; }
+
+/* the printer sees only the ticket */
+@media print {
+  body * { visibility: hidden !important; }
+  .kticket-overlay { position: static; background: none; padding: 0; }
+  .kticket,
+  .kticket * { visibility: visible !important; }
+  .kticket {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 80mm;
+    max-height: none;
+    overflow: visible;
+    box-shadow: none;
+    border-radius: 0;
+  }
+  .kticket-actions { display: none; }
+}

@@ -15,11 +15,17 @@ npm install
 npm run dev
 ```
 The app runs against **MSW mocks** by default (no backend needed).
-Demo logins (password `demo123`):
-- `sara@alrayyan-market.qa` — cashier, Al Rayyan Store (till PIN 1234; Amal 2345)
-- `yusuf@karakcorner.qa` — cashier, Karak Corner restaurant (till PIN 3456)
-- `maryam@alrayyan-market.qa` — manager, Al Rayyan Store (PIN 9999)
-- `owner@agricope.qa` — owner, all stores (PIN 0000)
+
+**Signing in (Phase 12): one login per business — the PIN says who you are.**
+Sign in with the business account, pick the branch the till serves, then type your PIN.
+Platform staff sign in on the same form: `admin@agricope.qa` / `demo123` → the **Agricope
+Console** (`/admin`): every business and branch on the POS, plus onboarding — add a
+business, its branches, and create its first owner login.
+
+| Business login (password `demo123`) | Branches | PINs |
+|---|---|---|
+| `demo@agricope.qa` — Agricope Demo Trading Co. | Al Rayyan Store (retail), Karak Corner (restaurant) | Sara 1234 · Amal 2345 (Al Rayyan) · Yusuf 3456 (Karak) · Maryam 9999 (manager) · Ayaan 0000 (owner) |
+| `drumsticks@agricope.qa` — Drumsticks (the first client; real menu & prices) | Drumsticks — Barwa Village (restaurant, prints kitchen tickets) | Rhea 3333 (cashier) · Imran 2222 (manager) · Yousuf 1111 (owner) |
 
 To point at the real API set `VITE_USE_MOCKS=false` in `app/.env.local`.
 
@@ -39,6 +45,8 @@ React 19 · Vite · TypeScript · TanStack Query · React Router · MSW · big.j
 - [x] Phase 9 — kitchen & KDS: send groups by station, dark KDS board with elapsed coloring and bumping, 5s polling
 - [x] Phase 10 — dashboard & reports: KPIs, sales by hour, payment mix, top items, FIFO credit aging
 - [x] Phase 11 — hardening: production build clean, 17 unit tests (money + the pinned totals formula), walkthroughs below
+- [x] Phase 13 — platform console & floor control: Agricope admin login + console (see all businesses/branches, onboard new ones with branches and an owner login), owner-only table CRUD from the floor ("Manage tables"), register Dine-in flow (order first, table optional — assign it on the tab later), "Switch user · PIN" wording, single logout button with a confirm pop-up
+- [x] Phase 12 — multi-business & the Drumsticks menu: one login per business + PIN identity, per-business isolation (users, PINs, staff, catalog, orders), product parameters (Arabic name, multi-category, combos, customisable options like Spicy, time-bound offers, in-store vs online price — all tax-inclusive), Drumsticks' 65 products seeded from their pricing files, Staff page (check-in/out, add staff), owner-only user delete, KDS ↔ kitchen-ticket-printer toggle per branch, nav icons
 
 
 ## Testing
@@ -80,6 +88,34 @@ Start `npm run dev`, open http://localhost:5173, then:
 3. Add a second round — it fires as a new ticket ("fire the mains" for free). Fired lines lock; pulling one needs a PIN.
 4. *Split bill* moves lines to a new order that pays on the normal charge screen — service charge (10%) rides along.
 5. *Reports* shows the day: payment mix, top items, credit aging.
+
+**Drumsticks (the pilot client)** — `drumsticks@agricope.qa` / `demo123`, PIN `2222` (Imran, manager)
+1. The register shows their real menu: category tabs from the pricing file, offer badges
+   (−50% on the Fingers daily bucket) with struck-through prices.
+2. Tap a Tender Box — the flavor sheet asks Normal / Spicy / Mix before it hits the cart;
+   the choice rides to the kitchen ticket and the receipt.
+3. Flip the register to *Online* — items ring at the online price list.
+4. *Catalog* → edit a product: Arabic name, description, several categories (★ = where it
+   reports), an offer with an end date, and its option groups are all editable.
+5. *Staff* → check Omar in, watch "on the floor now" count, check him out — the day's
+   attendance log builds under each card.
+6. *Tables* → seat a table, add a round, *Send to kitchen* — this branch is set to
+   **Ticket printer** in *Settings*, so a printable 80mm kitchen ticket pops instead of
+   the KDS. Flip the toggle in *Settings* and the Kitchen screen comes back.
+7. As the owner (PIN `1111`): *Users* → Delete removes a login entirely (managers can only
+   deactivate). Drumsticks' users, PINs, staff and menu are invisible to the demo business,
+   and vice versa.
+
+**As platform staff** — `admin@agricope.qa` / `demo123`
+1. The Agricope Console lists every business, its branches, owners, user and product counts.
+2. *+ Add business* → branches → *Create owner* — the new business can sign in immediately
+   (starter category included so its Catalog is not a dead end).
+
+**Dine-in without a table (Drumsticks, PIN `2222`)**
+1. On the register pick *Dine-in*, ring items, *Open tab* — the order exists with no table.
+2. On the tab, *Assign table* offers the free tables; skipping is fine.
+3. As the owner (PIN `1111`): *Tables* → *Manage tables* renames, resizes, adds and deletes
+   tables (deleting needs a confirm; an occupied table refuses).
 
 **Designed error paths worth seeing**: wrong password on login, wrong PIN on switch,
 duplicate barcode or PIN, cashier hitting a manager URL, cash without an open shift,

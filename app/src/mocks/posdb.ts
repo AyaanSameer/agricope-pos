@@ -1,20 +1,35 @@
 import Big from 'big.js'
 import { computeTotals } from '../lib/totals'
 import type { OrderDiscount } from '../lib/totals'
-import { products, stores, users, storeName } from './db'
+import { products, serviceChargeRates, stores, users, storeName, storeBusinessId } from './db'
 import type { DbUser } from './db'
+import { channelForOrderType, resolveUnitPrice, withOptionDeltas } from '../lib/pricing'
 
-/** Business settings — the tenant row's JSONB in the real schema. */
-export const businessSettings = {
-  discount_approval_percent: '10',
-  receipt_footer: 'Thank you — see you tomorrow!',
-  business_name: 'Agricope Demo Trading Co.',
+/** Per-business settings — the tenant row's JSONB in the real schema. */
+export interface BusinessSettings {
+  discount_approval_percent: string
+  receipt_footer: string
+  business_name: string
 }
 
-export const serviceChargeRates: Record<string, string> = {
-  's-alrayyan': '0',
-  's-karak': '10',
+const SETTINGS: Record<string, BusinessSettings> = {
+  'b-demo': {
+    discount_approval_percent: '10',
+    receipt_footer: 'Thank you — see you tomorrow!',
+    business_name: 'Agricope Demo Trading Co.',
+  },
+  'b-drumsticks': {
+    discount_approval_percent: '10',
+    receipt_footer: 'Thank you for choosing Drumsticks!',
+    business_name: 'Drumsticks',
+  },
 }
+
+export function settingsFor(businessId: string): BusinessSettings {
+  return SETTINGS[businessId] ?? SETTINGS['b-demo']
+}
+
+export { serviceChargeRates }
 
 // ---------- entities ----------
 
@@ -22,6 +37,8 @@ export interface DbOrderItem {
   id: string
   product_id: string
   product_name: string
+  /** selected option labels ("Spicy") — snapshots, printed on tickets & receipts */
+  options: string[]
   unit_price: string
   quantity: string
   discount: string
@@ -71,6 +88,7 @@ export interface DbOrder {
 
 export interface DbCustomer {
   id: string
+  business_id: string
   name: string
   phone: string | null
   email: string | null
@@ -243,14 +261,33 @@ export function recomputeOrder(order: DbOrder): void {
   order.total = totals.total
 }
 
-export function snapshotItem(productId: string, quantity: string, discount = '0'): DbOrderItem {
+export function snapshotItem(
+  productId: string,
+  quantity: string,
+  discount = '0',
+  orderType: DbOrder['order_type'] = 'counter',
+  optionIds: string[] = [],
+): DbOrderItem {
   const p = products.find((x) => x.id === productId)
   if (!p) throw new Error('NO_SUCH_PRODUCT')
+  // Resolve the selected option choices — labels for the ticket, deltas for the price.
+  const labels: string[] = []
+  const deltas: string[] = []
+  for (const id of optionIds) {
+    const choice = p.option_groups.flatMap((g) => g.choices).find((c) => c.id === id)
+    if (!choice) throw new Error('NO_SUCH_OPTION')
+    labels.push(choice.name)
+    if (new Big(choice.price_delta).gt(0)) deltas.push(choice.price_delta)
+  }
+  // The server resolves the price: channel base (in-store vs online), any live
+  // offer, then option deltas. Client-sent prices are ignored, as always.
+  const resolved = resolveUnitPrice(p, channelForOrderType(orderType))
   return {
     id: uid('oi'),
     product_id: p.id,
     product_name: p.name, // snapshot — renames never touch old receipts
-    unit_price: p.price, // snapshot
+    options: labels, // snapshot
+    unit_price: withOptionDeltas(resolved.price, deltas), // snapshot
     quantity,
     discount,
     tax_rate: p.tax_rate, // snapshot
@@ -266,7 +303,7 @@ export function makeOrder(input: {
   customer_id?: string | null
   table_id?: string | null
   guest_count?: number | null
-  items: { product_id: string; quantity: string; discount?: string }[]
+  items: { product_id: string; quantity: string; discount?: string; option_ids?: string[] }[]
   created_at?: string
 }): DbOrder {
   const order: DbOrder = {
@@ -293,7 +330,9 @@ export function makeOrder(input: {
     shift_id: currentShift(input.store_id)?.id ?? null,
     created_at: input.created_at ?? iso(),
     completed_at: null,
-    items: input.items.map((i) => snapshotItem(i.product_id, i.quantity, i.discount ?? '0')),
+    items: input.items.map((i) =>
+      snapshotItem(i.product_id, i.quantity, i.discount ?? '0', input.order_type, i.option_ids),
+    ),
     payments: [],
   }
   recomputeOrder(order)
@@ -349,14 +388,23 @@ export function toPublicOrder(o: DbOrder) {
   }
 }
 
-/** Managers and owners approve sensitive actions with their PIN. */
-export function approverForPin(pin: string | null): DbUser | null {
+/** Managers and owners approve sensitive actions with their PIN — never across businesses. */
+export function approverForPin(pin: string | null, businessId: string): DbUser | null {
   if (!pin) return null
   return (
     users.find(
-      (u) => u.is_active && u.pin === pin && (u.role === 'manager' || u.role === 'owner'),
+      (u) =>
+        u.is_active &&
+        u.business_id === businessId &&
+        u.pin === pin &&
+        (u.role === 'manager' || u.role === 'owner'),
     ) ?? null
   )
+}
+
+/** Does this order belong to the caller's business? RLS, mock edition. */
+export function orderVisibleTo(order: DbOrder, caller: DbUser): boolean {
+  return storeBusinessId(order.store_id) === caller.business_id
 }
 
 export { storeName }

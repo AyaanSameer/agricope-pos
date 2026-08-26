@@ -4,15 +4,19 @@ import type { Money } from './money'
 /**
  * THE totals formula — the exact order of operations pinned in CONVENTIONS.md.
  * The mock server and the register's live preview both call this one function;
- * the real backend must reproduce it to the halala.
+ * the real backend must reproduce it to the dirham.
  *
- *   line_total     = unit_price × quantity − line discount
+ * Prices are TAX-INCLUSIVE (Gulf convention). Tax is EXTRACTED from the
+ * discounted amounts as a memo line — never added on top of the price:
+ *
+ *   line_total     = unit_price × quantity − line discount        [incl. tax]
  *   subtotal       = Σ line_total
  *   discount_total = order discount applied to subtotal
  *   service_charge = service_charge_rate × (subtotal − discount_total)   [dine-in only]
- *   tax_total      = Σ per-line tax on discounted amounts (order discount
- *                    apportioned to lines by their share of the subtotal)
- *   total          = subtotal − discount_total + service_charge + tax_total
+ *   total          = subtotal − discount_total + service_charge
+ *   tax_total      = Σ per-line  taxable × rate / (100 + rate)    [memo — already in total]
+ *                    (order discount apportioned to lines by subtotal share;
+ *                     service charge is a staff pass-through, never taxed)
  */
 
 export interface TotalsLine {
@@ -66,7 +70,8 @@ export function computeTotals(input: TotalsInput): Totals {
     serviceCharge = new Big(discounted.times(input.service_charge_rate).div(100).toFixed(2))
   }
 
-  // Apportion the order discount to lines by subtotal share, then tax each line.
+  // Apportion the order discount to lines by subtotal share, then EXTRACT the
+  // tax already inside each discounted line: tax = taxable × r / (100 + r).
   let tax = new Big(0)
   if (subtotal.gt(0)) {
     input.lines.forEach((l, i) => {
@@ -74,12 +79,13 @@ export function computeTotals(input: TotalsInput): Totals {
       if (rate.eq(0)) return
       const share = lineTotals[i].div(subtotal)
       const taxable = lineTotals[i].minus(discountTotal.times(share))
-      tax = tax.plus(taxable.times(rate).div(100))
+      tax = tax.plus(taxable.times(rate).div(rate.plus(100)))
     })
   }
   tax = new Big(tax.toFixed(2))
 
-  const total = discounted.plus(serviceCharge).plus(tax)
+  // Tax is inclusive — it is already inside `discounted`, so it never adds on.
+  const total = discounted.plus(serviceCharge)
 
   return {
     line_totals: lineTotals.map((t) => t.toFixed(2)),

@@ -1,6 +1,6 @@
 import { http, HttpResponse, delay } from 'msw'
 import Big from 'big.js'
-import { products, requester } from './db'
+import { products, requester, stations, storeBusinessId } from './db'
 import {
   currentShift,
   customerBalance,
@@ -28,15 +28,24 @@ function auth(request: Request) {
 export const posHandlers2 = [
   http.post('/api/v1/orders/:id/items', async ({ request, params }) => {
     await delay(250)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
-    const order = findOrder(params.id as string)
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const order = findOrder(params.id as string, caller)
     if (!order) return apiError(404, 'NOT_FOUND', 'No such order.')
     if (order.status !== 'open') return apiError(409, 'ORDER_NOT_OPEN', 'This tab is closed.')
-    const body = (await request.json()) as { items?: { product_id: string; quantity: string }[] }
+    const body = (await request.json()) as {
+      items?: { product_id: string; quantity: string; option_ids?: string[] }[]
+    }
     for (const i of body.items ?? []) {
-      const p = products.find((x) => x.id === i.product_id && x.is_active)
+      const p = products.find(
+        (x) => x.id === i.product_id && x.is_active && x.business_id === caller.business_id,
+      )
       if (!p) return apiError(400, 'VALIDATION_ERROR', 'Unknown or inactive product.')
-      order.items.push(snapshotItem(i.product_id, i.quantity))
+      const validChoices = new Set(p.option_groups.flatMap((g) => g.choices.map((c) => c.id)))
+      if ((i.option_ids ?? []).some((id) => !validChoices.has(id))) {
+        return apiError(400, 'VALIDATION_ERROR', `Unknown option for ${p.name}.`)
+      }
+      order.items.push(snapshotItem(i.product_id, i.quantity, '0', order.order_type, i.option_ids))
     }
     recomputeOrder(order)
     return HttpResponse.json(toPublicOrder(order))
@@ -44,8 +53,9 @@ export const posHandlers2 = [
 
   http.patch('/api/v1/orders/:id/items/:itemId', async ({ request, params }) => {
     await delay(200)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
-    const order = findOrder(params.id as string)
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const order = findOrder(params.id as string, caller)
     if (!order) return apiError(404, 'NOT_FOUND', 'No such order.')
     if (order.status !== 'open') return apiError(409, 'ORDER_NOT_OPEN', 'This tab is closed.')
     const item = order.items.find((i) => i.id === params.itemId)
@@ -64,14 +74,15 @@ export const posHandlers2 = [
 
   http.delete('/api/v1/orders/:id/items/:itemId', async ({ request, params }) => {
     await delay(200)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
-    const order = findOrder(params.id as string)
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const order = findOrder(params.id as string, caller)
     if (!order) return apiError(404, 'NOT_FOUND', 'No such order.')
     if (order.status !== 'open') return apiError(409, 'ORDER_NOT_OPEN', 'This tab is closed.')
     const item = order.items.find((i) => i.id === params.itemId)
     if (!item) return apiError(404, 'NOT_FOUND', 'No such line.')
     if (item.sent_to_kitchen_at) {
-      if (!approval(request)) return APPROVAL_REQUIRED()
+      if (!approval(request, caller.business_id)) return APPROVAL_REQUIRED()
       for (const t of tickets) {
         for (const ti of t.items) if (ti.order_item_id === item.id) ti.cancelled = true
         if (t.items.every((ti) => ti.cancelled) && t.status !== 'done') t.status = 'cancelled'
@@ -88,7 +99,7 @@ export const posHandlers2 = [
     await delay(300)
     const caller = auth(request)
     if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
-    const order = findOrder(params.id as string)
+    const order = findOrder(params.id as string, caller)
     if (!order) return apiError(404, 'NOT_FOUND', 'No such order.')
     if (order.status !== 'open') return apiError(409, 'ORDER_NOT_OPEN', 'This tab is closed.')
     const body = (await request.json()) as { items?: { order_item_id: string; quantity: string }[] }
@@ -133,11 +144,12 @@ export const posHandlers2 = [
 
   http.post('/api/v1/orders/:id/merge', async ({ request, params }) => {
     await delay(300)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
-    const target = findOrder(params.id as string)
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const target = findOrder(params.id as string, caller)
     if (!target) return apiError(404, 'NOT_FOUND', 'No such order.')
     const body = (await request.json()) as { source_order_id?: string }
-    const source = findOrder(body.source_order_id ?? '')
+    const source = findOrder(body.source_order_id ?? '', caller)
     if (!source) return apiError(404, 'NOT_FOUND', 'No such source order.')
     if (target.status !== 'open' || source.status !== 'open') {
       return apiError(409, 'ORDER_NOT_OPEN', 'Both tabs must be open to merge.')
@@ -164,8 +176,9 @@ export const posHandlers2 = [
 
   http.post('/api/v1/orders/:id/send', async ({ request, params }) => {
     await delay(250)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
-    const order = findOrder(params.id as string)
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const order = findOrder(params.id as string, caller)
     if (!order) return apiError(404, 'NOT_FOUND', 'No such order.')
     if (order.status !== 'open') return apiError(409, 'ORDER_NOT_OPEN', 'This tab is closed.')
     const unsent = order.items.filter((i) => !i.sent_to_kitchen_at)
@@ -195,7 +208,7 @@ export const posHandlers2 = [
           order_item_id: i.id,
           product_name: i.product_name,
           quantity: i.quantity,
-          note: null,
+          note: i.options.length ? i.options.join(' · ') : null,
           cancelled: false,
         })),
       })
@@ -205,11 +218,17 @@ export const posHandlers2 = [
 
   http.get('/api/v1/kitchen/tickets', async ({ request }) => {
     await delay(120)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
     const url = new URL(request.url)
     const stationId = url.searchParams.get('station_id')
     const status = url.searchParams.get('status')
-    let data = [...tickets]
+    const ownStations = new Set(
+      stations
+        .filter((st) => storeBusinessId(st.store_id) === caller.business_id)
+        .map((st) => st.id),
+    )
+    let data = tickets.filter((t) => ownStations.has(t.station_id))
     if (stationId) data = data.filter((t) => t.station_id === stationId)
     if (status) data = data.filter((t) => status.split(',').includes(t.status))
     data.sort((a, b) => a.created_at.localeCompare(b.created_at))
@@ -218,8 +237,14 @@ export const posHandlers2 = [
 
   http.patch('/api/v1/kitchen/tickets/:id', async ({ request, params }) => {
     await delay(150)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
-    const ticket = tickets.find((t) => t.id === params.id)
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const ticket = tickets.find(
+      (t) =>
+        t.id === params.id &&
+        storeBusinessId(stations.find((st) => st.id === t.station_id)?.store_id ?? null) ===
+          caller.business_id,
+    )
     if (!ticket) return apiError(404, 'NOT_FOUND', 'No such ticket.')
     const body = (await request.json()) as { status?: 'new' | 'in_progress' | 'done' | 'cancelled' }
     if (!body.status) return apiError(400, 'VALIDATION_ERROR', 'A status is required.')
@@ -232,11 +257,17 @@ export const posHandlers2 = [
 
   http.get('/api/v1/tables/floor', async ({ request }) => {
     await delay(200)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
     const url = new URL(request.url)
     const storeId = url.searchParams.get('store_id')
     const data = tables
-      .filter((t) => t.is_active && (!storeId || t.store_id === storeId))
+      .filter(
+        (t) =>
+          t.is_active &&
+          storeBusinessId(t.store_id) === caller.business_id &&
+          (!storeId || t.store_id === storeId),
+      )
       .map((t) => {
         const open = orders.find((o) => o.status === 'open' && o.table_id === t.id)
         return {
@@ -261,10 +292,11 @@ export const posHandlers2 = [
 
   http.get('/api/v1/customers', async ({ request }) => {
     await delay(200)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
     const url = new URL(request.url)
     const search = url.searchParams.get('search')?.toLowerCase()
-    let data = customers.filter((c) => c.is_active)
+    let data = customers.filter((c) => c.is_active && c.business_id === caller.business_id)
     if (search) {
       data = data.filter(
         (c) => c.name.toLowerCase().includes(search) || (c.phone ?? '').includes(search),
@@ -280,11 +312,13 @@ export const posHandlers2 = [
 
   http.post('/api/v1/customers', async ({ request }) => {
     await delay(250)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
     const body = (await request.json()) as Partial<(typeof customers)[number]>
     if (!body.name?.trim()) return apiError(400, 'VALIDATION_ERROR', 'A name is required.')
     const customer = {
       id: uid('cu'),
+      business_id: caller.business_id,
       name: body.name.trim(),
       phone: body.phone ?? null,
       email: body.email ?? null,
@@ -298,8 +332,11 @@ export const posHandlers2 = [
 
   http.patch('/api/v1/customers/:id', async ({ request, params }) => {
     await delay(250)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
-    const customer = customers.find((c) => c.id === params.id)
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const customer = customers.find(
+      (c) => c.id === params.id && c.business_id === caller.business_id,
+    )
     if (!customer) return apiError(404, 'NOT_FOUND', 'No such customer.')
     const body = (await request.json()) as Partial<typeof customer>
     if (body.name !== undefined) customer.name = body.name
@@ -313,8 +350,11 @@ export const posHandlers2 = [
 
   http.get('/api/v1/customers/:id/statement', async ({ request, params }) => {
     await delay(250)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
-    const customer = customers.find((c) => c.id === params.id)
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const customer = customers.find(
+      (c) => c.id === params.id && c.business_id === caller.business_id,
+    )
     if (!customer) return apiError(404, 'NOT_FOUND', 'No such customer.')
     const entries = ledger
       .filter((e) => e.customer_id === customer.id)
@@ -343,7 +383,9 @@ export const posHandlers2 = [
     await delay(300)
     const caller = auth(request)
     if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
-    const customer = customers.find((c) => c.id === params.id)
+    const customer = customers.find(
+      (c) => c.id === params.id && c.business_id === caller.business_id,
+    )
     if (!customer) return apiError(404, 'NOT_FOUND', 'No such customer.')
     const body = (await request.json()) as {
       amount?: string
@@ -383,9 +425,10 @@ export const posHandlers2 = [
 
   http.get('/api/v1/customers/balances', async ({ request }) => {
     await delay(200)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
     const data = customers
-      .filter((c) => c.is_active)
+      .filter((c) => c.is_active && c.business_id === caller.business_id)
       .map((c) => ({ ...c, balance: customerBalance(c.id) }))
       .filter((c) => new Big(c.balance).gt(0))
       .sort((a, b) => new Big(b.balance).minus(a.balance).toNumber())

@@ -55,7 +55,7 @@ describe('computeTotals — the pinned order of operations', () => {
     expect(takeaway.service_charge_total).toBe('0.00')
   })
 
-  it('taxes per line on discounted amounts, apportioned by subtotal share', () => {
+  it('extracts inclusive tax per line from discounted amounts, apportioned by subtotal share', () => {
     const t = computeTotals({
       lines: [
         { unit_price: '100.00', quantity: '1', tax_rate: '10' }, // half the subtotal
@@ -63,9 +63,10 @@ describe('computeTotals — the pinned order of operations', () => {
       ],
       discount: { type: 'fixed', value: '40.00' },
     })
-    // taxable line 1: 100 − 40×(100/200) = 80 → 10% = 8.00
-    expect(t.tax_total).toBe('8.00')
-    expect(t.total).toBe('168.00') // 200 − 40 + 8
+    // taxable line 1: 100 − 40×(100/200) = 80 → extracted: 80 × 10/110 = 7.27
+    expect(t.tax_total).toBe('7.27')
+    // prices are tax-inclusive, so tax never adds to the total
+    expect(t.total).toBe('160.00') // 200 − 40
   })
 
   it('handles weighed quantities in line totals', () => {

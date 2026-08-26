@@ -44,3 +44,37 @@
   border: 1px solid var(--border);
 }
 .floor-guests span { font-family: var(--font-head); font-size: 26px; font-weight: 700; min-width: 40px; }
+
+/* ---- Phase 13: owner's table management ---- */
+.floor-manage {
+  width: min(560px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 22px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+.floor-manage-head { display: flex; justify-content: space-between; align-items: center; }
+.floor-manage-list { display: flex; flex-direction: column; gap: 8px; }
+.floor-manage-row,
+.floor-manage-add {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 64px auto auto;
+  gap: 8px;
+  align-items: center;
+}
+.floor-manage-add { grid-template-columns: 1fr 1.2fr 64px auto; }
+.floor-manage-row input,
+.floor-manage-add input {
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1.5px solid var(--line, #ddd);
+  background: var(--surface);
+  font: inherit;
+}
+.floor-manage-seats { text-align: center; }
+.floor-manage-state { font-size: 11.5px; color: var(--ink-3); }
+.floor-manage-del { color: var(--danger, #c0392b); }
+.floor-manage-del:disabled { opacity: 0.4; }

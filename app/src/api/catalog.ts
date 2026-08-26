@@ -1,5 +1,6 @@
 import { api } from './client'
 import type { Paginated } from './types'
+import type { ProductOffer } from '../lib/pricing'
 
 export interface Category {
   id: string
@@ -7,14 +8,39 @@ export interface Category {
   sort_order: number
 }
 
+export interface OptionChoice {
+  id: string
+  name: string
+  price_delta: string // "0.00" for free choices
+}
+
+export interface OptionGroup {
+  id: string
+  name: string // e.g. "Flavor"
+  required: boolean
+  choices: OptionChoice[]
+}
+
 export interface Product {
   id: string
   name: string
+  name_ar: string | null
+  description: string | null
+  /** primary placement — first of category_ids */
   category_id: string | null
   category_name: string | null
+  category_ids: string[]
   barcode: string | null
+  /** in-store price, tax-inclusive */
   price: string
+  /** online-channel price; null = same as in-store */
+  price_online: string | null
   tax_rate: string
+  is_combo: boolean
+  /** time-bound product discount */
+  offer: ProductOffer | null
+  /** customisable options, e.g. Flavor: Normal/Spicy/Mix */
+  option_groups: OptionGroup[]
   kitchen_station_id: string | null
   station_name: string | null
   is_active: boolean
@@ -53,10 +79,16 @@ export function listProducts(filters: ProductFilters = {}): Promise<Paginated<Pr
 
 export interface ProductInput {
   name: string
-  category_id: string | null
+  name_ar?: string | null
+  description?: string | null
+  category_ids: string[]
   barcode: string | null
   price: string
+  price_online?: string | null
   tax_rate: string
+  is_combo?: boolean
+  offer?: ProductOffer | null
+  option_groups?: OptionGroup[]
   kitchen_station_id: string | null
   is_active?: boolean
 }

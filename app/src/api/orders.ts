@@ -9,6 +9,8 @@ export interface OrderItem {
   id: string
   product_id: string
   product_name: string
+  /** selected option labels, e.g. ["Spicy"] — printed on tickets and receipts */
+  options: string[]
   unit_price: string
   quantity: string
   discount: string
@@ -63,7 +65,8 @@ export interface NewOrderInput {
   customer_id?: string | null
   table_id?: string | null
   guest_count?: number | null
-  items: { product_id: string; quantity: string; discount?: string }[]
+  /** option_ids: selected option-choice ids — the server resolves labels & deltas */
+  items: { product_id: string; quantity: string; discount?: string; option_ids?: string[] }[]
 }
 
 export function createOrder(input: NewOrderInput): Promise<Order> {
@@ -104,6 +107,11 @@ export function attachCustomer(orderId: string, customer_id: string | null): Pro
   return api<Order>(`/orders/${orderId}`, { method: 'PATCH', body: JSON.stringify({ customer_id }) })
 }
 
+/** Dine-in orders can start without a table; assigning one later is optional. */
+export function assignTable(orderId: string, table_id: string | null): Promise<Order> {
+  return api<Order>(`/orders/${orderId}`, { method: 'PATCH', body: JSON.stringify({ table_id }) })
+}
+
 export function applyDiscount(
   orderId: string,
   input: { type: 'percent' | 'fixed'; value: string; reason: string },
@@ -138,7 +146,7 @@ export function refundOrder(orderId: string, approvalPin?: string): Promise<Orde
 
 export function addOrderItems(
   orderId: string,
-  items: { product_id: string; quantity: string }[],
+  items: { product_id: string; quantity: string; option_ids?: string[] }[],
 ): Promise<Order> {
   return api<Order>(`/orders/${orderId}/items`, { method: 'POST', body: JSON.stringify({ items }) })
 }

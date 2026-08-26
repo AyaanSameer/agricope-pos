@@ -35,7 +35,10 @@ export function ReceiptView({ data }: { data: ReceiptData }) {
       {order.items.map((i) => (
         <div key={i.id} className="receipt-line">
           <span className="receipt-qty">{i.quantity}×</span>
-          <span className="receipt-name">{i.product_name}</span>
+          <span className="receipt-name">
+            {i.product_name}
+            {i.options.length > 0 && <span className="receipt-opts">{i.options.join(' · ')}</span>}
+          </span>
           <span className="receipt-amt">{fmt(i.line_total)}</span>
         </div>
       ))}
@@ -48,7 +51,7 @@ export function ReceiptView({ data }: { data: ReceiptData }) {
         <div className="receipt-line"><span className="receipt-name">Service charge</span><span className="receipt-amt">{fmt(order.service_charge_total)}</span></div>
       )}
       {Number(order.tax_total) > 0 && (
-        <div className="receipt-line"><span className="receipt-name">Tax</span><span className="receipt-amt">{fmt(order.tax_total)}</span></div>
+        <div className="receipt-line"><span className="receipt-name">Incl. tax</span><span className="receipt-amt">{fmt(order.tax_total)}</span></div>
       )}
       <div className="receipt-line receipt-total"><span className="receipt-name">TOTAL</span><span className="receipt-amt">{fmtQAR(order.total)}</span></div>
       <div className="receipt-sep" />

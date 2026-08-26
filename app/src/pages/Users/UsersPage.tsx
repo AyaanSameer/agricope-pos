@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createUser, listUsers, listStores, updateUser } from '../../api/org'
+import { createUser, deleteUser, listUsers, listStores, updateUser } from '../../api/org'
 import type { UserInput } from '../../api/org'
 import type { Role, UserRecord } from '../../api/types'
 import { ApiError } from '../../api/client'
+import { useAuth } from '../../auth/AuthContext'
 import './users.css'
 
 type Draft = UserInput & { id?: string }
@@ -13,10 +14,19 @@ const EMPTY: Draft = { name: '', email: '', role: 'cashier', store_id: null, pin
 
 export function UsersPage() {
   const queryClient = useQueryClient()
+  const { session } = useAuth()
+  const isOwner = session?.user.role === 'owner'
   const usersQuery = useQuery({ queryKey: ['users'], queryFn: listUsers })
   const storesQuery = useQuery({ queryKey: ['stores'], queryFn: listStores })
   const [draft, setDraft] = useState<Draft | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  const remove = useMutation({
+    mutationFn: (id: string) => deleteUser(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+    onError: (err) =>
+      window.alert(err instanceof ApiError ? err.message : 'Could not delete — try again.'),
+  })
 
   const save = useMutation({
     mutationFn: (d: Draft) => {
@@ -56,7 +66,7 @@ export function UsersPage() {
       <div className="page-head">
         <div>
           <h2>Users</h2>
-          <p className="page-sub">Staff logins, roles and till PINs · owner &amp; manager only</p>
+          <p className="page-sub">Till logins, roles and PINs · the PIN is who you are on the till · owner can delete</p>
         </div>
         <button type="button" className="btn-primary users-add" onClick={() => { setError(null); setDraft({ ...EMPTY }) }}>
           + Add user
@@ -80,10 +90,24 @@ export function UsersPage() {
                 {u.is_active ? 'Active' : 'Inactive'}
               </span>
             </span>
-            <span>
+            <span className="users-actions">
               <button type="button" className="btn-secondary users-edit" onClick={() => edit(u)}>
                 Edit
               </button>
+              {isOwner && u.id !== session?.user.id && (
+                <button
+                  type="button"
+                  className="btn-secondary users-delete"
+                  disabled={remove.isPending}
+                  onClick={() => {
+                    if (window.confirm(`Delete ${u.name}? Their login and PIN stop working immediately.`)) {
+                      remove.mutate(u.id)
+                    }
+                  }}
+                >
+                  Delete
+                </button>
+              )}
             </span>
           </div>
         ))}

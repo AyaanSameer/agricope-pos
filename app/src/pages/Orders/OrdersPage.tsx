@@ -105,7 +105,12 @@ export function OrdersPage() {
             <div className="orders-sep" />
             {selected.items.map((i) => (
               <div key={i.id} className="orders-line">
-                <span>{i.quantity} × {i.product_name}</span>
+                <span>
+                {i.quantity} × {i.product_name}
+                {i.options.length > 0 && (
+                  <span className="muted small"> — {i.options.join(' · ')}</span>
+                )}
+              </span>
                 <span>{fmt(i.line_total)}</span>
               </div>
             ))}

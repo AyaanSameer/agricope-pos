@@ -3,8 +3,10 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Big from 'big.js'
 import { listCategories, listProducts } from '../../api/catalog'
+import type { Product } from '../../api/catalog'
 import {
   addOrderItems,
+  assignTable,
   getOrder,
   listOrders,
   mergeOrder,
@@ -13,9 +15,13 @@ import {
   splitOrder,
   updateOrderItem,
 } from '../../api/orders'
-import type { Order } from '../../api/orders'
-import { ApiError } from '../../api/client'
+import type { Order, OrderItem } from '../../api/orders'
+import { listStores } from '../../api/org'
+import { api, ApiError } from '../../api/client'
 import { ApprovalPinModal } from '../../components/ApprovalPinModal'
+import { KitchenTicketPrint } from '../../components/KitchenTicketPrint'
+import { OptionPicker } from '../../components/OptionPicker'
+import { resolveUnitPrice } from '../../lib/pricing'
 import { fmt, fmtQAR } from '../../lib/money'
 import './tab.css'
 
@@ -29,9 +35,15 @@ export function TabPage() {
   const [merging, setMerging] = useState(false)
   const [pullingItem, setPullingItem] = useState<string | null>(null)
   const [pinError, setPinError] = useState<string | null>(null)
+  const [printItems, setPrintItems] = useState<OrderItem[] | null>(null)
+  const [assigningTable, setAssigningTable] = useState(false)
 
   const orderQuery = useQuery({ queryKey: ['order', id], queryFn: () => getOrder(id!), enabled: !!id })
   const order = orderQuery.data
+  const storesQuery = useQuery({ queryKey: ['stores'], queryFn: listStores })
+  // Branch setting: kitchens without a display print a ticket on send instead.
+  const printsTickets =
+    storesQuery.data?.data.find((s) => s.id === order?.store_id)?.kitchen_mode === 'printer'
 
   const refresh = (updated: Order) => {
     queryClient.setQueryData(['order', id], updated)
@@ -40,8 +52,17 @@ export function TabPage() {
   }
 
   const send = useMutation({
-    mutationFn: () => sendToKitchen(order!.id),
-    onSuccess: refresh,
+    mutationFn: () => {
+      // Remember which lines this send fires — they make up the printed ticket.
+      const firing = new Set(
+        order!.items.filter((i) => !i.sent_to_kitchen_at).map((i) => i.id),
+      )
+      return sendToKitchen(order!.id).then((updated) => ({ updated, firing }))
+    },
+    onSuccess: ({ updated, firing }) => {
+      refresh(updated)
+      if (printsTickets) setPrintItems(updated.items.filter((i) => firing.has(i.id)))
+    },
   })
   const changeQty = useMutation({
     mutationFn: ({ itemId, quantity }: { itemId: string; quantity: string }) =>
@@ -83,11 +104,19 @@ export function TabPage() {
             ← Floor
           </button>
           <div className="tab-title">
-            <h2>{order.table_name ?? order.order_type} — open tab</h2>
+            <h2>
+              {order.table_name ?? (order.order_type === 'dine_in' ? 'Dine-in' : order.order_type)} — open tab
+            </h2>
             <p className="page-sub">
               {order.guest_count ?? '—'} guests · {order.order_number} · {order.cashier_name}
+              {order.order_type === 'dine_in' && !order.table_id && ' · no table yet'}
             </p>
           </div>
+          {order.order_type === 'dine_in' && !order.table_id && order.status === 'open' && (
+            <button type="button" className="btn-secondary" onClick={() => setAssigningTable(true)}>
+              Assign table
+            </button>
+          )}
           <button type="button" className="btn-secondary" onClick={() => setSplitting(true)} disabled={order.items.length === 0}>
             Split bill
           </button>
@@ -111,6 +140,7 @@ export function TabPage() {
               </span>
               <div className="tab-item-info">
                 <span className={i.sent_to_kitchen_at ? 'muted' : ''}>{i.quantity} × {i.product_name}</span>
+                {i.options.length > 0 && <span className="tiny muted">{i.options.join(' · ')}</span>}
                 {i.sent_to_kitchen_at && <span className="tiny muted">locked — manager PIN to remove</span>}
               </div>
               {!i.sent_to_kitchen_at && (
@@ -152,7 +182,7 @@ export function TabPage() {
           <div className="trow"><span>Discount</span><span>−{fmt(order.discount_total)}</span></div>
         )}
         <div className="trow"><span>Service charge</span><span>{fmt(order.service_charge_total)}</span></div>
-        <div className="trow"><span>Tax</span><span>{fmt(order.tax_total)}</span></div>
+        <div className="trow"><span>Incl. tax</span><span>{fmt(order.tax_total)}</span></div>
         <div className="trow total"><span>Total</span><span>{fmtQAR(order.total)}</span></div>
         {perGuest && <div className="tab-perguest">≈ {fmt(perGuest)} per guest ({order.guest_count})</div>}
         <div className="tab-side-grow" />
@@ -205,6 +235,25 @@ export function TabPage() {
           onClose={() => setMerging(false)}
         />
       )}
+      {assigningTable && (
+        <AssignTableModal
+          order={order}
+          onDone={(updated) => {
+            refresh(updated)
+            setAssigningTable(false)
+          }}
+          onClose={() => setAssigningTable(false)}
+        />
+      )}
+      {printItems && order && (
+        <KitchenTicketPrint
+          orderNumber={order.order_number}
+          tableName={order.table_name}
+          items={printItems}
+          onClose={() => setPrintItems(null)}
+        />
+      )}
+
       {pullingItem && (
         <ApprovalPinModal
           title="Pull a fired item"
@@ -223,13 +272,32 @@ function AddItemsModal({
   onAdd,
   onClose,
 }: {
-  onAdd: (items: { product_id: string; quantity: string }[]) => Promise<void>
+  onAdd: (items: { product_id: string; quantity: string; option_ids?: string[] }[]) => Promise<void>
   onClose: () => void
 }) {
   const [categoryId, setCategoryId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
-  const [picked, setPicked] = useState<Map<string, { name: string; qty: number }>>(new Map())
+  const [picked, setPicked] = useState<
+    Map<string, { product_id: string; name: string; qty: number; option_ids: string[]; labels: string[] }>
+  >(new Map())
+  const [pickingOptions, setPickingOptions] = useState<Product | null>(null)
   const [busy, setBusy] = useState(false)
+
+  function addPick(p: Product, optionIds: string[], labels: string[]) {
+    const key = [p.id, ...optionIds].join('|')
+    setPicked((prev) => {
+      const next = new Map(prev)
+      const existing = next.get(key)
+      next.set(key, {
+        product_id: p.id,
+        name: p.name,
+        qty: (existing?.qty ?? 0) + 1,
+        option_ids: optionIds,
+        labels,
+      })
+      return next
+    })
+  }
 
   const categoriesQuery = useQuery({ queryKey: ['categories'], queryFn: listCategories })
   const productsQuery = useQuery({
@@ -257,20 +325,22 @@ function AddItemsModal({
         </div>
         <div className="tab-additems-grid">
           {productsQuery.data?.data.map((p) => {
-            const qty = picked.get(p.id)?.qty ?? 0
+            const qty = [...picked.values()]
+              .filter((x) => x.product_id === p.id)
+              .reduce((a, x) => a + x.qty, 0)
+            const price = resolveUnitPrice(p, 'store').price
             return (
               <button
                 key={p.id}
                 type="button"
                 className={qty > 0 ? 'tile picked' : 'tile'}
                 onClick={() => {
-                  const next = new Map(picked)
-                  next.set(p.id, { name: p.name, qty: qty + 1 })
-                  setPicked(next)
+                  if (p.option_groups.length) setPickingOptions(p)
+                  else addPick(p, [], [])
                 }}
               >
                 <span className="tile-name">{p.name}</span>
-                <span className="tile-price">QAR {fmt(p.price)}</span>
+                <span className="tile-price">QAR {fmt(price)}</span>
                 {qty > 0 && <span className="tile-qty">×{qty}</span>}
               </button>
             )
@@ -282,13 +352,33 @@ function AddItemsModal({
           disabled={count === 0 || busy}
           onClick={async () => {
             setBusy(true)
-            await onAdd([...picked.entries()].map(([product_id, p]) => ({ product_id, quantity: String(p.qty) })))
+            await onAdd(
+              [...picked.values()].map((p) => ({
+                product_id: p.product_id,
+                quantity: String(p.qty),
+                option_ids: p.option_ids,
+              })),
+            )
             setBusy(false)
           }}
         >
           {busy ? 'Adding…' : `Add ${count} item${count === 1 ? '' : 's'} to tab`}
         </button>
       </div>
+      {pickingOptions && (
+        <OptionPicker
+          product={pickingOptions}
+          onAdd={(selections) => {
+            addPick(
+              pickingOptions,
+              selections.map((s) => s.choice_id),
+              selections.map((s) => s.label),
+            )
+            setPickingOptions(null)
+          }}
+          onClose={() => setPickingOptions(null)}
+        />
+      )}
     </div>
   )
 }
@@ -384,6 +474,68 @@ function MergeModal({
         ))}
         {error && <div className="cust-error">{error}</div>}
         <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
+      </div>
+    </div>
+  )
+}
+
+
+/** Dine-in without a table: the order came first, the table is optional. */
+function AssignTableModal({
+  order,
+  onDone,
+  onClose,
+}: {
+  order: Order
+  onDone: (updated: Order) => void
+  onClose: () => void
+}) {
+  const [error, setError] = useState<string | null>(null)
+  const floorQuery = useQuery({
+    queryKey: ['floor', order.store_id],
+    queryFn: () =>
+      api<{ data: { id: string; name: string; zone: string; seats: number; order: unknown | null }[] }>(
+        `/tables/floor?store_id=${order.store_id}`,
+      ),
+  })
+  const assign = useMutation({
+    mutationFn: (tableId: string) => assignTable(order.id, tableId),
+    onSuccess: onDone,
+    onError: (err) => setError(err instanceof ApiError ? err.message : 'Could not assign — try again.'),
+  })
+  const free = (floorQuery.data?.data ?? []).filter((t) => !t.order)
+
+  return (
+    <div className="cust-modal" role="dialog" aria-modal="true">
+      <div className="card tab-split">
+        <h3>Assign a table</h3>
+        <p className="muted small">
+          The order is already open — pick where the guests are sitting. Skipping is fine.
+        </p>
+        <div className="tab-assign-grid">
+          {floorQuery.isPending && <span className="muted small">Loading tables…</span>}
+          {free.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              className="tile"
+              disabled={assign.isPending}
+              onClick={() => assign.mutate(t.id)}
+            >
+              <span className="tile-name">{t.name}</span>
+              <span className="tile-price">{t.zone} · seats {t.seats}</span>
+            </button>
+          ))}
+          {floorQuery.data && free.length === 0 && (
+            <span className="muted small">Every table is occupied right now.</span>
+          )}
+        </div>
+        {error && <div className="cust-error">{error}</div>}
+        <div className="cust-new-actions">
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            Keep without a table
+          </button>
+        </div>
       </div>
     </div>
   )

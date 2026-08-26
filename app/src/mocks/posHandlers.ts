@@ -1,10 +1,10 @@
 import { http, HttpResponse, delay } from 'msw'
 import Big from 'big.js'
-import { products, requester, stores } from './db'
+import { products, requester, storeBusinessId, stores } from './db'
+import type { DbUser } from './db'
 import {
   amountDue,
   approverForPin,
-  businessSettings,
   currentShift,
   customerBalance,
   customers,
@@ -14,6 +14,8 @@ import {
   orders,
   paymentsSum,
   recomputeOrder,
+  settingsFor,
+  tables,
   tickets,
   toPublicOrder,
   uid,
@@ -31,13 +33,17 @@ function auth(request: Request) {
   return requester(request)
 }
 
-function findOrder(id: string | readonly string[]): DbOrder | undefined {
-  return orders.find((o) => o.id === id)
+function findOrder(id: string | readonly string[], caller?: DbUser | null): DbOrder | undefined {
+  const order = orders.find((o) => o.id === id)
+  if (!order) return undefined
+  // RLS, mock edition: an order is invisible outside its business.
+  if (caller && storeBusinessId(order.store_id) !== caller.business_id) return undefined
+  return order
 }
 
-/** Sensitive actions need a manager/owner PIN in X-Approval-Pin. */
-function approval(request: Request) {
-  return approverForPin(request.headers.get('X-Approval-Pin'))
+/** Sensitive actions need a manager/owner PIN in X-Approval-Pin — same business only. */
+function approval(request: Request, businessId: string) {
+  return approverForPin(request.headers.get('X-Approval-Pin'), businessId)
 }
 
 const APPROVAL_REQUIRED = () =>
@@ -56,16 +62,31 @@ export const posHandlers = [
       customer_id?: string | null
       table_id?: string | null
       guest_count?: number | null
-      items?: { product_id: string; quantity: string; discount?: string }[]
+      items?: { product_id: string; quantity: string; discount?: string; option_ids?: string[] }[]
     }
-    if (!body.store_id || !stores.some((s) => s.id === body.store_id)) {
+    if (
+      !body.store_id ||
+      !stores.some((s) => s.id === body.store_id && s.business_id === caller.business_id)
+    ) {
       return apiError(400, 'VALIDATION_ERROR', 'A valid store_id is required.')
     }
     const items = body.items ?? []
     for (const i of items) {
-      const p = products.find((x) => x.id === i.product_id && x.is_active)
+      const p = products.find(
+        (x) => x.id === i.product_id && x.is_active && x.business_id === caller.business_id,
+      )
       if (!p) return apiError(400, 'VALIDATION_ERROR', 'Order contains an unknown or inactive product.')
       if (!(Number(i.quantity) > 0)) return apiError(400, 'VALIDATION_ERROR', 'Quantities must be positive.')
+      const validChoices = new Set(p.option_groups.flatMap((g) => g.choices.map((c) => c.id)))
+      if ((i.option_ids ?? []).some((id) => !validChoices.has(id))) {
+        return apiError(400, 'VALIDATION_ERROR', `Unknown option for ${p.name}.`)
+      }
+      const required = p.option_groups.filter((g) => g.required)
+      for (const g of required) {
+        if (!(i.option_ids ?? []).some((id) => g.choices.some((c) => c.id === id))) {
+          return apiError(400, 'VALIDATION_ERROR', `${p.name} needs a ${g.name} choice.`)
+        }
+      }
     }
     if (body.table_id) {
       const occupied = orders.some((o) => o.status === 'open' && o.table_id === body.table_id)
@@ -85,12 +106,13 @@ export const posHandlers = [
 
   http.get('/api/v1/orders', async ({ request }) => {
     await delay(250)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
     const url = new URL(request.url)
     const storeId = url.searchParams.get('store_id')
     const status = url.searchParams.get('status')
     const search = url.searchParams.get('search')?.toLowerCase()
-    let data = [...orders]
+    let data = orders.filter((o) => storeBusinessId(o.store_id) === caller.business_id)
     if (storeId) data = data.filter((o) => o.store_id === storeId)
     if (status) data = data.filter((o) => o.status === status)
     if (search) data = data.filter((o) => o.order_number.toLowerCase().includes(search))
@@ -100,19 +122,41 @@ export const posHandlers = [
 
   http.get('/api/v1/orders/:id', async ({ request, params }) => {
     await delay(150)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
-    const order = findOrder(params.id as string)
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const order = findOrder(params.id as string, caller)
     if (!order) return apiError(404, 'NOT_FOUND', 'No such order.')
     return HttpResponse.json(toPublicOrder(order))
   }),
 
   http.patch('/api/v1/orders/:id', async ({ request, params }) => {
     await delay(200)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
-    const order = findOrder(params.id as string)
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const order = findOrder(params.id as string, caller)
     if (!order) return apiError(404, 'NOT_FOUND', 'No such order.')
     if (order.status !== 'open') return apiError(409, 'ORDER_NOT_OPEN', 'Only open orders can change.')
-    const body = (await request.json()) as { customer_id?: string | null; guest_count?: number }
+    const body = (await request.json()) as {
+      customer_id?: string | null
+      guest_count?: number
+      table_id?: string | null
+    }
+    if (body.table_id !== undefined) {
+      if (body.table_id) {
+        const table = tables.find(
+          (t) =>
+            t.id === body.table_id &&
+            t.is_active &&
+            t.store_id === order.store_id,
+        )
+        if (!table) return apiError(400, 'VALIDATION_ERROR', 'No such table on this branch.')
+        const occupied = orders.some(
+          (o) => o.status === 'open' && o.table_id === table.id && o.id !== order.id,
+        )
+        if (occupied) return apiError(409, 'TABLE_OCCUPIED', 'That table already has an open tab.')
+      }
+      order.table_id = body.table_id
+    }
     if (body.customer_id !== undefined) {
       if (body.customer_id && !customers.some((c) => c.id === body.customer_id && c.is_active)) {
         return apiError(400, 'VALIDATION_ERROR', 'No such customer.')
@@ -127,7 +171,7 @@ export const posHandlers = [
     await delay(350)
     const caller = auth(request)
     if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
-    const order = findOrder(params.id as string)
+    const order = findOrder(params.id as string, caller)
     if (!order) return apiError(404, 'NOT_FOUND', 'No such order.')
     if (order.status !== 'open') return apiError(409, 'ORDER_NOT_OPEN', 'This order is already settled.')
     const body = (await request.json()) as {
@@ -222,7 +266,7 @@ export const posHandlers = [
     await delay(250)
     const caller = auth(request)
     if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
-    const order = findOrder(params.id as string)
+    const order = findOrder(params.id as string, caller)
     if (!order) return apiError(404, 'NOT_FOUND', 'No such order.')
     if (order.status !== 'open') return apiError(409, 'ORDER_NOT_OPEN', 'Only open orders can be discounted.')
     if (order.payments.length) return apiError(409, 'PAYMENTS_STARTED', 'Remove payments before changing the discount.')
@@ -233,7 +277,7 @@ export const posHandlers = [
     if (body.type === 'percent' && new Big(body.value).gt(100)) {
       return apiError(400, 'VALIDATION_ERROR', 'A percent discount cannot exceed 100.')
     }
-    const threshold = new Big(businessSettings.discount_approval_percent)
+    const threshold = new Big(settingsFor(caller.business_id).discount_approval_percent)
     const pctEquivalent =
       body.type === 'percent'
         ? new Big(body.value)
@@ -242,7 +286,7 @@ export const posHandlers = [
           : new Big(0)
     let approvedBy: string | null = null
     if (pctEquivalent.gt(threshold)) {
-      const approver = approval(request)
+      const approver = approval(request, caller.business_id)
       if (!approver) return APPROVAL_REQUIRED()
       approvedBy = approver.id
     }
@@ -256,8 +300,9 @@ export const posHandlers = [
 
   http.delete('/api/v1/orders/:id/discount', async ({ request, params }) => {
     await delay(200)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
-    const order = findOrder(params.id as string)
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const order = findOrder(params.id as string, caller)
     if (!order) return apiError(404, 'NOT_FOUND', 'No such order.')
     if (order.status !== 'open') return apiError(409, 'ORDER_NOT_OPEN', 'Only open orders can change.')
     order.discount_type = null
@@ -270,11 +315,12 @@ export const posHandlers = [
 
   http.post('/api/v1/orders/:id/void', async ({ request, params }) => {
     await delay(250)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
-    const order = findOrder(params.id as string)
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const order = findOrder(params.id as string, caller)
     if (!order) return apiError(404, 'NOT_FOUND', 'No such order.')
     if (order.status !== 'open') return apiError(409, 'ORDER_NOT_OPEN', 'Only open orders can be voided.')
-    const approver = approval(request)
+    const approver = approval(request, caller.business_id)
     if (!approver) return APPROVAL_REQUIRED()
     order.status = 'void'
     order.note = order.note ?? `Voided — approved by ${approver.name}`
@@ -286,10 +332,10 @@ export const posHandlers = [
     await delay(300)
     const caller = auth(request)
     if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
-    const order = findOrder(params.id as string)
+    const order = findOrder(params.id as string, caller)
     if (!order) return apiError(404, 'NOT_FOUND', 'No such order.')
     if (order.status !== 'completed') return apiError(409, 'ORDER_NOT_COMPLETED', 'Only completed orders can be refunded.')
-    const approver = approval(request)
+    const approver = approval(request, caller.business_id)
     if (!approver) return APPROVAL_REQUIRED()
     const hasCash = order.payments.some((p) => p.method === 'cash' && new Big(p.amount).gt(0))
     if (hasCash && !currentShift(order.store_id)) {
@@ -331,8 +377,9 @@ export const posHandlers = [
 
   http.get('/api/v1/orders/:id/receipt', async ({ request, params }) => {
     await delay(150)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
-    const order = findOrder(params.id as string)
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const order = findOrder(params.id as string, caller)
     if (!order) return apiError(404, 'NOT_FOUND', 'No such order.')
     return HttpResponse.json(receiptPayload(order))
   }),
@@ -347,9 +394,10 @@ export const posHandlers = [
 
 export function receiptPayload(order: DbOrder) {
   const store = stores.find((s) => s.id === order.store_id)
+  const settings = settingsFor(store?.business_id ?? 'b-demo')
   const creditPayment = order.payments.find((p) => p.method === 'credit')
   return {
-    business: { name: businessSettings.business_name, footer: businessSettings.receipt_footer },
+    business: { name: settings.business_name, footer: settings.receipt_footer },
     store: { name: store?.name ?? '', address: store?.address ?? '' },
     order: toPublicOrder(order),
     credit:

@@ -47,7 +47,20 @@ export function seedWorld(): void {
     opened_at: iso(6 * 60),
     closed_at: null,
   }
-  shifts.push(alrayyanShift, karakShift)
+  const drumsticksShift: DbShift = {
+    id: uid('sh'),
+    store_id: 's-drumsticks',
+    status: 'open',
+    opened_by: 'u-ds-manager',
+    closed_by: null,
+    opening_float: '400.00',
+    expected_cash: null,
+    counted_cash: null,
+    over_short: null,
+    opened_at: iso(5 * 60),
+    closed_at: null,
+  }
+  shifts.push(alrayyanShift, karakShift, drumsticksShift)
 
   cashMovements.push({
     id: uid('cm'),
@@ -70,10 +83,10 @@ export function seedWorld(): void {
 
   // --- customers & their credit history ---
   customers.push(
-    { id: 'cu-mohammed', name: 'Mohammed Al-Kuwari', phone: '5511 2233', email: 'm.alkuwari@gmail.com', credit_limit: '2000.00', notes: null, is_active: true },
-    { id: 'cu-fatima', name: 'Fatima Hassan', phone: '5522 6677', email: null, credit_limit: '1000.00', notes: null, is_active: true },
-    { id: 'cu-noora', name: 'Noora Al-Thani', phone: '6644 2288', email: null, credit_limit: '500.00', notes: null, is_active: true },
-    { id: 'cu-ali', name: 'Ali Reza', phone: '3355 9911', email: null, credit_limit: null, notes: 'Cash only — no credit', is_active: true },
+    { id: 'cu-mohammed', business_id: 'b-demo', name: 'Mohammed Al-Kuwari', phone: '5511 2233', email: 'm.alkuwari@gmail.com', credit_limit: '2000.00', notes: null, is_active: true },
+    { id: 'cu-fatima', business_id: 'b-demo', name: 'Fatima Hassan', phone: '5522 6677', email: null, credit_limit: '1000.00', notes: null, is_active: true },
+    { id: 'cu-noora', business_id: 'b-demo', name: 'Noora Al-Thani', phone: '6644 2288', email: null, credit_limit: '500.00', notes: null, is_active: true },
+    { id: 'cu-ali', business_id: 'b-demo', name: 'Ali Reza', phone: '3355 9911', email: null, credit_limit: null, notes: 'Cash only — no credit', is_active: true },
   )
   const daysAgo = (d: number, note: string, customer: string, type: 'charge' | 'repayment', amount: string, method: 'cash' | null = null) =>
     ledger.push({
@@ -105,6 +118,11 @@ export function seedWorld(): void {
     { id: 't-5', store_id: 's-karak', name: 'T5', zone: 'Family section', seats: 4, is_active: true },
     { id: 't-p1', store_id: 's-karak', name: 'P1', zone: 'Terrace', seats: 6, is_active: true },
     { id: 't-p2', store_id: 's-karak', name: 'P2', zone: 'Terrace', seats: 2, is_active: true },
+    // Drumsticks — a small dine-in hall beside the counter
+    { id: 't-ds1', store_id: 's-drumsticks', name: 'T1', zone: 'Hall', seats: 4, is_active: true },
+    { id: 't-ds2', store_id: 's-drumsticks', name: 'T2', zone: 'Hall', seats: 4, is_active: true },
+    { id: 't-ds3', store_id: 's-drumsticks', name: 'T3', zone: 'Hall', seats: 6, is_active: true },
+    { id: 't-ds4', store_id: 's-drumsticks', name: 'T4', zone: 'Hall', seats: 2, is_active: true },
   )
 
   const sara = users.find((u) => u.id === 'u-sara')!

@@ -101,3 +101,12 @@
   border: 1px solid var(--border);
   padding: 12px 14px;
 }
+
+/* ---- Phase 13: assign a table to a walk-up dine-in order ---- */
+.tab-assign-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+  max-height: 40vh;
+  overflow-y: auto;
+}

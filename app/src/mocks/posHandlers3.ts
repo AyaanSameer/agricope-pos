@@ -1,6 +1,6 @@
 import { http, HttpResponse, delay } from 'msw'
 import Big from 'big.js'
-import { requester, stores } from './db'
+import { requester, storeBusinessId, stores } from './db'
 import {
   cashMovements,
   currentShift,
@@ -76,7 +76,9 @@ export const posHandlers3 = [
     const caller = auth(request)
     if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
     const body = (await request.json()) as { store_id?: string; opening_float?: string }
-    if (!body.store_id) return apiError(400, 'VALIDATION_ERROR', 'A store is required.')
+    if (!body.store_id || storeBusinessId(body.store_id) !== caller.business_id) {
+      return apiError(400, 'VALIDATION_ERROR', 'A store is required.')
+    }
     if (body.opening_float === undefined || new Big(body.opening_float).lt(0)) {
       return apiError(400, 'VALIDATION_ERROR', 'Count the opening float first.')
     }
@@ -102,10 +104,13 @@ export const posHandlers3 = [
 
   http.get('/api/v1/shifts/current', async ({ request }) => {
     await delay(150)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
     const url = new URL(request.url)
     const storeId = url.searchParams.get('store_id')
-    if (!storeId) return apiError(400, 'VALIDATION_ERROR', 'store_id is required.')
+    if (!storeId || storeBusinessId(storeId) !== caller.business_id) {
+      return apiError(400, 'VALIDATION_ERROR', 'store_id is required.')
+    }
     const shift = currentShift(storeId)
     return HttpResponse.json({ shift: shift ? shiftReport(shift) : null })
   }),
@@ -114,7 +119,9 @@ export const posHandlers3 = [
     await delay(250)
     const caller = auth(request)
     if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
-    const shift = shifts.find((s) => s.id === params.id)
+    const shift = shifts.find(
+      (s) => s.id === params.id && storeBusinessId(s.store_id) === caller.business_id,
+    )
     if (!shift) return apiError(404, 'NOT_FOUND', 'No such shift.')
     if (shift.status !== 'open') return apiError(409, 'SHIFT_CLOSED', 'That shift is closed.')
     const body = (await request.json()) as { type?: 'paid_in' | 'paid_out'; amount?: string; reason?: string }
@@ -137,7 +144,9 @@ export const posHandlers3 = [
     await delay(350)
     const caller = auth(request)
     if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
-    const shift = shifts.find((s) => s.id === params.id)
+    const shift = shifts.find(
+      (s) => s.id === params.id && storeBusinessId(s.store_id) === caller.business_id,
+    )
     if (!shift) return apiError(404, 'NOT_FOUND', 'No such shift.')
     if (shift.status !== 'open') return apiError(409, 'SHIFT_CLOSED', 'That shift is already closed.')
     const body = (await request.json()) as { counted_cash?: string }
@@ -155,18 +164,22 @@ export const posHandlers3 = [
 
   http.get('/api/v1/shifts/:id/report', async ({ request, params }) => {
     await delay(200)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
-    const shift = shifts.find((s) => s.id === params.id)
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const shift = shifts.find(
+      (s) => s.id === params.id && storeBusinessId(s.store_id) === caller.business_id,
+    )
     if (!shift) return apiError(404, 'NOT_FOUND', 'No such shift.')
     return HttpResponse.json(shiftReport(shift))
   }),
 
   http.get('/api/v1/shifts', async ({ request }) => {
     await delay(200)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
     const url = new URL(request.url)
     const storeId = url.searchParams.get('store_id')
-    let data = [...shifts]
+    let data = shifts.filter((s) => storeBusinessId(s.store_id) === caller.business_id)
     if (storeId) data = data.filter((s) => s.store_id === storeId)
     data.sort((a, b) => b.opened_at.localeCompare(a.opened_at))
     return HttpResponse.json({ data: data.map(shiftReport), total: data.length, page: 1, limit: 50 })
@@ -176,10 +189,13 @@ export const posHandlers3 = [
 
   http.get('/api/v1/reports/summary', async ({ request }) => {
     await delay(300)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
     const url = new URL(request.url)
     const storeId = url.searchParams.get('store_id')
-    let scope = todays(orders)
+    let scope = todays(orders).filter(
+      (o) => storeBusinessId(o.store_id) === caller.business_id,
+    )
     if (storeId) scope = scope.filter((o) => o.store_id === storeId)
     const completed = scope.filter((o) => o.status === 'completed')
     const gross = completed.reduce((a, o) => a.plus(o.total), new Big(0))
@@ -220,6 +236,7 @@ export const posHandlers3 = [
       credit_charged: creditCharged.toFixed(2),
       credit_repaid: creditRepaid.toFixed(2),
       credit_outstanding: customers
+        .filter((c) => c.business_id === caller.business_id)
         .reduce((a, c) => a.plus(customerBalance(c.id)), new Big(0))
         .toFixed(2),
     })
@@ -227,10 +244,13 @@ export const posHandlers3 = [
 
   http.get('/api/v1/reports/top-items', async ({ request }) => {
     await delay(250)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
     const url = new URL(request.url)
     const storeId = url.searchParams.get('store_id')
-    let scope = todays(orders)
+    let scope = todays(orders).filter(
+      (o) => storeBusinessId(o.store_id) === caller.business_id,
+    )
     if (storeId) scope = scope.filter((o) => o.store_id === storeId)
     const byName = new Map<string, { qty: Big; revenue: Big }>()
     for (const o of scope) {
@@ -251,9 +271,10 @@ export const posHandlers3 = [
 
   http.get('/api/v1/reports/credit-aging', async ({ request }) => {
     await delay(250)
-    if (!auth(request)) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const caller = auth(request)
+    if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
     const rows = []
-    for (const c of customers) {
+    for (const c of customers.filter((x) => x.business_id === caller.business_id)) {
       const balance = new Big(customerBalance(c.id))
       if (balance.lte(0)) continue
       // FIFO: apply repayments/adjustments against charges oldest-first;

@@ -6,12 +6,20 @@ through Swagger PRs, never just chat.
 
 ## Transport
 - Base path `/api/v1`, JSON everywhere, dates in ISO-8601 UTC.
-- Auth: `POST /auth/login` → short-lived JWT (carries `user_id`, `business_id`, `role`) + refresh
-  token. Every other call sends `Authorization: Bearer <token>`.
-- `business_id` comes **only** from the token, never from the client.
+- Auth is TWO-STAGE (Phase 12): a business has ONE login for all branches.
+  `POST /auth/login` (business email + password) → `{ business_token, business, stores }`.
+  `POST /auth/switch-cashier` (`store_id` | null, `pin`) with that token identifies the PERSON
+  → short-lived JWT (carries `user_id`, `business_id`, `role`) + refresh token. The same
+  endpoint also hands the till over mid-shift. `store_id: null` = back office; only
+  cross-store PINs (owner) match there.
+- Every other call sends `Authorization: Bearer <token>` (user JWT).
+- `business_id` comes **only** from the token, never from the client. Everything —
+  users, PINs, staff, catalog, orders, customers, shifts — is scoped to it; RLS in the DB.
 
 ## Money
 - Money is sent as **decimal strings** (`"60.00"`), never JSON numbers.
+- **Prices are TAX-INCLUSIVE** (Gulf convention). Tax is extracted as a memo
+  line — `taxable × rate / (100 + rate)` — and never added on top.
 - Frontend rule: all money arithmetic goes through `app/src/lib/money.ts` (big.js).
   `parseFloat` on money is a review-blocking bug.
 - Quantities allow 3 decimals for weighed goods (`"1.250"`).
@@ -42,6 +50,7 @@ through Swagger PRs, never just chat.
 | `TABLE_OCCUPIED` | 409 | Phase 8 |
 | `ITEM_ALREADY_SENT` | 409 | Phase 8 (edit a fired line) |
 | `NOTHING_TO_SEND` | 409 | Phase 9 |
+| `ALREADY_CHECKED_IN` / `NOT_CHECKED_IN` | 409 | Phase 12 (staff attendance) |
 | `APPROVAL_REQUIRED` | 403 | Phase 7 (discounts; retried with `X-Approval-Pin`) |
 | `CREDIT_LIMIT_EXCEEDED` | 403 | Phase 5 |
 | `NO_OPEN_SHIFT` | 409 | Phase 6 (cash payments & cash repayments) |
@@ -78,17 +87,26 @@ Users CRUD (`GET/POST /users`, `PATCH /users/:id`) is owner/manager only → `40
 
 ## Totals — the one agreed order of operations (both sides compute identically)
 ```
-line_total     = unit_price × quantity − line discount
+line_total     = unit_price × quantity − line discount        [prices incl. tax]
 subtotal       = Σ line_total
 discount_total = order discount applied to subtotal
 service_charge = service_charge_rate × (subtotal − discount_total)   [dine-in only]
-tax_total      = Σ per-line tax on discounted amounts
-total          = subtotal − discount_total + service_charge + tax_total
+total          = subtotal − discount_total + service_charge
+tax_total      = Σ per-line  taxable × rate / (100 + rate)    [memo — already inside total]
 ```
 The server recomputes every total from database prices; client-sent totals are ignored.
+Unit prices resolve server-side per channel: online orders use `price_online` (fallback:
+`price`), a live product offer (percent, optional end date) applies next, then selected
+option deltas. `lib/pricing.ts` is the shared implementation, like `lib/totals.ts`.
 
 ## Endpoints implemented in MSW (mirror = her Swagger checklist)
-Auth: login · refresh · switch-cashier — Org: stores · users CRUD — Catalog:
+Auth: business login · refresh · switch-cashier (PIN → person) — Org: stores ·
+`PATCH /stores/:id` (kitchen_mode: kds | printer) · users CRUD + owner-only
+`DELETE /users/:id` — Staff: list · create · patch · check-in · check-out — Admin (platform):
+businesses list · create · add branch · create owner — Tables (owner only):
+`POST /tables` · `PATCH /tables/:id` · `DELETE /tables/:id` (409 TABLE_OCCUPIED on
+an open tab); `PATCH /orders/:id` also takes `table_id` — a dine-in order may start
+WITHOUT a table and be assigned one later (optional) — Catalog:
 categories · products (+`?barcode=`/`?search=`) · kitchen/stations — Orders:
 create (full or empty) · list · get · patch (customer) · payments · discount
 (+approval) · void · refund · items add/edit/remove · split · merge · send —
@@ -101,8 +119,16 @@ The frontend's `computeTotals` unit tests (`app/src/lib/totals.test.ts`) are
 the executable spec for the totals formula — copy the cases into the
 backend's suite so both sides round identically.
 
+## Product shape (Phase 12)
+A product carries: `name`, `name_ar`, `description`, `category_ids[]` (first = primary,
+reporting), `barcode`, `price` (in-store, incl. tax), `price_online` (null = same),
+`tax_rate`, `is_combo`, `offer` (`{ percent, starts_at, ends_at }`, null = none),
+`option_groups[]` (`{ name, required, choices: [{ name, price_delta }] }` — e.g.
+Flavor: Normal/Spicy/Mix), `kitchen_station_id`, `is_active`. Order items snapshot the
+resolved unit price and the chosen option labels; `option_ids` go up, labels come back.
+
 ## Open questions for the next contract sync
 1. How does an order-level discount apportion across lines for per-line tax?
 2. Is service charge taxable?
-3. Rounding: per line or per total? (Both sides must match to the halala.)
+3. Rounding: per line or per total? (Both sides must match to the dirham.)
 4. Race-safe `order_number` generation (`S1-YYYYMMDD-NNNN`) under two simultaneous tills.

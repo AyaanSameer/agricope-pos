@@ -15,9 +15,9 @@ export function LoginPage() {
 
   const login = useMutation({
     mutationFn: () => signIn(email, password),
-    onSuccess: (user) => {
-      // Store staff land straight on their till; owners pick where to work first.
-      navigate(user.store_id ? '/' : '/pick-store', { replace: true })
+    onSuccess: (kind) => {
+      // Admins land on the console; a business picks its branch, then a PIN.
+      navigate(kind === 'admin' ? '/admin' : '/pick-store', { replace: true })
     },
   })
 
@@ -61,7 +61,9 @@ export function LoginPage() {
         <form className="login-card" onSubmit={onSubmit}>
           <div>
             <h2>Welcome back</h2>
-            <p className="login-card-sub">Sign in to open your store</p>
+            <p className="login-card-sub">
+              Sign in with your business account — the till asks for a PIN next
+            </p>
           </div>
 
           <label className="field">
@@ -93,10 +95,10 @@ export function LoginPage() {
           </button>
 
           <div className="login-hint">
-            Demo: sara@alrayyan-market.qa · owner@agricope.qa — password demo123
+            Demo: demo@agricope.qa · drumsticks@agricope.qa — password demo123
           </div>
         </form>
-        <div className="login-version">Agricope POS v0.1 · Phase 0</div>
+        <div className="login-version">Agricope POS v0.2 · Phase 12</div>
       </main>
     </div>
   )

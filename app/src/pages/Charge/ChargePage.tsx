@@ -126,7 +126,12 @@ export function ChargePage() {
         </div>
         {order.items.map((i) => (
           <div key={i.id} className="charge-sum-line">
-            <span>{i.quantity} × {i.product_name}</span>
+            <span>
+                {i.quantity} × {i.product_name}
+                {i.options.length > 0 && (
+                  <span className="muted small"> — {i.options.join(' · ')}</span>
+                )}
+              </span>
             <span>{fmt(i.line_total)}</span>
           </div>
         ))}
@@ -138,7 +143,7 @@ export function ChargePage() {
         {Number(order.service_charge_total) > 0 && (
           <div className="charge-sum-line muted"><span>Service charge</span><span>{fmt(order.service_charge_total)}</span></div>
         )}
-        <div className="charge-sum-line muted"><span>Tax</span><span>{fmt(order.tax_total)}</span></div>
+        <div className="charge-sum-line muted"><span>Incl. tax</span><span>{fmt(order.tax_total)}</span></div>
         <div className="charge-sum-total"><span>Total</span><span>{fmtQAR(order.total)}</span></div>
         {order.payments.length > 0 && (
           <>

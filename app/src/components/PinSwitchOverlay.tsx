@@ -31,10 +31,10 @@ export function PinSwitchOverlay({ onClose }: { onClose: () => void }) {
   }, [pin])
 
   return (
-    <div className="pinswitch" role="dialog" aria-modal="true" aria-label="Switch cashier">
+    <div className="pinswitch" role="dialog" aria-modal="true" aria-label="Switch user">
       <div className="pinswitch-card">
         <Logomark size={40} variant="two-tone" />
-        <h2>Switch cashier</h2>
+        <h2>Switch user</h2>
         <p className="pinswitch-sub">
           {activeStore ? `${activeStore.name} · enter your PIN` : 'Enter your PIN'}
         </p>

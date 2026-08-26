@@ -16,11 +16,33 @@ import { FloorPage } from './pages/Floor/FloorPage'
 import { TabPage } from './pages/Tab/TabPage'
 import { KdsPage } from './pages/Kds/KdsPage'
 import { ReportsPage } from './pages/Reports/ReportsPage'
+import { StaffPage } from './pages/Staff/StaffPage'
+import { SettingsPage } from './pages/Settings/SettingsPage'
+import { AdminPage } from './pages/Admin/AdminPage'
 import type { Role } from './api/types'
 
 function RequireAuth() {
-  const { session } = useAuth()
-  if (!session) return <Navigate to="/login" replace />
+  const { adminSession, businessSession, session } = useAuth()
+  if (!session) {
+    // Admins have no till — they belong on the console.
+    if (adminSession) return <Navigate to="/admin" replace />
+    // Business signed in but nobody identified yet → the branch/PIN screen.
+    return <Navigate to={businessSession ? '/pick-store' : '/login'} replace />
+  }
+  return <Outlet />
+}
+
+/** The branch/PIN screen needs a business, not a person. */
+function RequireBusiness() {
+  const { businessSession } = useAuth()
+  if (!businessSession) return <Navigate to="/login" replace />
+  return <Outlet />
+}
+
+/** The platform console — Agricope staff only. */
+function RequireAdmin() {
+  const { adminSession } = useAuth()
+  if (!adminSession) return <Navigate to="/login" replace />
   return <Outlet />
 }
 
@@ -36,8 +58,13 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/r/:token" element={<PublicReceiptPage />} />
-      <Route element={<RequireAuth />}>
+      <Route element={<RequireBusiness />}>
         <Route path="/pick-store" element={<PickStorePage />} />
+      </Route>
+      <Route element={<RequireAdmin />}>
+        <Route path="/admin" element={<AdminPage />} />
+      </Route>
+      <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
           <Route path="/" element={<RegisterPage />} />
           <Route path="/charge/:id" element={<ChargePage />} />
@@ -69,6 +96,22 @@ export default function App() {
             element={
               <RequireRole roles={['owner', 'manager']}>
                 <UsersPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/staff"
+            element={
+              <RequireRole roles={['owner', 'manager']}>
+                <StaffPage />
+              </RequireRole>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <RequireRole roles={['owner', 'manager']}>
+                <SettingsPage />
               </RequireRole>
             }
           />

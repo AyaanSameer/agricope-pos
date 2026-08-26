@@ -67,3 +67,33 @@
   color: var(--leaf-pale);
   font-weight: 500;
 }
+
+/* ---- PIN stage (Phase 12: PIN identifies the person) ---- */
+.pickstore-pin {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 320px;
+}
+
+.pickstore-dots { display: flex; gap: 12px; }
+.pickstore-dots .dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--surface-2, #eee);
+  border: 1.5px solid var(--ink-3);
+}
+.pickstore-dots .dot.filled { background: var(--forest); border-color: var(--forest); }
+
+.pickstore-error {
+  color: var(--danger, #c0392b);
+  font-size: 13px;
+  text-align: center;
+}
+
+.pickstore-back { width: 100%; }

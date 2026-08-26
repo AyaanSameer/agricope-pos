@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import Big from 'big.js'
 import {
   createCategory,
   createProduct,
@@ -9,21 +10,133 @@ import {
   listStations,
   updateProduct,
 } from '../../api/catalog'
-import type { Product, ProductInput } from '../../api/catalog'
+import type { OptionGroup, Product, ProductInput } from '../../api/catalog'
 import { ApiError } from '../../api/client'
 import { fmt } from '../../lib/money'
+import { offerActive } from '../../lib/pricing'
 import './catalog.css'
 
-type Draft = ProductInput & { id?: string }
+/** Option groups edit as text — "Normal / Spicy / Mix", price deltas as "Extra shot:+6". */
+interface GroupDraft {
+  id?: string
+  name: string
+  required: boolean
+  choicesText: string
+}
+
+interface Draft {
+  id?: string
+  name: string
+  name_ar: string
+  description: string
+  category_ids: string[]
+  barcode: string | null
+  price: string
+  price_online: string
+  tax_rate: string
+  is_combo: boolean
+  offer_enabled: boolean
+  offer_percent: string
+  offer_ends: string // yyyy-mm-dd, empty = open-ended
+  option_groups: GroupDraft[]
+  kitchen_station_id: string | null
+  is_active: boolean
+}
 
 const EMPTY: Draft = {
   name: '',
-  category_id: null,
+  name_ar: '',
+  description: '',
+  category_ids: [],
   barcode: null,
   price: '',
+  price_online: '',
   tax_rate: '0',
+  is_combo: false,
+  offer_enabled: false,
+  offer_percent: '20',
+  offer_ends: '',
+  option_groups: [],
   kitchen_station_id: null,
   is_active: true,
+}
+
+function groupToDraft(g: OptionGroup): GroupDraft {
+  return {
+    id: g.id,
+    name: g.name,
+    required: g.required,
+    choicesText: g.choices
+      .map((c) => (new Big(c.price_delta).gt(0) ? `${c.name}:+${c.price_delta}` : c.name))
+      .join(' / '),
+  }
+}
+
+function draftToGroups(drafts: GroupDraft[]): OptionGroup[] {
+  return drafts
+    .filter((d) => d.name.trim() && d.choicesText.trim())
+    .map((d, gi) => ({
+      id: d.id ?? `og-new-${gi}`,
+      name: d.name.trim(),
+      required: d.required,
+      choices: d.choicesText
+        .split('/')
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((s, ci) => {
+          const m = s.match(/^(.*?):\+\s*(\d+(?:\.\d{1,2})?)$/)
+          return {
+            id: `${d.id ?? `og-new-${gi}`}-c${ci}`,
+            name: m ? m[1].trim() : s,
+            price_delta: m ? new Big(m[2]).toFixed(2) : '0.00',
+          }
+        }),
+    }))
+}
+
+function productToDraft(p: Product): Draft {
+  return {
+    id: p.id,
+    name: p.name,
+    name_ar: p.name_ar ?? '',
+    description: p.description ?? '',
+    category_ids: p.category_ids,
+    barcode: p.barcode,
+    price: p.price,
+    price_online: p.price_online ?? '',
+    tax_rate: p.tax_rate,
+    is_combo: p.is_combo,
+    offer_enabled: p.offer !== null,
+    offer_percent: p.offer?.percent ?? '20',
+    offer_ends: p.offer?.ends_at ? p.offer.ends_at.slice(0, 10) : '',
+    option_groups: p.option_groups.map(groupToDraft),
+    kitchen_station_id: p.kitchen_station_id,
+    is_active: p.is_active,
+  }
+}
+
+function draftToInput(d: Draft): ProductInput {
+  return {
+    name: d.name,
+    name_ar: d.name_ar.trim() || null,
+    description: d.description.trim() || null,
+    category_ids: d.category_ids,
+    barcode: d.barcode,
+    price: d.price,
+    price_online: d.price_online.trim() || null,
+    tax_rate: d.tax_rate,
+    is_combo: d.is_combo,
+    offer: d.offer_enabled
+      ? {
+          percent: d.offer_percent,
+          starts_at: null,
+          ends_at: d.offer_ends ? new Date(`${d.offer_ends}T23:59:59`).toISOString() : null,
+        }
+      : null,
+    option_groups: draftToGroups(d.option_groups),
+    kitchen_station_id: d.kitchen_station_id,
+    is_active: d.is_active,
+  }
 }
 
 export function CatalogPage() {
@@ -52,15 +165,7 @@ export function CatalogPage() {
 
   const save = useMutation({
     mutationFn: (d: Draft) => {
-      const input: ProductInput = {
-        name: d.name,
-        category_id: d.category_id,
-        barcode: d.barcode,
-        price: d.price,
-        tax_rate: d.tax_rate,
-        kitchen_station_id: d.kitchen_station_id,
-        is_active: d.is_active,
-      }
+      const input = draftToInput(d)
       return d.id ? updateProduct(d.id, input) : createProduct(input)
     },
     onSuccess: () => {
@@ -88,21 +193,19 @@ export function CatalogPage() {
 
   function edit(p: Product) {
     setError(null)
-    setDraft({
-      id: p.id,
-      name: p.name,
-      category_id: p.category_id,
-      barcode: p.barcode,
-      price: p.price,
-      tax_rate: p.tax_rate,
-      kitchen_station_id: p.kitchen_station_id,
-      is_active: p.is_active,
-    })
+    setDraft(productToDraft(p))
   }
 
   function onSubmit(e: FormEvent) {
     e.preventDefault()
     if (draft) save.mutate(draft)
+  }
+
+  function toggleCategory(d: Draft, id: string): Draft {
+    // Selection order matters: the first pick is the primary (reporting) category.
+    return d.category_ids.includes(id)
+      ? { ...d, category_ids: d.category_ids.filter((c) => c !== id) }
+      : { ...d, category_ids: [...d.category_ids, id] }
   }
 
   const cats = categoriesQuery.data?.data ?? []
@@ -114,7 +217,7 @@ export function CatalogPage() {
         <div>
           <h2>Catalog</h2>
           <p className="page-sub">
-            Products &amp; categories · price changes never touch old receipts
+            Products &amp; categories · prices include tax · changes never touch old receipts
           </p>
         </div>
         <button
@@ -122,7 +225,7 @@ export function CatalogPage() {
           className="btn-primary cat-add"
           onClick={() => {
             setError(null)
-            setDraft({ ...EMPTY, category_id: categoryId })
+            setDraft({ ...EMPTY, category_ids: categoryId ? [categoryId] : [] })
           }}
         >
           + Add product
@@ -189,16 +292,37 @@ export function CatalogPage() {
 
       <div className="card cat-table">
         <div className="cat-row cat-head-row">
-          <span>Product</span><span>Barcode</span><span>Category</span><span>Station</span><span className="num">Price (QAR)</span><span>Active</span><span />
+          <span>Product</span><span>Category</span><span>Options</span><span>Offer</span><span className="num">In-store</span><span className="num">Online</span><span>Active</span><span />
         </div>
         {productsQuery.isPending && <div className="cat-loading">Loading…</div>}
         {productsQuery.data?.data.map((p) => (
           <div key={p.id} className={p.is_active ? 'cat-row' : 'cat-row inactive'}>
-            <span className="cat-name">{p.name}</span>
-            <span className="cat-code">{p.barcode ?? '—'}</span>
-            <span>{p.category_name ?? '—'}</span>
-            <span>{p.station_name ?? '—'}</span>
+            <span className="cat-name">
+              {p.name}
+              {p.is_combo && <span className="cat-combo">combo</span>}
+            </span>
+            <span>
+              {p.category_name ?? '—'}
+              {p.category_ids.length > 1 && (
+                <span className="cat-more"> +{p.category_ids.length - 1}</span>
+              )}
+            </span>
+            <span className="cat-opts">
+              {p.option_groups.length
+                ? p.option_groups.map((g) => g.name).join(', ')
+                : '—'}
+            </span>
+            <span>
+              {p.offer ? (
+                <span className={offerActive(p.offer) ? 'cat-offer live' : 'cat-offer'}>
+                  −{p.offer.percent}%
+                </span>
+              ) : (
+                '—'
+              )}
+            </span>
             <span className="num cat-price">{fmt(p.price)}</span>
+            <span className="num cat-price">{p.price_online ? fmt(p.price_online) : '—'}</span>
             <span>
               <button
                 type="button"
@@ -225,23 +349,191 @@ export function CatalogPage() {
         <div className="cat-modal" role="dialog" aria-modal="true">
           <form className="cat-form card" onSubmit={onSubmit}>
             <h3>{draft.id ? 'Edit product' : 'New product'}</h3>
-            <label className="field">
-              <span>Name</span>
-              <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} required />
-            </label>
+
             <div className="cat-form-row">
               <label className="field">
-                <span>Category</span>
-                <select
-                  value={draft.category_id ?? ''}
-                  onChange={(e) => setDraft({ ...draft, category_id: e.target.value || null })}
-                >
-                  <option value="">Uncategorised</option>
-                  {cats.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+                <span>Name</span>
+                <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} required />
               </label>
+              <label className="field">
+                <span>Arabic name (receipts &amp; kitchen)</span>
+                <input
+                  dir="rtl"
+                  value={draft.name_ar}
+                  onChange={(e) => setDraft({ ...draft, name_ar: e.target.value })}
+                />
+              </label>
+            </div>
+
+            <label className="field">
+              <span>Description (what's inside a combo)</span>
+              <textarea
+                rows={2}
+                value={draft.description}
+                onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+              />
+            </label>
+
+            <div className="field">
+              <span>Categories — first pick is where it reports</span>
+              <div className="cat-form-cats">
+                {cats.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className={draft.category_ids.includes(c.id) ? 'chip active' : 'chip'}
+                    onClick={() => setDraft(toggleCategory(draft, c.id))}
+                  >
+                    {draft.category_ids[0] === c.id ? '★ ' : ''}
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="cat-form-row">
+              <label className="field">
+                <span>In-store price (QAR, incl. tax)</span>
+                <input
+                  inputMode="decimal"
+                  placeholder="35.00"
+                  pattern="\d+(\.\d{1,2})?"
+                  value={draft.price}
+                  onChange={(e) => setDraft({ ...draft, price: e.target.value })}
+                  required
+                />
+              </label>
+              <label className="field">
+                <span>Online price (blank = same)</span>
+                <input
+                  inputMode="decimal"
+                  placeholder="38.00"
+                  pattern="\d+(\.\d{1,2})?"
+                  value={draft.price_online}
+                  onChange={(e) => setDraft({ ...draft, price_online: e.target.value })}
+                />
+              </label>
+              <label className="field">
+                <span>Tax rate %</span>
+                <input
+                  inputMode="decimal"
+                  value={draft.tax_rate}
+                  onChange={(e) => setDraft({ ...draft, tax_rate: e.target.value })}
+                />
+              </label>
+            </div>
+
+            <div className="cat-offer-box">
+              <label className="cat-check">
+                <input
+                  type="checkbox"
+                  checked={draft.offer_enabled}
+                  onChange={(e) => setDraft({ ...draft, offer_enabled: e.target.checked })}
+                />
+                Run a discount on this product
+              </label>
+              {draft.offer_enabled && (
+                <div className="cat-form-row">
+                  <label className="field">
+                    <span>Discount %</span>
+                    <input
+                      inputMode="numeric"
+                      pattern="\d+"
+                      value={draft.offer_percent}
+                      onChange={(e) => setDraft({ ...draft, offer_percent: e.target.value })}
+                      required
+                    />
+                  </label>
+                  <label className="field">
+                    <span>Until (blank = until removed)</span>
+                    <input
+                      type="date"
+                      value={draft.offer_ends}
+                      onChange={(e) => setDraft({ ...draft, offer_ends: e.target.value })}
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
+
+            <div className="field">
+              <span>Customisable options — choices split with “/”, paid extras as “Name:+6.00”</span>
+              {draft.option_groups.map((g, i) => (
+                <div key={i} className="cat-group-row">
+                  <input
+                    className="cat-group-name"
+                    placeholder="Flavor"
+                    value={g.name}
+                    onChange={(e) =>
+                      setDraft({
+                        ...draft,
+                        option_groups: draft.option_groups.map((x, j) =>
+                          j === i ? { ...x, name: e.target.value } : x,
+                        ),
+                      })
+                    }
+                  />
+                  <input
+                    className="cat-group-choices"
+                    placeholder="Normal / Spicy / Mix"
+                    value={g.choicesText}
+                    onChange={(e) =>
+                      setDraft({
+                        ...draft,
+                        option_groups: draft.option_groups.map((x, j) =>
+                          j === i ? { ...x, choicesText: e.target.value } : x,
+                        ),
+                      })
+                    }
+                  />
+                  <label className="cat-group-req" title="Cashier must choose">
+                    <input
+                      type="checkbox"
+                      checked={g.required}
+                      onChange={(e) =>
+                        setDraft({
+                          ...draft,
+                          option_groups: draft.option_groups.map((x, j) =>
+                            j === i ? { ...x, required: e.target.checked } : x,
+                          ),
+                        })
+                      }
+                    />
+                    req.
+                  </label>
+                  <button
+                    type="button"
+                    className="chip"
+                    aria-label="Remove option group"
+                    onClick={() =>
+                      setDraft({
+                        ...draft,
+                        option_groups: draft.option_groups.filter((_, j) => j !== i),
+                      })
+                    }
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                className="chip dashed"
+                onClick={() =>
+                  setDraft({
+                    ...draft,
+                    option_groups: [
+                      ...draft.option_groups,
+                      { name: '', required: true, choicesText: '' },
+                    ],
+                  })
+                }
+              >
+                + Add option group
+              </button>
+            </div>
+
+            <div className="cat-form-row">
               <label className="field">
                 <span>Kitchen station (restaurant)</span>
                 <select
@@ -254,45 +546,36 @@ export function CatalogPage() {
                   ))}
                 </select>
               </label>
+              <label className="field">
+                <span>Barcode (scan-ready, optional)</span>
+                <input
+                  inputMode="numeric"
+                  placeholder="628 000 111 …"
+                  value={draft.barcode ?? ''}
+                  onChange={(e) => setDraft({ ...draft, barcode: e.target.value.trim() || null })}
+                />
+              </label>
             </div>
+
             <div className="cat-form-row">
-              <label className="field">
-                <span>Price (QAR)</span>
+              <label className="cat-check">
                 <input
-                  inputMode="decimal"
-                  placeholder="4.50"
-                  pattern="\d+(\.\d{1,2})?"
-                  value={draft.price}
-                  onChange={(e) => setDraft({ ...draft, price: e.target.value })}
-                  required
+                  type="checkbox"
+                  checked={draft.is_combo}
+                  onChange={(e) => setDraft({ ...draft, is_combo: e.target.checked })}
                 />
+                Combo — sold as a bundle of items
               </label>
-              <label className="field">
-                <span>Tax rate %</span>
+              <label className="cat-check">
                 <input
-                  inputMode="decimal"
-                  value={draft.tax_rate}
-                  onChange={(e) => setDraft({ ...draft, tax_rate: e.target.value })}
+                  type="checkbox"
+                  checked={draft.is_active}
+                  onChange={(e) => setDraft({ ...draft, is_active: e.target.checked })}
                 />
+                Active — visible on the register
               </label>
             </div>
-            <label className="field">
-              <span>Barcode (scan-ready, optional)</span>
-              <input
-                inputMode="numeric"
-                placeholder="628 000 111 …"
-                value={draft.barcode ?? ''}
-                onChange={(e) => setDraft({ ...draft, barcode: e.target.value.trim() || null })}
-              />
-            </label>
-            <label className="cat-check">
-              <input
-                type="checkbox"
-                checked={draft.is_active ?? true}
-                onChange={(e) => setDraft({ ...draft, is_active: e.target.checked })}
-              />
-              Active — visible on the register
-            </label>
+
             {error && <div className="cat-error">{error}</div>}
             <div className="cat-form-actions">
               <button type="button" className="btn-secondary" onClick={() => setDraft(null)}>
