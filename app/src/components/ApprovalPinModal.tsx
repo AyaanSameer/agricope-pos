@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { PinPad } from './PinPad'
+import { PinPad, PinDots } from './PinPad'
 import './pinswitch.css'
 
 const PIN_LENGTH = 4
@@ -39,11 +39,7 @@ export function ApprovalPinModal({
       <div className="pinswitch-card">
         <h2>{title}</h2>
         <p className="pinswitch-sub">{message}</p>
-        <div className="pinswitch-dots">
-          {Array.from({ length: PIN_LENGTH }).map((_, i) => (
-            <span key={i} className={i < pin.length ? 'dot filled' : 'dot'} />
-          ))}
-        </div>
+        <PinDots filled={pin.length} length={PIN_LENGTH} />
         {error && <div className="pinswitch-error">{error}</div>}
         <PinPad
           disabled={busy}

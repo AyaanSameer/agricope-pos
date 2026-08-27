@@ -47,6 +47,9 @@ export interface DbBusiness {
 export const businesses: DbBusiness[] = [
   { id: 'b-demo', name: 'Agricope Demo Trading Co.', email: 'demo@agricope.qa', password: 'demo123' },
   { id: 'b-drumsticks', name: 'Drumsticks', email: 'drumsticks@agricope.qa', password: 'demo123' },
+  // Onboarded but not yet handed over — no branches, no owner login. The console
+  // is where that gets finished.
+  { id: 'b-karakhouse', name: 'Karak House', email: 'karakhouse@agricope.qa', password: 'demo123' },
 ]
 
 // ---------- stores (branches) ----------

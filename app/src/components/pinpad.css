@@ -1,18 +1,45 @@
+/* Touch targets per the design foundations: keypads 72–76px. */
 .pinpad {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(3, var(--key));
+  gap: var(--key-gap);
+  justify-content: center;
 }
+.pinpad-md { --key: 72px; --key-gap: 12px; --key-radius: 14px; --key-size: 24px; }
+.pinpad-lg { --key: 76px; --key-gap: 14px; --key-radius: 16px; --key-size: 26px; }
 
 .pinpad-key {
-  min-height: 56px;
-  font-size: 20px;
-  font-weight: 500;
+  width: var(--key);
+  height: var(--key);
+  min-height: var(--key);
+  padding: 0;
+  border-radius: var(--key-radius);
   font-family: var(--font-head);
+  font-size: var(--key-size);
+  font-weight: 500;
   background: var(--surface-warm);
   border: 1px solid var(--border);
   color: var(--ink);
 }
-.pinpad-key:active {
-  background: var(--success-tint);
+.pinpad-key-back { font-size: calc(var(--key-size) - 6px); }
+.pinpad-key:active { background: var(--success-tint); border-color: var(--leaf); }
+.pinpad-key:disabled { opacity: 0.5; }
+
+.pin-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pin-dots-md { gap: 14px; --dot: 15px; }
+.pin-dots-lg { gap: 16px; --dot: 16px; }
+.pin-dots .dot {
+  width: var(--dot);
+  height: var(--dot);
+  border-radius: 50%;
+  background: var(--surface-warm);
+  border: 1.5px solid var(--border);
+}
+.pin-dots .dot.filled {
+  background: var(--forest);
+  border-color: var(--forest);
 }

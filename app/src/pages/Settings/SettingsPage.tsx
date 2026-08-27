@@ -47,25 +47,38 @@ export function SettingsPage() {
         {visible.map((store) => (
           <div key={store.id} className="card settings-card">
             <div className="settings-store">
-              <div className="settings-store-name">{store.name}</div>
-              <div className="settings-store-sub">
-                {store.type === 'retail' ? 'Retail' : 'Restaurant'} · {store.address}
+              <div className="settings-store-main">
+                <div className="settings-store-name">{store.name}</div>
+                <div className="settings-store-sub">
+                  {store.type === 'retail' ? 'Retail' : 'Restaurant'} · {store.address}
+                </div>
               </div>
+              <span className={`settings-type ${store.type}`}>
+                {store.type === 'retail' ? 'Retail' : 'Restaurant'}
+              </span>
             </div>
 
             <div className="settings-block">
               <div className="settings-block-head">
                 <div className="settings-block-title">Kitchen output</div>
                 <p className="settings-block-sub">
-                  Where a sent order lands: the KDS board on the pass, or a printed kitchen
-                  ticket for kitchens without a display.
+                  Where a sent order lands: the KDS board on the pass, or a printed ticket for
+                  kitchens without a screen.
                 </p>
               </div>
               <div className="settings-seg" role="radiogroup" aria-label="Kitchen output">
                 {(
                   [
-                    { mode: 'kds', label: 'KDS board', hint: 'Live tickets on a screen' },
-                    { mode: 'printer', label: 'Ticket printer', hint: 'Prints on send, no screen' },
+                    {
+                      mode: 'kds',
+                      label: 'KDS board',
+                      hint: 'Live tickets on a screen at the pass, bumped by the kitchen.',
+                    },
+                    {
+                      mode: 'printer',
+                      label: 'Ticket printer',
+                      hint: 'Prints an 80mm ticket on send. The Kitchen screen is hidden on this branch.',
+                    },
                   ] as const
                 ).map((opt) => (
                   <button
@@ -79,17 +92,23 @@ export function SettingsPage() {
                     disabled={setKitchenMode.isPending}
                     onClick={() => setKitchenMode.mutate({ id: store.id, mode: opt.mode })}
                   >
-                    <span className="settings-opt-label">{opt.label}</span>
+                    <span className="settings-opt-top">
+                      <span className="settings-radio" aria-hidden="true" />
+                      <span className="settings-opt-label">{opt.label}</span>
+                    </span>
                     <span className="settings-opt-hint">{opt.hint}</span>
                   </button>
                 ))}
               </div>
-              {store.kitchen_mode === 'printer' && (
-                <p className="settings-note">
-                  The Kitchen screen is hidden on this branch; sending a round opens a
-                  printable ticket instead.
-                </p>
-              )}
+              {/* Say what the switch actually changes, before it is made. */}
+              <div className="settings-effect">
+                <span className="settings-effect-tag">Effect</span>
+                <span className="settings-effect-text">
+                  {store.kitchen_mode === 'printer'
+                    ? 'Kitchen disappears from the sidebar · “Send to kitchen” opens a printable ticket instead'
+                    : 'Kitchen appears in the sidebar · a sent round lands on the KDS board at the pass'}
+                </span>
+              </div>
             </div>
           </div>
         ))}

@@ -115,6 +115,17 @@ statement · repayments · balances — Shifts: open · current · movements ·
 close · report · list — Tables: `/tables/floor` — Kitchen: tickets list ·
 ticket status — Reports: summary · top-items · credit-aging.
 
+## Reports windows (Phase 14 — new, mirror in Swagger)
+`GET /reports/summary` and `GET /reports/top-items` take `?range=today|7d|month`
+(default `today`), alongside the existing `?store_id=`. A window runs from midnight
+`range`-days-back to *now*, and `summary` additionally returns a `previous` block —
+`{ gross_sales, order_count, average_order, discount_total }` for the same-length
+window immediately before it (same hours elapsed, so "vs yesterday" compares like
+with like). The Reports screen renders the movement between the two; when `previous`
+is absent, or its figure is zero, the UI shows "no comparison" rather than a bogus
+percentage. Credit-ageing buckets stay `current | 30 | 60 | 90+` (days since the
+oldest unpaid charge, FIFO) — only `90+` is coloured as genuinely overdue.
+
 The frontend's `computeTotals` unit tests (`app/src/lib/totals.test.ts`) are
 the executable spec for the totals formula — copy the cases into the
 backend's suite so both sides round identically.

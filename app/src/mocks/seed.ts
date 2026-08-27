@@ -305,5 +305,42 @@ export function seedWorld(): void {
   tab.items.push(snapshotItem('p-lime', '1'))
   recomputeOrder(tab)
 
+  // --- a fortnight of closed days ---
+  // Reports compare a window against the one before it; without prior days the
+  // day-over-day movement has nothing to measure. These are plain completed
+  // counter sales, off-shift, so only the report windows see them.
+  const historyBaskets: [string, string][][] = [
+    [['p-milk', '2'], ['p-bread', '2']],
+    [['p-water', '6'], ['p-karak', '1']],
+    [['p-tomato', '1.500'], ['p-cucumber', '2']],
+    [['p-kofta', '1'], ['p-bread', '3']],
+    [['p-croissant', '3'], ['p-laban', '1']],
+    [['p-apple', '2'], ['p-banana', '2']],
+  ]
+  const clockNow = new Date()
+  const nowMinuteOfDay = clockNow.getHours() * 60 + clockNow.getMinutes()
+  /** minutes-ago for `hour:00` on the day `d` days back */
+  const atHour = (d: number, hour: number) => d * 24 * 60 + (nowMinuteOfDay - hour * 60)
+  for (let d = 1; d <= 14; d++) {
+    const count = 3 + ((d * 5) % 3)
+    for (let i = 0; i < count; i++) {
+      const minutesAgo = atHour(d, 8 + i)
+      const past = makeOrder({
+        store_id: 's-alrayyan',
+        cashier: i % 2 === 0 ? sara : amal,
+        order_type: 'counter',
+        items: historyBaskets[(d + i) % historyBaskets.length].map(([product_id, quantity]) => ({
+          product_id,
+          quantity,
+        })),
+        created_at: iso(minutesAgo),
+      })
+      past.shift_id = null
+      if (i % 3 === 0) pay(past, 'card', past.total, minutesAgo - 1)
+      else if (i % 4 === 3) pay(past, 'online', past.total, minutesAgo - 1)
+      else pay(past, 'cash', past.total, minutesAgo - 1, past.total)
+    }
+  }
+
   void orders
 }

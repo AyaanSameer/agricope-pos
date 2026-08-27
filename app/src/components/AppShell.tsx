@@ -21,19 +21,40 @@ interface NavEntry {
   kdsOnly?: boolean
 }
 
-/** Role-lean navigation: each role sees only what it needs. */
-const NAV: NavEntry[] = [
-  { label: 'Register', icon: 'register', to: '/', roles: ['cashier', 'manager', 'owner'] },
-  { label: 'Tables', icon: 'tables', to: '/floor', roles: ['cashier', 'manager', 'owner'], restaurantOnly: true },
-  { label: 'Orders', icon: 'orders', to: '/orders', roles: ['cashier', 'manager', 'owner'] },
-  { label: 'Customers', icon: 'customers', to: '/customers', roles: ['cashier', 'manager', 'owner'] },
-  { label: 'Kitchen', icon: 'kitchen', to: '/kds', roles: ['cashier', 'manager', 'owner'], restaurantOnly: true, kdsOnly: true },
-  { label: 'Catalog', icon: 'catalog', to: '/catalog', roles: ['manager', 'owner'] },
-  { label: 'Shifts', icon: 'shifts', to: '/shifts', roles: ['cashier', 'manager', 'owner'] },
-  { label: 'Reports', icon: 'reports', to: '/reports', roles: ['manager', 'owner'] },
-  { label: 'Staff', icon: 'staff', to: '/staff', roles: ['manager', 'owner'] },
-  { label: 'Users', icon: 'users', to: '/users', roles: ['manager', 'owner'] },
-  { label: 'Settings', icon: 'settings', to: '/settings', roles: ['manager', 'owner'] },
+interface NavGroup {
+  /** quiet label above the group — SELL / MANAGE / ADMIN */
+  label: string
+  items: NavEntry[]
+}
+
+/** Role-lean navigation, grouped by what the item is *for* rather than one flat list. */
+const NAV: NavGroup[] = [
+  {
+    label: 'Sell',
+    items: [
+      { label: 'Register', icon: 'register', to: '/', roles: ['cashier', 'manager', 'owner'] },
+      { label: 'Tables', icon: 'tables', to: '/floor', roles: ['cashier', 'manager', 'owner'], restaurantOnly: true },
+      { label: 'Orders', icon: 'orders', to: '/orders', roles: ['cashier', 'manager', 'owner'] },
+      { label: 'Customers', icon: 'customers', to: '/customers', roles: ['cashier', 'manager', 'owner'] },
+      { label: 'Kitchen', icon: 'kitchen', to: '/kds', roles: ['cashier', 'manager', 'owner'], restaurantOnly: true, kdsOnly: true },
+    ],
+  },
+  {
+    label: 'Manage',
+    items: [
+      { label: 'Catalog', icon: 'catalog', to: '/catalog', roles: ['manager', 'owner'] },
+      { label: 'Shifts', icon: 'shifts', to: '/shifts', roles: ['cashier', 'manager', 'owner'] },
+      { label: 'Reports', icon: 'reports', to: '/reports', roles: ['manager', 'owner'] },
+      { label: 'Staff', icon: 'staff', to: '/staff', roles: ['manager', 'owner'] },
+    ],
+  },
+  {
+    label: 'Admin',
+    items: [
+      { label: 'Users', icon: 'users', to: '/users', roles: ['manager', 'owner'] },
+      { label: 'Settings', icon: 'settings', to: '/settings', roles: ['manager', 'owner'] },
+    ],
+  },
 ]
 
 export function AppShell() {
@@ -46,12 +67,21 @@ export function AppShell() {
   const store = storesQuery.data?.data.find((s) => s.id === activeStore?.id)
   const isRestaurant = store?.type === 'restaurant'
   const printsTickets = store?.kitchen_mode === 'printer'
-  const nav = NAV.filter(
-    (n) =>
-      n.roles.includes(user.role) &&
-      (!n.restaurantOnly || isRestaurant) &&
-      (!n.kdsOnly || !printsTickets),
-  )
+  const groups = NAV.map((group) => ({
+    ...group,
+    items: group.items.filter(
+      (n) =>
+        n.roles.includes(user.role) &&
+        (!n.restaurantOnly || isRestaurant) &&
+        (!n.kdsOnly || !printsTickets),
+    ),
+  })).filter((group) => group.items.length > 0)
+
+  const initials = user.name
+    .split(' ')
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join('')
 
   return (
     <div className="shell">
@@ -65,16 +95,21 @@ export function AppShell() {
           {activeStore ? activeStore.name : 'All stores · Back office'}
         </div>
         <nav className="sidebar-nav">
-          {nav.map((item) => (
-            <NavLink
-              key={item.label}
-              to={item.to}
-              end={item.to === '/'}
-              className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}
-            >
-              <NavIcon name={item.icon} />
-              {item.label}
-            </NavLink>
+          {groups.map((group) => (
+            <div key={group.label} className="nav-group">
+              <div className="nav-group-label">{group.label}</div>
+              {group.items.map((item) => (
+                <NavLink
+                  key={item.label}
+                  to={item.to}
+                  end={item.to === '/'}
+                  className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}
+                >
+                  <NavIcon name={item.icon} />
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
         {activeStore && (
@@ -83,13 +118,7 @@ export function AppShell() {
           </button>
         )}
         <div className="sidebar-user">
-          <div className="avatar">
-            {user.name
-              .split(' ')
-              .map((w) => w[0])
-              .slice(0, 2)
-              .join('')}
-          </div>
+          <div className="avatar">{initials}</div>
           <div className="sidebar-user-info">
             <div className="sidebar-user-name">{user.name}</div>
             <div className="sidebar-user-role">{user.role}</div>

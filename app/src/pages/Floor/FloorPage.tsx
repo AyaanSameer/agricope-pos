@@ -217,14 +217,25 @@ function ManageTablesModal({ storeId, onClose }: { storeId: string; onClose: () 
     <div className="cust-modal" role="dialog" aria-modal="true">
       <div className="card floor-manage">
         <div className="floor-manage-head">
-          <h3>Tables — owner only</h3>
-          <button type="button" className="btn-secondary" onClick={onClose}>✕</button>
+          <h3>
+            Tables <span className="floor-manage-owner">Owner only</span>
+          </h3>
+          <button type="button" className="floor-manage-close" aria-label="Close" onClick={onClose}>
+            ✕
+          </button>
         </div>
-        <p className="muted small">
-          Rename, resize or remove tables. A table with an open tab cannot be deleted.
+        <p className="floor-manage-sub">
+          Rename, re-zone, resize or remove. A table with an open tab cannot be deleted.
         </p>
 
         <div className="floor-manage-list">
+          <div className="floor-manage-row floor-manage-head-row">
+            <span>Table</span>
+            <span>Zone</span>
+            <span>Seats</span>
+            <span>Status</span>
+            <span />
+          </div>
           {tablesList.map((t) => (
             <div key={t.id} className="floor-manage-row">
               <input
@@ -253,10 +264,12 @@ function ManageTablesModal({ storeId, onClose }: { storeId: string; onClose: () 
                   if (n > 0 && n !== t.seats) patch.mutate({ id: t.id, input: { seats: n } })
                 }}
               />
-              <span className="floor-manage-state">{t.order ? 'occupied' : 'free'}</span>
+              <span className={t.order ? 'floor-manage-state busy' : 'floor-manage-state'}>
+                {t.order ? 'Occupied' : 'Free'}
+              </span>
               <button
                 type="button"
-                className="btn-secondary floor-manage-del"
+                className="floor-manage-del"
                 disabled={!!t.order || remove.isPending}
                 title={t.order ? 'Close its open tab first' : 'Delete table'}
                 onClick={() => setDeleting({ id: t.id, name: t.name })}
@@ -275,7 +288,7 @@ function ManageTablesModal({ storeId, onClose }: { storeId: string; onClose: () 
           }}
         >
           <input
-            placeholder="New table (e.g. T5)"
+            placeholder="New table (e.g. P2)"
             value={draft.name}
             onChange={(e) => setDraft({ ...draft, name: e.target.value })}
           />
@@ -292,7 +305,7 @@ function ManageTablesModal({ storeId, onClose }: { storeId: string; onClose: () 
             onChange={(e) => setDraft({ ...draft, seats: e.target.value.replace(/\D/g, '') })}
           />
           <button type="submit" className="btn-primary" disabled={add.isPending || !draft.name.trim()}>
-            {add.isPending ? 'Adding…' : '+ Add'}
+            {add.isPending ? 'Adding…' : '+ Add table'}
           </button>
         </form>
 

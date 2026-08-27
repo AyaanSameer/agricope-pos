@@ -63,9 +63,31 @@ export function shiftReport(shift: DbShift) {
   }
 }
 
-function todays<T extends { created_at: string }>(list: T[]): T[] {
-  const today = new Date().toISOString().slice(0, 10)
-  return list.filter((x) => x.created_at.slice(0, 10) === today)
+/** Reporting windows. `previous` is the same-length window immediately before,
+    so "vs yesterday" compares like with like (same hours elapsed). */
+export type ReportRange = 'today' | '7d' | 'month'
+
+const DAY_MS = 86_400_000
+
+function rangeWindow(range: ReportRange) {
+  const now = Date.now()
+  const midnight = new Date()
+  midnight.setHours(0, 0, 0, 0)
+  const days = range === 'today' ? 1 : range === '7d' ? 7 : 30
+  const from = midnight.getTime() - (days - 1) * DAY_MS
+  const span = days * DAY_MS
+  return { from, to: now, prevFrom: from - span, prevTo: now - span, days }
+}
+
+function within<T extends { created_at: string }>(list: T[], from: number, to: number): T[] {
+  return list.filter((x) => {
+    const t = new Date(x.created_at).getTime()
+    return t >= from && t <= to
+  })
+}
+
+function parseRange(value: string | null): ReportRange {
+  return value === '7d' || value === 'month' ? value : 'today'
 }
 
 export const posHandlers3 = [
@@ -193,52 +215,81 @@ export const posHandlers3 = [
     if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
     const url = new URL(request.url)
     const storeId = url.searchParams.get('store_id')
-    let scope = todays(orders).filter(
-      (o) => storeBusinessId(o.store_id) === caller.business_id,
-    )
-    if (storeId) scope = scope.filter((o) => o.store_id === storeId)
-    const completed = scope.filter((o) => o.status === 'completed')
-    const gross = completed.reduce((a, o) => a.plus(o.total), new Big(0))
-    const byMethod: Record<string, Big> = { cash: new Big(0), card: new Big(0), online: new Big(0), credit: new Big(0) }
-    const byType: Record<string, Big> = {}
-    let discounts = new Big(0)
-    let serviceCharge = new Big(0)
-    const byHour: Record<string, Big> = {}
-    for (const o of completed) {
-      discounts = discounts.plus(o.discount_total)
-      serviceCharge = serviceCharge.plus(o.service_charge_total)
-      byType[o.order_type] = (byType[o.order_type] ?? new Big(0)).plus(o.total)
-      const hour = new Date(o.created_at).getHours()
-      byHour[hour] = (byHour[hour] ?? new Big(0)).plus(o.total)
-      for (const p of o.payments) {
-        if (new Big(p.amount).gt(0)) byMethod[p.method] = byMethod[p.method].plus(p.amount)
-      }
+    const range = parseRange(url.searchParams.get('range'))
+    const win = rangeWindow(range)
+
+    const mine = orders.filter((o) => storeBusinessId(o.store_id) === caller.business_id)
+    const inScope = (from: number, to: number) => {
+      const rows = within(mine, from, to)
+      return storeId ? rows.filter((o) => o.store_id === storeId) : rows
     }
-    const creditCharged = todays(ledger)
-      .filter((e) => e.entry_type === 'charge')
-      .reduce((a, e) => a.plus(e.amount), new Big(0))
-    const creditRepaid = todays(ledger)
-      .filter((e) => e.entry_type === 'repayment')
-      .reduce((a, e) => a.plus(new Big(e.amount).abs()), new Big(0))
+
     const toMoney = (r: Record<string, Big>) =>
       Object.fromEntries(Object.entries(r).map(([k, v]) => [k, v.toFixed(2)]))
+
+    function aggregate(scope: typeof orders) {
+      const completed = scope.filter((o) => o.status === 'completed')
+      const gross = completed.reduce((a, o) => a.plus(o.total), new Big(0))
+      const byMethod: Record<string, Big> = {
+        cash: new Big(0),
+        card: new Big(0),
+        online: new Big(0),
+        credit: new Big(0),
+      }
+      const byType: Record<string, Big> = {}
+      const byHour: Record<string, Big> = {}
+      let discounts = new Big(0)
+      let serviceCharge = new Big(0)
+      for (const o of completed) {
+        discounts = discounts.plus(o.discount_total)
+        serviceCharge = serviceCharge.plus(o.service_charge_total)
+        byType[o.order_type] = (byType[o.order_type] ?? new Big(0)).plus(o.total)
+        const hour = new Date(o.created_at).getHours()
+        byHour[hour] = (byHour[hour] ?? new Big(0)).plus(o.total)
+        for (const p of o.payments) {
+          if (new Big(p.amount).gt(0)) byMethod[p.method] = byMethod[p.method].plus(p.amount)
+        }
+      }
+      return {
+        gross_sales: gross.toFixed(2),
+        order_count: completed.length,
+        average_order: completed.length ? gross.div(completed.length).toFixed(2) : '0.00',
+        refund_count: scope.filter((o) => o.status === 'refunded').length,
+        void_count: scope.filter((o) => o.status === 'void').length,
+        by_method: toMoney(byMethod),
+        by_type: toMoney(byType),
+        by_hour: toMoney(byHour),
+        discount_total: discounts.toFixed(2),
+        service_charge_total: serviceCharge.toFixed(2),
+      }
+    }
+
+    const current = aggregate(inScope(win.from, win.to))
+    const prior = aggregate(inScope(win.prevFrom, win.prevTo))
+
+    const creditCharged = within(ledger, win.from, win.to)
+      .filter((e) => e.entry_type === 'charge')
+      .reduce((a, e) => a.plus(e.amount), new Big(0))
+    const creditRepaid = within(ledger, win.from, win.to)
+      .filter((e) => e.entry_type === 'repayment')
+      .reduce((a, e) => a.plus(new Big(e.amount).abs()), new Big(0))
+
     return HttpResponse.json({
-      gross_sales: gross.toFixed(2),
-      order_count: completed.length,
-      average_order: completed.length ? gross.div(completed.length).toFixed(2) : '0.00',
-      refund_count: scope.filter((o) => o.status === 'refunded').length,
-      void_count: scope.filter((o) => o.status === 'void').length,
-      by_method: toMoney(byMethod),
-      by_type: toMoney(byType),
-      by_hour: toMoney(byHour),
-      discount_total: discounts.toFixed(2),
-      service_charge_total: serviceCharge.toFixed(2),
+      ...current,
+      range,
       credit_charged: creditCharged.toFixed(2),
       credit_repaid: creditRepaid.toFixed(2),
       credit_outstanding: customers
         .filter((c) => c.business_id === caller.business_id)
         .reduce((a, c) => a.plus(customerBalance(c.id)), new Big(0))
         .toFixed(2),
+      // Same-length window immediately before, for day-over-day movement.
+      previous: {
+        gross_sales: prior.gross_sales,
+        order_count: prior.order_count,
+        average_order: prior.average_order,
+        discount_total: prior.discount_total,
+      },
     })
   }),
 
@@ -248,7 +299,8 @@ export const posHandlers3 = [
     if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
     const url = new URL(request.url)
     const storeId = url.searchParams.get('store_id')
-    let scope = todays(orders).filter(
+    const win = rangeWindow(parseRange(url.searchParams.get('range')))
+    let scope = within(orders, win.from, win.to).filter(
       (o) => storeBusinessId(o.store_id) === caller.business_id,
     )
     if (storeId) scope = scope.filter((o) => o.store_id === storeId)

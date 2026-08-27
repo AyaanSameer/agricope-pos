@@ -21,6 +21,9 @@
   --gold: #ffd85e;
   --gold-tint: #fff1c2;
   --success-tint: #dfefdb;
+  /* Destructive is Sunset Orange — no screen uses another red. */
+  --danger: #d94720;
+  --surface-2: #f8f5e8;
 
   --font-head: 'Inter', system-ui, -apple-system, sans-serif;
   --font-body: 'Roboto', system-ui, -apple-system, sans-serif;
@@ -88,3 +91,67 @@ input:focus, select:focus, button:focus-visible {
   border: 1px solid var(--border);
   font-weight: 500;
 }
+
+/* ---- Shared control language (Foundations: controls & badges) ------------ */
+
+/* Filter / selection pills — 34px per the design's touch scale. */
+.chip {
+  min-height: 34px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 99px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--ink-2);
+  font-weight: 500;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+.chip.active {
+  background: var(--forest);
+  border-color: var(--forest);
+  color: #fff;
+}
+.chip.dashed { border-style: dashed; color: var(--ink-3); }
+
+/* Fresh Leaf reads as "on" everywhere. */
+.toggle {
+  width: 42px;
+  min-width: 42px;
+  height: 24px;
+  min-height: 24px;
+  border-radius: 99px;
+  background: var(--border);
+  position: relative;
+  padding: 0;
+  transition: background 0.15s;
+}
+.toggle .knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left 0.15s;
+}
+.toggle.on { background: var(--leaf); }
+.toggle.on .knob { left: 20px; }
+
+/* Status pills. Gold = attention, green = settled, orange = money the wrong way. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 99px;
+  font-family: var(--font-head);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.badge-combo { background: var(--success-tint); color: var(--forest); }
+.badge-offer { background: var(--gold-tint); color: #8a5a00; }

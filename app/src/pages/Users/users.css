@@ -1,40 +1,141 @@
-.users-add { padding: 0 20px; }
+.users-add { padding: 0 18px; height: 44px; min-height: 44px; }
 
-.users-table { overflow: hidden; }
+/* Owner-only rule, stated where it bites. */
+.users-owner-note {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--gold-tint);
+  color: #8a5a00;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+}
+.users-owner-tag {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.65);
+  font-family: var(--font-head);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.users-table {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
 
 .users-row {
   display: grid;
-  grid-template-columns: 1.2fr 1.6fr 0.7fr 1fr 0.5fr 0.7fr 0.6fr;
-  gap: 10px;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.2fr) 130px 160px 70px 170px;
+  gap: 12px;
   align-items: center;
   padding: 12px 18px;
-  border-bottom: 1px solid var(--beige);
-  min-height: 52px;
+  border-top: 1px solid var(--border);
+  min-height: 56px;
 }
-.users-row:last-child { border-bottom: none; }
+.users-row:first-child { border-top: none; }
 .users-head-row {
   background: var(--surface-warm);
-  font-size: 12px;
-  font-weight: 500;
+  font-family: var(--font-head);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.63px;
+  text-transform: uppercase;
   color: var(--ink-3);
-  min-height: 40px;
+  min-height: 44px;
 }
-.users-row.inactive .users-name,
-.users-row.inactive .users-email { color: var(--hint); }
-.users-name { font-weight: 500; }
-.users-email { color: var(--ink-3); font-size: 13px; }
-.users-role { text-transform: capitalize; }
+.users-row.inactive { opacity: 0.6; }
 
-.badge {
-  font-size: 11px;
+.users-person { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.users-avatar {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--success-tint);
+  color: var(--forest);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-head);
+  font-size: 10px;
+  font-weight: 700;
+}
+.users-name {
   font-weight: 500;
-  border-radius: 99px;
-  padding: 3px 9px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.badge.on { background: var(--success-tint); color: var(--forest); }
-.badge.off { background: var(--beige); color: var(--ink-3); }
+.users-off {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 99px;
+  background: var(--beige);
+  color: var(--ink-3);
+  font-family: var(--font-head);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
 
-.users-edit { min-height: 40px; padding: 0 14px; }
+.users-email {
+  color: var(--ink-3);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.users-role {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 99px;
+  background: var(--success-tint);
+  color: var(--forest);
+  font-family: var(--font-head);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+/* Gold marks the account that governs the business. */
+.users-role.owner { background: var(--gold-tint); color: #8a5a00; }
+
+.users-branch { font-size: 13px; color: var(--ink-2); }
+.users-pin { color: var(--ink-2); letter-spacing: 1px; }
+
+.users-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.users-btn {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 14px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--ink-2);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.users-btn:active { background: var(--surface-warm); }
+/* Sunset Orange is destructive, and only destructive. */
+.users-btn.danger { color: var(--cta); border-color: #f0cdbf; }
+.users-btn.danger:active { background: var(--cta-tint); }
+
 .users-loading { padding: 20px; color: var(--ink-3); }
 
 .users-modal {
@@ -82,6 +183,3 @@
 }
 .users-form-actions button { padding: 0 22px; }
 
-/* ---- Phase 12: owner delete ---- */
-.users-actions { display: flex; gap: 6px; }
-.users-delete { color: var(--danger, #c0392b); }

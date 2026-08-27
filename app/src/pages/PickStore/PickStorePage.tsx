@@ -4,7 +4,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useAuth } from '../../auth/AuthContext'
 import { ApiError } from '../../api/client'
 import { Logomark } from '../../components/Logomark'
-import { PinPad } from '../../components/PinPad'
+import { PinPad, PinDots } from '../../components/PinPad'
 import './pickstore.css'
 
 const PIN_LENGTH = 4
@@ -28,7 +28,7 @@ export function PickStorePage() {
     onSuccess: () => navigate('/', { replace: true }),
     onError: (err) => {
       setPin('')
-      setError(err instanceof ApiError ? err.message : 'Could not sign in — try again.')
+      setError(err instanceof ApiError ? err.message : 'That PIN does not match anyone here.')
     },
   })
 
@@ -58,34 +58,42 @@ export function PickStorePage() {
   }
 
   if (stage === 'pin') {
+    // The chip names the till, not the tenant — a branch name already carries it.
     const tillLabel = backOffice
-      ? 'Back office · all branches'
-      : (activeStore?.name ?? 'this till')
+      ? `${businessSession.business.name} · Back office`
+      : (activeStore?.name ?? businessSession.business.name)
     return (
-      <div className="pickstore">
-        <div className="pickstore-head">
-          <Logomark size={44} />
-          <h1>{businessSession.business.name}</h1>
-          <p>
-            {tillLabel} — enter your PIN to take the till
-          </p>
-        </div>
-
-        <div className="pickstore-pin">
-          <div className="pickstore-dots" aria-label={`${pin.length} of ${PIN_LENGTH} digits`}>
-            {Array.from({ length: PIN_LENGTH }).map((_, i) => (
-              <span key={i} className={i < pin.length ? 'dot filled' : 'dot'} />
-            ))}
+      <div className="pickstore pickstore-pin-screen">
+        <div className="pin-card">
+          <div className="pin-branch">
+            <span className="dot" />
+            {tillLabel}
           </div>
-          {error && <div className="pickstore-error">{error}</div>}
+
+          <div className="pin-who">
+            <div className="pin-who-avatar" aria-hidden="true">
+              ?
+            </div>
+            <h1>Who is taking the till?</h1>
+            {error ? (
+              <p className="pin-error">{error}</p>
+            ) : (
+              <p className="pin-hint">Enter your {PIN_LENGTH}-digit PIN</p>
+            )}
+          </div>
+
+          <PinDots filled={pin.length} length={PIN_LENGTH} size="lg" />
+
           <PinPad
+            size="lg"
             disabled={unlock.isPending}
             onDigit={(d) => setPin((p) => (p.length < PIN_LENGTH ? p + d : p))}
             onBackspace={() => setPin((p) => p.slice(0, -1))}
           />
+
           <button
             type="button"
-            className="btn-secondary pickstore-back"
+            className="pin-change-branch"
             onClick={() => {
               setStage('store')
               setPin('')

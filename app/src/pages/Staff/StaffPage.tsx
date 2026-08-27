@@ -19,7 +19,7 @@ function timeOf(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
-function hoursToday(s: StaffMember): string {
+function msToday(s: StaffMember): number {
   let ms = 0
   for (const e of s.today) {
     const end = e.check_out ? new Date(e.check_out).getTime() : Date.now()
@@ -28,10 +28,22 @@ function hoursToday(s: StaffMember): string {
   if (s.checked_in_at && !s.today.some((e) => e.check_in === s.checked_in_at)) {
     ms += Date.now() - new Date(s.checked_in_at).getTime()
   }
+  return Math.max(0, ms)
+}
+
+function duration(ms: number): string {
   if (ms <= 0) return '—'
   const h = Math.floor(ms / 3_600_000)
   const m = Math.round((ms % 3_600_000) / 60_000)
-  return h ? `${h}h ${m}m` : `${m}m`
+  return h ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m`
+}
+
+/** Earliest check-in on the floor today — blank before anyone arrives. */
+function firstCheckIn(staff: StaffMember[]): string {
+  const times = staff.flatMap((s) => s.today.map((e) => e.check_in))
+  for (const s of staff) if (s.checked_in_at) times.push(s.checked_in_at)
+  if (times.length === 0) return '—'
+  return timeOf(times.reduce((a, b) => (a < b ? a : b)))
 }
 
 export function StaffPage() {
@@ -78,9 +90,10 @@ export function StaffPage() {
   const stores = storesQuery.data?.data ?? []
   const staff = staffQuery.data?.data ?? []
   const onFloor = staff.filter((s) => s.checked_in_at).length
+  const loggedToday = staff.reduce((a, s) => a + msToday(s), 0)
 
   return (
-    <div className="page">
+    <div className="page page-wide">
       <div className="page-head">
         <div>
           <h2>Staff</h2>
@@ -99,6 +112,26 @@ export function StaffPage() {
         >
           + Add staff
         </button>
+      </div>
+
+      {/* The shift at a glance, before the individual cards. */}
+      <div className="staff-stats">
+        <div className="staff-stat">
+          <strong>{onFloor}</strong>
+          <span>On the floor</span>
+        </div>
+        <div className="staff-stat">
+          <strong>{staff.length - onFloor}</strong>
+          <span>Off the floor</span>
+        </div>
+        <div className="staff-stat">
+          <strong>{duration(loggedToday)}</strong>
+          <span>Hours logged today</span>
+        </div>
+        <div className="staff-stat">
+          <strong>{firstCheckIn(staff)}</strong>
+          <span>First check-in</span>
+        </div>
       </div>
 
       <div className="staff-grid">
@@ -120,12 +153,15 @@ export function StaffPage() {
                 </div>
               </div>
               <span className={s.checked_in_at ? 'staff-status in' : 'staff-status out'}>
-                {s.checked_in_at ? `In since ${timeOf(s.checked_in_at)}` : 'Off the floor'}
+                {s.checked_in_at ? `In since ${timeOf(s.checked_in_at)}` : 'Off floor'}
               </span>
             </div>
 
             <div className="staff-card-mid">
-              <span className="staff-hours">Today: {hoursToday(s)}</span>
+              <span className="staff-hours">Today · {duration(msToday(s))}</span>
+              {s.today.length === 0 && !s.checked_in_at && (
+                <span className="staff-log">no entries today</span>
+              )}
               {s.today.length > 0 && (
                 <span className="staff-log">
                   {s.today

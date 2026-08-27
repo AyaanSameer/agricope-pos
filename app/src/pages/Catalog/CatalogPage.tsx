@@ -13,19 +13,27 @@ import {
 import type { OptionGroup, Product, ProductInput } from '../../api/catalog'
 import { ApiError } from '../../api/client'
 import { fmt } from '../../lib/money'
-import { offerActive } from '../../lib/pricing'
+import { offerActive, resolveUnitPrice } from '../../lib/pricing'
 import './catalog.css'
 
-/** Option groups edit as text — "Normal / Spicy / Mix", price deltas as "Extra shot:+6". */
+/** A choice is a chip: a name and, optionally, what it adds to the price. */
+interface ChoiceDraft {
+  id?: string
+  name: string
+  /** surcharge as typed — "" means free */
+  delta: string
+}
+
 interface GroupDraft {
   id?: string
   name: string
   required: boolean
-  choicesText: string
+  choices: ChoiceDraft[]
 }
 
 interface Draft {
   id?: string
+  sku?: string | null
   name: string
   name_ar: string
   description: string
@@ -66,32 +74,32 @@ function groupToDraft(g: OptionGroup): GroupDraft {
     id: g.id,
     name: g.name,
     required: g.required,
-    choicesText: g.choices
-      .map((c) => (new Big(c.price_delta).gt(0) ? `${c.name}:+${c.price_delta}` : c.name))
-      .join(' / '),
+    choices: g.choices.map((c) => ({
+      id: c.id,
+      name: c.name,
+      delta: new Big(c.price_delta).gt(0) ? new Big(c.price_delta).toFixed(2) : '',
+    })),
   }
 }
 
 function draftToGroups(drafts: GroupDraft[]): OptionGroup[] {
   return drafts
-    .filter((d) => d.name.trim() && d.choicesText.trim())
-    .map((d, gi) => ({
-      id: d.id ?? `og-new-${gi}`,
-      name: d.name.trim(),
-      required: d.required,
-      choices: d.choicesText
-        .split('/')
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .map((s, ci) => {
-          const m = s.match(/^(.*?):\+\s*(\d+(?:\.\d{1,2})?)$/)
-          return {
-            id: `${d.id ?? `og-new-${gi}`}-c${ci}`,
-            name: m ? m[1].trim() : s,
-            price_delta: m ? new Big(m[2]).toFixed(2) : '0.00',
-          }
-        }),
-    }))
+    .filter((d) => d.name.trim() && d.choices.some((c) => c.name.trim()))
+    .map((d, gi) => {
+      const gid = d.id ?? `og-new-${gi}`
+      return {
+        id: gid,
+        name: d.name.trim(),
+        required: d.required,
+        choices: d.choices
+          .filter((c) => c.name.trim())
+          .map((c, ci) => ({
+            id: c.id ?? `${gid}-c${ci}`,
+            name: c.name.trim(),
+            price_delta: c.delta.trim() ? new Big(c.delta).toFixed(2) : '0.00',
+          })),
+      }
+    })
 }
 
 function productToDraft(p: Product): Draft {
@@ -137,6 +145,24 @@ function draftToInput(d: Draft): ProductInput {
     kitchen_station_id: d.kitchen_station_id,
     is_active: d.is_active,
   }
+}
+
+/** "12 days left" for the header badge — null when the offer is open-ended. */
+function daysLeft(endsAt: string): number | null {
+  if (!endsAt) return null
+  const ms = new Date(`${endsAt}T23:59:59`).getTime() - Date.now()
+  return ms <= 0 ? 0 : Math.ceil(ms / 86_400_000)
+}
+
+/** The second line of the product cell: Arabic name, then what the cashier is asked. */
+function productSubtitle(p: Product): string {
+  const bits: string[] = []
+  if (p.name_ar) bits.push(p.name_ar)
+  for (const g of p.option_groups) {
+    const names = g.choices.map((c) => c.name)
+    bits.push(names.length <= 3 ? `${g.name}: ${names.join(' / ')}` : `${g.name}: ${names.length} options`)
+  }
+  return bits.join('   ·   ')
 }
 
 export function CatalogPage() {
@@ -201,6 +227,20 @@ export function CatalogPage() {
     if (draft) save.mutate(draft)
   }
 
+  function patchGroup(d: Draft, i: number, patch: Partial<GroupDraft>): Draft {
+    return {
+      ...d,
+      option_groups: d.option_groups.map((g, j) => (j === i ? { ...g, ...patch } : g)),
+    }
+  }
+
+  function patchChoice(d: Draft, gi: number, ci: number, patch: Partial<ChoiceDraft>): Draft {
+    const group = d.option_groups[gi]
+    return patchGroup(d, gi, {
+      choices: group.choices.map((c, j) => (j === ci ? { ...c, ...patch } : c)),
+    })
+  }
+
   function toggleCategory(d: Draft, id: string): Draft {
     // Selection order matters: the first pick is the primary (reporting) category.
     return d.category_ids.includes(id)
@@ -210,14 +250,37 @@ export function CatalogPage() {
 
   const cats = categoriesQuery.data?.data ?? []
   const stations = stationsQuery.data?.data ?? []
+  const products = productsQuery.data?.data ?? []
+
+  // The offer preview: exactly what resolveUnitPrice will hand the till.
+  const preview =
+    draft && draft.price
+      ? resolveUnitPrice(
+          {
+            price: draft.price,
+            price_online: null,
+            offer: draft.offer_enabled
+              ? {
+                  percent: draft.offer_percent || '0',
+                  starts_at: null,
+                  ends_at: draft.offer_ends
+                    ? new Date(`${draft.offer_ends}T23:59:59`).toISOString()
+                    : null,
+                }
+              : null,
+          },
+          'store',
+        )
+      : null
+  const draftDays = draft?.offer_enabled ? daysLeft(draft.offer_ends) : null
 
   return (
-    <div className="page">
+    <div className="page page-wide">
       <div className="page-head">
         <div>
           <h2>Catalog</h2>
           <p className="page-sub">
-            Products &amp; categories · prices include tax · changes never touch old receipts
+            {products.length} products · prices include tax · changes never touch old receipts
           </p>
         </div>
         <button
@@ -290,305 +353,451 @@ export function CatalogPage() {
         </label>
       </div>
 
-      <div className="card cat-table">
+      {/* Six columns. Barcode and station live in the editor, where they are set. */}
+      <div className="cat-table">
         <div className="cat-row cat-head-row">
-          <span>Product</span><span>Category</span><span>Options</span><span>Offer</span><span className="num">In-store</span><span className="num">Online</span><span>Active</span><span />
+          <span>Product</span>
+          <span>Placement</span>
+          <span>Offer</span>
+          <span className="num">Store / online</span>
+          <span>Active</span>
+          <span />
         </div>
         {productsQuery.isPending && <div className="cat-loading">Loading…</div>}
-        {productsQuery.data?.data.map((p) => (
-          <div key={p.id} className={p.is_active ? 'cat-row' : 'cat-row inactive'}>
-            <span className="cat-name">
-              {p.name}
-              {p.is_combo && <span className="cat-combo">combo</span>}
-            </span>
-            <span>
-              {p.category_name ?? '—'}
-              {p.category_ids.length > 1 && (
-                <span className="cat-more"> +{p.category_ids.length - 1}</span>
-              )}
-            </span>
-            <span className="cat-opts">
-              {p.option_groups.length
-                ? p.option_groups.map((g) => g.name).join(', ')
-                : '—'}
-            </span>
-            <span>
-              {p.offer ? (
-                <span className={offerActive(p.offer) ? 'cat-offer live' : 'cat-offer'}>
-                  −{p.offer.percent}%
+        {products.map((p) => {
+          const subtitle = productSubtitle(p)
+          return (
+            <div key={p.id} className={p.is_active ? 'cat-row' : 'cat-row inactive'}>
+              <span className="cat-product">
+                <span className="cat-product-top">
+                  <span className="cat-name">{p.name}</span>
+                  {p.is_combo && <span className="cat-combo">Combo</span>}
                 </span>
-              ) : (
-                '—'
-              )}
-            </span>
-            <span className="num cat-price">{fmt(p.price)}</span>
-            <span className="num cat-price">{p.price_online ? fmt(p.price_online) : '—'}</span>
-            <span>
-              <button
-                type="button"
-                className={p.is_active ? 'toggle on' : 'toggle'}
-                aria-label={p.is_active ? 'Deactivate' : 'Activate'}
-                onClick={() => toggleActive.mutate(p)}
-              >
-                <span className="knob" />
-              </button>
-            </span>
-            <span>
-              <button type="button" className="btn-secondary cat-edit" onClick={() => edit(p)}>
-                Edit
-              </button>
-            </span>
-          </div>
-        ))}
-        {productsQuery.data && productsQuery.data.data.length === 0 && (
+                {subtitle && (
+                  <span className="cat-product-sub" dir="auto">
+                    {subtitle}
+                  </span>
+                )}
+              </span>
+              <span className="cat-placement">
+                {p.category_name ?? '—'}
+                {p.category_ids.length > 1 && (
+                  <span className="cat-more">+{p.category_ids.length - 1}</span>
+                )}
+              </span>
+              <span>
+                {p.offer ? (
+                  <span className={offerActive(p.offer) ? 'cat-offer live' : 'cat-offer'}>
+                    −{p.offer.percent}%
+                  </span>
+                ) : (
+                  <span className="cat-dash">—</span>
+                )}
+              </span>
+              <span className="num cat-prices">
+                <span className="cat-price-store">{fmt(p.price)}</span>
+                <span className="cat-price-sep">/</span>
+                <span className="cat-price-online">
+                  {p.price_online ? fmt(p.price_online) : fmt(p.price)}
+                </span>
+              </span>
+              <span>
+                <button
+                  type="button"
+                  className={p.is_active ? 'toggle on' : 'toggle'}
+                  aria-label={p.is_active ? 'Deactivate' : 'Activate'}
+                  onClick={() => toggleActive.mutate(p)}
+                >
+                  <span className="knob" />
+                </button>
+              </span>
+              <span>
+                <button type="button" className="cat-edit" onClick={() => edit(p)}>
+                  Edit
+                </button>
+              </span>
+            </div>
+          )
+        })}
+        {productsQuery.data && products.length === 0 && (
           <div className="cat-loading">No products match.</div>
         )}
       </div>
 
       {draft && (
         <div className="cat-modal" role="dialog" aria-modal="true">
-          <form className="cat-form card" onSubmit={onSubmit}>
-            <h3>{draft.id ? 'Edit product' : 'New product'}</h3>
-
-            <div className="cat-form-row">
-              <label className="field">
-                <span>Name</span>
-                <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} required />
-              </label>
-              <label className="field">
-                <span>Arabic name (receipts &amp; kitchen)</span>
-                <input
-                  dir="rtl"
-                  value={draft.name_ar}
-                  onChange={(e) => setDraft({ ...draft, name_ar: e.target.value })}
-                />
-              </label>
-            </div>
-
-            <label className="field">
-              <span>Description (what's inside a combo)</span>
-              <textarea
-                rows={2}
-                value={draft.description}
-                onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-              />
-            </label>
-
-            <div className="field">
-              <span>Categories — first pick is where it reports</span>
-              <div className="cat-form-cats">
-                {cats.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    className={draft.category_ids.includes(c.id) ? 'chip active' : 'chip'}
-                    onClick={() => setDraft(toggleCategory(draft, c.id))}
-                  >
-                    {draft.category_ids[0] === c.id ? '★ ' : ''}
-                    {c.name}
-                  </button>
-                ))}
+          <form className="editor" onSubmit={onSubmit}>
+            {/* Header and footer pin; the two columns scroll between them. */}
+            <header className="editor-head">
+              <div className="editor-head-main">
+                <div className="editor-title">
+                  <h3>{draft.name || (draft.id ? 'Edit product' : 'New product')}</h3>
+                  {draft.is_combo && <span className="badge badge-combo">Combo</span>}
+                  {draft.offer_enabled && (
+                    <span className="badge badge-offer">
+                      Offer live
+                      {draftDays !== null && ` · ${draftDays} ${draftDays === 1 ? 'day' : 'days'} left`}
+                    </span>
+                  )}
+                </div>
+                <p className="editor-sub">
+                  {draft.id ? 'Edits never touch receipts already printed' : 'New product — nothing is live until you save'}
+                </p>
               </div>
-            </div>
+              <button
+                type="button"
+                className="editor-close"
+                aria-label="Close"
+                onClick={() => setDraft(null)}
+              >
+                ✕
+              </button>
+            </header>
 
-            <div className="cat-form-row">
-              <label className="field">
-                <span>In-store price (QAR, incl. tax)</span>
-                <input
-                  inputMode="decimal"
-                  placeholder="35.00"
-                  pattern="\d+(\.\d{1,2})?"
-                  value={draft.price}
-                  onChange={(e) => setDraft({ ...draft, price: e.target.value })}
-                  required
-                />
-              </label>
-              <label className="field">
-                <span>Online price (blank = same)</span>
-                <input
-                  inputMode="decimal"
-                  placeholder="38.00"
-                  pattern="\d+(\.\d{1,2})?"
-                  value={draft.price_online}
-                  onChange={(e) => setDraft({ ...draft, price_online: e.target.value })}
-                />
-              </label>
-              <label className="field">
-                <span>Tax rate %</span>
-                <input
-                  inputMode="decimal"
-                  value={draft.tax_rate}
-                  onChange={(e) => setDraft({ ...draft, tax_rate: e.target.value })}
-                />
-              </label>
-            </div>
+            <div className="editor-body">
+              <div className="editor-col editor-col-left">
+                <div className="editor-block">
+                  <div className="block-label">Identity</div>
+                  <p className="block-hint">Shown on the till, the kitchen ticket and the receipt.</p>
+                </div>
 
-            <div className="cat-offer-box">
-              <label className="cat-check">
-                <input
-                  type="checkbox"
-                  checked={draft.offer_enabled}
-                  onChange={(e) => setDraft({ ...draft, offer_enabled: e.target.checked })}
-                />
-                Run a discount on this product
-              </label>
-              {draft.offer_enabled && (
-                <div className="cat-form-row">
+                <label className="field">
+                  <span>Name</span>
+                  <input
+                    value={draft.name}
+                    onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                    required
+                  />
+                </label>
+
+                <label className="field">
+                  <span>Arabic name</span>
+                  <input
+                    dir="rtl"
+                    value={draft.name_ar}
+                    onChange={(e) => setDraft({ ...draft, name_ar: e.target.value })}
+                  />
+                </label>
+
+                <label className="field">
+                  <span>Description</span>
+                  <textarea
+                    rows={2}
+                    placeholder="What's inside a combo"
+                    value={draft.description}
+                    onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                  />
+                </label>
+
+                <div className="editor-block">
+                  <div className="block-label">
+                    Categories
+                    <span className="block-note">★ first pick is where it reports</span>
+                  </div>
+                </div>
+                <div className="editor-cats">
+                  {cats.map((c) => {
+                    const picked = draft.category_ids.includes(c.id)
+                    const primary = draft.category_ids[0] === c.id
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className={primary ? 'chip primary' : picked ? 'chip active' : 'chip'}
+                        onClick={() => setDraft(toggleCategory(draft, c.id))}
+                      >
+                        {primary ? '★ ' : ''}
+                        {c.name}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <div className="editor-block">
+                  <div className="block-label">Routing &amp; scanning</div>
+                </div>
+                <div className="editor-row">
                   <label className="field">
-                    <span>Discount %</span>
+                    <span>Kitchen station</span>
+                    <select
+                      value={draft.kitchen_station_id ?? ''}
+                      onChange={(e) =>
+                        setDraft({ ...draft, kitchen_station_id: e.target.value || null })
+                      }
+                    >
+                      <option value="">None — no kitchen ticket</option>
+                      {stations.map((s) => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="field">
+                    <span>Barcode</span>
                     <input
                       inputMode="numeric"
-                      pattern="\d+"
-                      value={draft.offer_percent}
-                      onChange={(e) => setDraft({ ...draft, offer_percent: e.target.value })}
+                      placeholder="—"
+                      value={draft.barcode ?? ''}
+                      onChange={(e) => setDraft({ ...draft, barcode: e.target.value.trim() || null })}
+                    />
+                  </label>
+                </div>
+
+                <div className="switch-row">
+                  <div>
+                    <div className="switch-name">Combo</div>
+                    <div className="switch-hint">Sold as a bundle of items</div>
+                  </div>
+                  <button
+                    type="button"
+                    className={draft.is_combo ? 'toggle on' : 'toggle'}
+                    aria-pressed={draft.is_combo}
+                    aria-label="Combo"
+                    onClick={() => setDraft({ ...draft, is_combo: !draft.is_combo })}
+                  >
+                    <span className="knob" />
+                  </button>
+                </div>
+                <div className="switch-row">
+                  <div>
+                    <div className="switch-name">Active</div>
+                    <div className="switch-hint">Visible on the register</div>
+                  </div>
+                  <button
+                    type="button"
+                    className={draft.is_active ? 'toggle on' : 'toggle'}
+                    aria-pressed={draft.is_active}
+                    aria-label="Active"
+                    onClick={() => setDraft({ ...draft, is_active: !draft.is_active })}
+                  >
+                    <span className="knob" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="editor-col editor-col-right">
+                <div className="editor-block">
+                  <div className="block-label">Pricing &amp; offer</div>
+                  <p className="block-hint">All prices include tax.</p>
+                </div>
+
+                <div className="editor-row editor-row-3">
+                  <label className="field">
+                    <span>In-store</span>
+                    <input
+                      inputMode="decimal"
+                      placeholder="35.00"
+                      pattern="\d+(\.\d{1,2})?"
+                      value={draft.price}
+                      onChange={(e) => setDraft({ ...draft, price: e.target.value })}
                       required
                     />
                   </label>
                   <label className="field">
-                    <span>Until (blank = until removed)</span>
+                    <span>Online</span>
                     <input
-                      type="date"
-                      value={draft.offer_ends}
-                      onChange={(e) => setDraft({ ...draft, offer_ends: e.target.value })}
+                      inputMode="decimal"
+                      placeholder="same"
+                      pattern="\d+(\.\d{1,2})?"
+                      value={draft.price_online}
+                      onChange={(e) => setDraft({ ...draft, price_online: e.target.value })}
+                    />
+                  </label>
+                  <label className="field">
+                    <span>Tax %</span>
+                    <input
+                      inputMode="decimal"
+                      value={draft.tax_rate}
+                      onChange={(e) => setDraft({ ...draft, tax_rate: e.target.value })}
                     />
                   </label>
                 </div>
-              )}
-            </div>
 
-            <div className="field">
-              <span>Customisable options — choices split with “/”, paid extras as “Name:+6.00”</span>
-              {draft.option_groups.map((g, i) => (
-                <div key={i} className="cat-group-row">
-                  <input
-                    className="cat-group-name"
-                    placeholder="Flavor"
-                    value={g.name}
-                    onChange={(e) =>
-                      setDraft({
-                        ...draft,
-                        option_groups: draft.option_groups.map((x, j) =>
-                          j === i ? { ...x, name: e.target.value } : x,
-                        ),
-                      })
-                    }
-                  />
-                  <input
-                    className="cat-group-choices"
-                    placeholder="Normal / Spicy / Mix"
-                    value={g.choicesText}
-                    onChange={(e) =>
-                      setDraft({
-                        ...draft,
-                        option_groups: draft.option_groups.map((x, j) =>
-                          j === i ? { ...x, choicesText: e.target.value } : x,
-                        ),
-                      })
-                    }
-                  />
-                  <label className="cat-group-req" title="Cashier must choose">
-                    <input
-                      type="checkbox"
-                      checked={g.required}
-                      onChange={(e) =>
-                        setDraft({
-                          ...draft,
-                          option_groups: draft.option_groups.map((x, j) =>
-                            j === i ? { ...x, required: e.target.checked } : x,
-                          ),
-                        })
-                      }
-                    />
-                    req.
-                  </label>
-                  <button
-                    type="button"
-                    className="chip"
-                    aria-label="Remove option group"
-                    onClick={() =>
-                      setDraft({
-                        ...draft,
-                        option_groups: draft.option_groups.filter((_, j) => j !== i),
-                      })
-                    }
-                  >
-                    ✕
-                  </button>
+                <div className={draft.offer_enabled ? 'offer-panel on' : 'offer-panel'}>
+                  <div className="offer-head">
+                    <div>
+                      <div className="offer-name">Run a discount</div>
+                      <div className="offer-hint">Shows a struck-through price on the till</div>
+                    </div>
+                    <button
+                      type="button"
+                      className={draft.offer_enabled ? 'toggle on' : 'toggle'}
+                      aria-pressed={draft.offer_enabled}
+                      aria-label="Run a discount"
+                      onClick={() => setDraft({ ...draft, offer_enabled: !draft.offer_enabled })}
+                    >
+                      <span className="knob" />
+                    </button>
+                  </div>
+
+                  {draft.offer_enabled && (
+                    <>
+                      <div className="editor-row">
+                        <label className="field">
+                          <span>Percent off</span>
+                          <input
+                            inputMode="numeric"
+                            pattern="\d+"
+                            value={draft.offer_percent}
+                            onChange={(e) => setDraft({ ...draft, offer_percent: e.target.value })}
+                            required
+                          />
+                        </label>
+                        <label className="field">
+                          <span>Ends</span>
+                          <input
+                            type="date"
+                            value={draft.offer_ends}
+                            onChange={(e) => setDraft({ ...draft, offer_ends: e.target.value })}
+                          />
+                        </label>
+                      </div>
+
+                      {preview && (
+                        <div className="offer-preview">
+                          <span className="offer-preview-label">On the till</span>
+                          <span className="offer-preview-now">QAR {fmt(preview.price)}</span>
+                          {preview.offer_applied && (
+                            <>
+                              <span className="offer-preview-was">{fmt(preview.original)}</span>
+                              <span className="cat-offer live">−{draft.offer_percent}%</span>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
-              ))}
-              <button
-                type="button"
-                className="chip dashed"
-                onClick={() =>
-                  setDraft({
-                    ...draft,
-                    option_groups: [
-                      ...draft.option_groups,
-                      { name: '', required: true, choicesText: '' },
-                    ],
-                  })
-                }
-              >
-                + Add option group
-              </button>
-            </div>
 
-            <div className="cat-form-row">
-              <label className="field">
-                <span>Kitchen station (restaurant)</span>
-                <select
-                  value={draft.kitchen_station_id ?? ''}
-                  onChange={(e) => setDraft({ ...draft, kitchen_station_id: e.target.value || null })}
+                <div className="editor-block">
+                  <div className="block-label">Customisable options</div>
+                  <p className="block-hint">What the cashier is asked before the item joins the sale.</p>
+                </div>
+
+                {draft.option_groups.map((g, gi) => (
+                  <div key={gi} className="group-card">
+                    <div className="group-head">
+                      <input
+                        className="group-name"
+                        placeholder="Flavor"
+                        value={g.name}
+                        onChange={(e) => setDraft(patchGroup(draft, gi, { name: e.target.value }))}
+                      />
+                      <button
+                        type="button"
+                        className={g.required ? 'group-req on' : 'group-req'}
+                        aria-pressed={g.required}
+                        title="Must the cashier choose?"
+                        onClick={() => setDraft(patchGroup(draft, gi, { required: !g.required }))}
+                      >
+                        {g.required ? 'Required' : 'Optional'}
+                      </button>
+                      <button
+                        type="button"
+                        className="group-remove"
+                        aria-label="Remove option group"
+                        onClick={() =>
+                          setDraft({
+                            ...draft,
+                            option_groups: draft.option_groups.filter((_, j) => j !== gi),
+                          })
+                        }
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="group-choices">
+                      {g.choices.map((c, ci) => (
+                        <span key={ci} className="choice-chip">
+                          <input
+                            className="choice-name"
+                            placeholder="Choice"
+                            size={Math.max(4, c.name.length || 6)}
+                            value={c.name}
+                            onChange={(e) =>
+                              setDraft(patchChoice(draft, gi, ci, { name: e.target.value }))
+                            }
+                          />
+                          <input
+                            className="choice-delta"
+                            inputMode="decimal"
+                            placeholder="+"
+                            title="Surcharge for this choice"
+                            size={Math.max(2, c.delta.length + 1)}
+                            value={c.delta ? `+${c.delta}` : ''}
+                            onChange={(e) =>
+                              setDraft(
+                                patchChoice(draft, gi, ci, {
+                                  delta: e.target.value.replace(/[^\d.]/g, ''),
+                                }),
+                              )
+                            }
+                          />
+                          <button
+                            type="button"
+                            className="choice-remove"
+                            aria-label={`Remove ${c.name || 'choice'}`}
+                            onClick={() =>
+                              setDraft(
+                                patchGroup(draft, gi, {
+                                  choices: g.choices.filter((_, j) => j !== ci),
+                                }),
+                              )
+                            }
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      ))}
+                      <button
+                        type="button"
+                        className="choice-add"
+                        onClick={() =>
+                          setDraft(
+                            patchGroup(draft, gi, {
+                              choices: [...g.choices, { name: '', delta: '' }],
+                            }),
+                          )
+                        }
+                      >
+                        + choice
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  className="group-add"
+                  onClick={() =>
+                    setDraft({
+                      ...draft,
+                      option_groups: [
+                        ...draft.option_groups,
+                        { name: '', required: true, choices: [{ name: '', delta: '' }] },
+                      ],
+                    })
+                  }
                 >
-                  <option value="">None — no kitchen ticket</option>
-                  {stations.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="field">
-                <span>Barcode (scan-ready, optional)</span>
-                <input
-                  inputMode="numeric"
-                  placeholder="628 000 111 …"
-                  value={draft.barcode ?? ''}
-                  onChange={(e) => setDraft({ ...draft, barcode: e.target.value.trim() || null })}
-                />
-              </label>
-            </div>
-
-            <div className="cat-form-row">
-              <label className="cat-check">
-                <input
-                  type="checkbox"
-                  checked={draft.is_combo}
-                  onChange={(e) => setDraft({ ...draft, is_combo: e.target.checked })}
-                />
-                Combo — sold as a bundle of items
-              </label>
-              <label className="cat-check">
-                <input
-                  type="checkbox"
-                  checked={draft.is_active}
-                  onChange={(e) => setDraft({ ...draft, is_active: e.target.checked })}
-                />
-                Active — visible on the register
-              </label>
+                  + Add option group
+                </button>
+              </div>
             </div>
 
             {error && <div className="cat-error">{error}</div>}
-            <div className="cat-form-actions">
-              <button type="button" className="btn-secondary" onClick={() => setDraft(null)}>
-                Cancel
-              </button>
-              <button type="submit" className="btn-primary" disabled={save.isPending}>
-                {save.isPending ? 'Saving…' : 'Save product'}
-              </button>
-            </div>
-            <p className="cat-note">
-              Deactivating hides a product from the register; sold items keep their receipt
-              snapshot forever.
-            </p>
+
+            <footer className="editor-foot">
+              <p className="editor-note">
+                Deactivating hides it from the register — sold items keep their snapshot forever.
+              </p>
+              <div className="editor-actions">
+                <button type="button" className="btn-secondary" onClick={() => setDraft(null)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary" disabled={save.isPending}>
+                  {save.isPending ? 'Saving…' : 'Save product'}
+                </button>
+              </div>
+            </footer>
           </form>
         </div>
       )}

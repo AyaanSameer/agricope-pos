@@ -15,6 +15,15 @@ import './admin.css'
  * its branches, hand the first owner login over.
  */
 
+/** Tenant monograms — a stable colour per business so cards are tellable apart. */
+const MONOGRAM_TONES = ['green', 'orange', 'gold'] as const
+
+function monogram(name: string): string {
+  const words = name.split(/\s+/).filter(Boolean)
+  const letters = words.length > 1 ? words[0][0] + words[1][0] : name.slice(0, 2)
+  return letters.toUpperCase()
+}
+
 type Modal =
   | { kind: 'business' }
   | { kind: 'branch'; business: AdminBusiness }
@@ -81,6 +90,7 @@ export function AdminPage() {
 
   const busy = addBusiness.isPending || addBranch.isPending || addOwner.isPending
   const businesses = businessesQuery.data?.data ?? []
+  const awaitingOwner = businesses.filter((b) => b.owners.length === 0).length
 
   if (!adminSession) return null
 
@@ -90,7 +100,7 @@ export function AdminPage() {
         <div className="admin-brand">
           <Logomark size={28} />
           <span>Agricope Console</span>
-          <span className="admin-tag">platform admin</span>
+          <span className="admin-tag">Platform admin</span>
         </div>
         <div className="admin-bar-right">
           <span className="admin-who">{adminSession.admin.name}</span>
@@ -105,8 +115,7 @@ export function AdminPage() {
           <div>
             <h2>Businesses on the platform</h2>
             <p className="page-sub">
-              {businesses.length} business{businesses.length === 1 ? '' : 'es'} ·{' '}
-              {businesses.reduce((a, b) => a + b.stores.length, 0)} branches running the POS
+              Every tenant running the POS, their branches and their owner logins.
             </p>
           </div>
           <button type="button" className="btn-primary" onClick={() => open({ kind: 'business' })}>
@@ -114,32 +123,74 @@ export function AdminPage() {
           </button>
         </div>
 
+        {/* Platform health at a glance — the one number that blocks a tenant is orange. */}
+        <div className="admin-stats">
+          <div className="admin-stat">
+            <strong>{businesses.length}</strong>
+            <span>Businesses</span>
+          </div>
+          <div className="admin-stat">
+            <strong>{businesses.reduce((a, b) => a + b.stores.length, 0)}</strong>
+            <span>Branches live</span>
+          </div>
+          <div className="admin-stat">
+            <strong>{businesses.reduce((a, b) => a + b.user_count, 0)}</strong>
+            <span>Till logins</span>
+          </div>
+          <div className="admin-stat">
+            <strong>{businesses.reduce((a, b) => a + b.product_count, 0)}</strong>
+            <span>Products catalogued</span>
+          </div>
+          <div className="admin-stat">
+            <strong className={awaitingOwner > 0 ? 'blocked' : undefined}>{awaitingOwner}</strong>
+            <span>Awaiting an owner</span>
+          </div>
+        </div>
+
         {businessesQuery.isPending && <div className="admin-loading">Loading…</div>}
 
         <div className="admin-grid">
-          {businesses.map((b) => (
-            <div key={b.id} className="card admin-biz">
+          {businesses.map((b, i) => (
+            <div key={b.id} className="admin-biz">
               <div className="admin-biz-head">
-                <div>
+                <span className={`admin-mono ${MONOGRAM_TONES[i % MONOGRAM_TONES.length]}`}>
+                  {monogram(b.name)}
+                </span>
+                <div className="admin-biz-id">
                   <div className="admin-biz-name">{b.name}</div>
-                  <div className="admin-biz-login">Login: {b.email}</div>
+                  <div className="admin-biz-login">Login · {b.email}</div>
                 </div>
-                <div className="admin-biz-stats">
-                  {b.user_count} users · {b.product_count} products
-                </div>
+              </div>
+
+              <div className="admin-counts">
+                <span className="admin-count">
+                  {b.user_count} user{b.user_count === 1 ? '' : 's'}
+                </span>
+                <span className="admin-count">
+                  {b.product_count} product{b.product_count === 1 ? '' : 's'}
+                </span>
+                <span className="admin-count">
+                  {b.stores.length} branch{b.stores.length === 1 ? '' : 'es'}
+                </span>
               </div>
 
               <div className="admin-section">
                 <div className="admin-section-head">
-                  <span>Branches</span>
-                  <button type="button" className="chip dashed" onClick={() => open({ kind: 'branch', business: b })}>
+                  <span className="admin-section-label">Branches</span>
+                  <button
+                    type="button"
+                    className="admin-action"
+                    onClick={() => open({ kind: 'branch', business: b })}
+                  >
                     + Add branch
                   </button>
                 </div>
-                {b.stores.length === 0 && <div className="admin-empty">No branches yet.</div>}
+                {b.stores.length === 0 && (
+                  <div className="admin-empty">No branches yet — add the first one.</div>
+                )}
                 {b.stores.map((s) => (
                   <div key={s.id} className="admin-row">
-                    <span className={`pickstore-type ${s.type}`}>
+                    <span className={`admin-type ${s.type}`}>
                       {s.type === 'retail' ? 'Retail' : 'Restaurant'}
                     </span>
                     <span className="admin-row-name">{s.name}</span>
@@ -150,19 +201,29 @@ export function AdminPage() {
 
               <div className="admin-section">
                 <div className="admin-section-head">
-                  <span>Owner logins</span>
-                  <button type="button" className="chip dashed" onClick={() => open({ kind: 'owner', business: b })}>
+                  <span className="admin-section-label">Owner logins</span>
+                  <button
+                    type="button"
+                    className="admin-action"
+                    onClick={() => open({ kind: 'owner', business: b })}
+                  >
                     + Create owner
                   </button>
                 </div>
+                {/* Say what is blocked, not just what is missing. */}
                 {b.owners.length === 0 && (
-                  <div className="admin-empty">No owner yet — create one so they can sign in.</div>
+                  <div className="admin-empty blocked">
+                    No owner yet — this business cannot sign in until you create one.
+                  </div>
                 )}
                 {b.owners.map((o) => (
                   <div key={o.id} className="admin-row">
+                    <span className="admin-avatar">{monogram(o.name)}</span>
                     <span className="admin-row-name">{o.name}</span>
                     <span className="admin-row-sub">{o.email}</span>
-                    <span className="admin-row-pin">{o.has_pin ? 'PIN set' : 'no PIN yet'}</span>
+                    <span className={o.has_pin ? 'admin-pin set' : 'admin-pin'}>
+                      {o.has_pin ? 'PIN set' : 'No PIN yet'}
+                    </span>
                   </div>
                 ))}
               </div>

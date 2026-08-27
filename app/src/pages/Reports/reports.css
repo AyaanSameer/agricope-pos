@@ -1,27 +1,254 @@
-.reports-loading { padding: 32px; color: var(--ink-3); }
-.rp-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-.rp-kpi { padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; }
-.rp-kpi span { font-size: 12px; color: var(--ink-3); }
-.rp-kpi strong { font-family: var(--font-head); font-size: 22px; }
-.rp-kpi em { font-style: normal; font-size: 11px; color: var(--hint); }
-.warn-text { color: var(--cta); }
+.rp-loading { color: var(--ink-3); padding: 24px; }
+.rp-empty { color: var(--ink-3); font-size: 13px; margin: 0; }
 
-.rp-row { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; align-items: start; }
-.rp-chart, .rp-methods, .rp-list { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
-.rp-bars { display: flex; gap: 10px; align-items: flex-end; min-height: 160px; }
-.rp-barcol { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; }
-.rp-bar { width: 100%; max-width: 34px; background: var(--forest); border-radius: 5px 5px 0 0; }
-.rp-barcol span { font-size: 11px; color: var(--hint); }
+/* Reporting period — a segmented control, not three loose buttons. */
+.rp-range {
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.rp-range-opt {
+  height: 36px;
+  min-height: 36px;
+  padding: 0 16px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+}
+.rp-range-opt.active {
+  background: var(--forest);
+  color: #fff;
+  font-family: var(--font-head);
+  font-weight: 600;
+}
 
-.rp-method { display: flex; flex-direction: column; gap: 5px; }
-.rp-method-label { display: flex; justify-content: space-between; font-size: 13px; color: var(--ink-2); }
-.rp-track { height: 8px; background: var(--beige); border-radius: 99px; overflow: hidden; }
-.rp-fill { height: 100%; border-radius: 99px; }
-.rp-types { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
-.rp-type { font-size: 11px; background: var(--surface-warm); border-radius: 99px; padding: 4px 10px; color: var(--ink-3); text-transform: capitalize; }
+/* ---- KPI row ----------------------------------------------------------- */
+.rp-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+.rp-kpi {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.rp-kpi-label {
+  font-family: var(--font-head);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.rp-kpi-value {
+  font-family: var(--font-head);
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--forest);
+  line-height: 1.1;
+}
+.rp-delta { font-size: 12px; font-weight: 500; }
+.rp-delta em { font-style: normal; color: var(--hint); font-weight: 400; }
+.rp-delta.up { color: #2e7d32; }
+.rp-delta.down { color: var(--cta); }
+.rp-delta.none { color: var(--hint); font-weight: 400; }
 
-.rp-item { display: flex; align-items: center; gap: 10px; }
-.rp-rank { width: 24px; height: 24px; border-radius: 6px; background: var(--surface-warm); display: grid; place-items: center; font-size: 12px; font-weight: 600; color: var(--ink-2); }
-.rp-item-info { flex: 1; display: flex; flex-direction: column; }
-.rp-aging-rows { border-top: 1px solid var(--beige); padding-top: 8px; display: flex; flex-direction: column; gap: 6px; }
-.rp-aging-row { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; font-size: 13px; }
+/* ---- Card grid --------------------------------------------------------- */
+.rp-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  gap: 20px;
+  align-items: start;
+}
+.rp-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.rp-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.rp-card-head h3 { font-size: 16px; font-weight: 600; }
+
+.rp-peak {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 99px;
+  background: var(--gold-tint);
+  color: #8a5a00;
+  font-family: var(--font-head);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+.rp-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 99px;
+  background: var(--surface-warm);
+  color: var(--ink-3);
+  font-family: var(--font-head);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+}
+
+/* ---- Sales by hour ----------------------------------------------------- */
+.rp-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  height: 220px;
+  padding-top: 8px;
+}
+.rp-barcol {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+.rp-bar {
+  width: 100%;
+  max-width: 34px;
+  background: var(--leaf);
+  border-radius: 4px 4px 0 0;
+  min-height: 4px;
+}
+/* Deep Forest marks the busiest hour. */
+.rp-bar.peak { background: var(--forest); }
+.rp-bar-label { font-size: 11px; color: var(--ink-3); }
+
+/* ---- Payment mix ------------------------------------------------------- */
+.rp-stack {
+  display: flex;
+  height: 14px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: var(--surface-warm);
+}
+.rp-stack-seg { display: block; height: 100%; }
+.rp-stack-empty { flex: 1; background: var(--surface-warm); }
+
+.rp-mix-rows { display: flex; flex-direction: column; }
+.rp-mix-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+}
+.rp-dot { width: 9px; height: 9px; flex: none; border-radius: 50%; }
+.rp-mix-name { flex: 1; font-size: 13.5px; color: var(--ink-2); }
+.rp-mix-amount {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink);
+}
+.rp-mix-pct { width: 34px; text-align: right; font-size: 12px; color: var(--hint); }
+
+/* ---- Top items --------------------------------------------------------- */
+.rp-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+}
+.rp-rank {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--success-tint);
+  color: var(--forest);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-head);
+  font-size: 11px;
+  font-weight: 600;
+}
+.rp-item-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.rp-item-name {
+  font-size: 13.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rp-share {
+  display: block;
+  height: 4px;
+  border-radius: 99px;
+  background: var(--surface-warm);
+  max-width: 240px;
+}
+.rp-share-fill {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--leaf);
+}
+.rp-item-figures {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.rp-item-revenue { font-family: var(--font-head); font-weight: 600; font-size: 14px; }
+.rp-item-qty { font-size: 11px; color: var(--hint); }
+
+/* ---- Credit ageing ----------------------------------------------------- */
+.rp-bucket {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 16px;
+  border-radius: 8px;
+}
+.rp-bucket-label { font-size: 13.5px; }
+.rp-bucket-amount { font-family: var(--font-head); font-weight: 600; font-size: 15px; }
+/* Colour only where it means something. */
+.rp-bucket.ok { background: #eef5ec; color: var(--ink); }
+.rp-bucket.quiet { background: var(--surface-warm); color: var(--ink); }
+.rp-bucket.warn { background: #fdf6e3; color: #8a5a00; }
+.rp-bucket.over { background: var(--cta-tint); color: var(--cta); }
+
+.rp-note {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--ink-3);
+  line-height: 1.45;
+}
+
+@media (max-width: 1180px) {
+  .rp-grid { grid-template-columns: minmax(0, 1fr); }
+  .rp-kpis { grid-template-columns: repeat(2, 1fr); }
+}

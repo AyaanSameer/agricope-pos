@@ -10,6 +10,11 @@ import './users.css'
 
 type Draft = UserInput & { id?: string }
 
+function initials(name: string): string {
+  const words = name.split(/\s+/).filter(Boolean)
+  return (words.length > 1 ? words[0][0] + words[1][0] : name.slice(0, 2)).toUpperCase()
+}
+
 const EMPTY: Draft = { name: '', email: '', role: 'cashier', store_id: null, pin: '', is_active: true }
 
 export function UsersPage() {
@@ -62,42 +67,55 @@ export function UsersPage() {
   const stores = storesQuery.data?.data ?? []
 
   return (
-    <div className="page">
+    <div className="page page-wide">
       <div className="page-head">
         <div>
           <h2>Users</h2>
-          <p className="page-sub">Till logins, roles and PINs · the PIN is who you are on the till · owner can delete</p>
+          <p className="page-sub">Till logins for this business · the PIN is who you are on the till</p>
         </div>
         <button type="button" className="btn-primary users-add" onClick={() => { setError(null); setDraft({ ...EMPTY }) }}>
           + Add user
         </button>
       </div>
 
-      <div className="card users-table">
+      {/* Deleting a login is the owner's call — deactivating keeps them on past receipts. */}
+      <div className="users-owner-note">
+        <span className="users-owner-tag">Owner only</span>
+        Only the owner can delete a login. Managers can deactivate, which keeps the person on past
+        receipts.
+      </div>
+
+      <div className="users-table">
         <div className="users-row users-head-row">
-          <span>Name</span><span>Email</span><span>Role</span><span>Store</span><span>PIN</span><span>Status</span><span />
+          <span>Person</span>
+          <span>Email</span>
+          <span>Role</span>
+          <span>Branch</span>
+          <span>PIN</span>
+          <span />
         </div>
         {usersQuery.isPending && <div className="users-loading">Loading…</div>}
         {usersQuery.data?.data.map((u) => (
           <div key={u.id} className={u.is_active ? 'users-row' : 'users-row inactive'}>
-            <span className="users-name">{u.name}</span>
-            <span className="users-email">{u.email}</span>
-            <span className="users-role">{u.role}</span>
-            <span>{u.store_name ?? 'All stores'}</span>
-            <span>{u.has_pin ? '••••' : '—'}</span>
-            <span>
-              <span className={u.is_active ? 'badge on' : 'badge off'}>
-                {u.is_active ? 'Active' : 'Inactive'}
-              </span>
+            <span className="users-person">
+              <span className="users-avatar">{initials(u.name)}</span>
+              <span className="users-name">{u.name}</span>
+              {!u.is_active && <span className="users-off">Deactivated</span>}
             </span>
+            <span className="users-email">{u.email}</span>
+            <span>
+              <span className={`users-role ${u.role}`}>{u.role}</span>
+            </span>
+            <span className="users-branch">{u.store_name ?? 'All branches'}</span>
+            <span className="users-pin">{u.has_pin ? '••••' : '—'}</span>
             <span className="users-actions">
-              <button type="button" className="btn-secondary users-edit" onClick={() => edit(u)}>
+              <button type="button" className="users-btn" onClick={() => edit(u)}>
                 Edit
               </button>
               {isOwner && u.id !== session?.user.id && (
                 <button
                   type="button"
-                  className="btn-secondary users-delete"
+                  className="users-btn danger"
                   disabled={remove.isPending}
                   onClick={() => {
                     if (window.confirm(`Delete ${u.name}? Their login and PIN stop working immediately.`)) {

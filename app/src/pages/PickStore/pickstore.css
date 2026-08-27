@@ -68,32 +68,74 @@
   font-weight: 500;
 }
 
-/* ---- PIN stage (Phase 12: PIN identifies the person) ---- */
-.pickstore-pin {
+/* ---- PIN stage — "Who is taking the till?" ---------------------------- */
+.pickstore-pin-screen { background: var(--forest); gap: 22px; }
+
+.pin-card {
   background: var(--surface);
-  border-radius: var(--radius-lg);
-  padding: 24px 28px;
+  border-radius: 20px;
+  padding: 32px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  width: 320px;
+  gap: 22px;
 }
 
-.pickstore-dots { display: flex; gap: 12px; }
-.pickstore-dots .dot {
-  width: 14px;
-  height: 14px;
+/* Branch chip pinned above, so nobody signs into the wrong till. */
+.pin-branch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 99px;
+  background: var(--surface-warm);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.pin-branch .dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
   border-radius: 50%;
-  background: var(--surface-2, #eee);
-  border: 1.5px solid var(--ink-3);
+  background: var(--leaf);
 }
-.pickstore-dots .dot.filled { background: var(--forest); border-color: var(--forest); }
 
-.pickstore-error {
-  color: var(--danger, #c0392b);
-  font-size: 13px;
+.pin-who {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
   text-align: center;
 }
+.pin-who-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 99px;
+  background: var(--surface-warm);
+  color: var(--hint);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-head);
+  font-size: 19px;
+  font-weight: 700;
+}
+.pin-who h1 { font-size: 20px; font-weight: 600; }
+.pin-hint { color: var(--ink-3); font-size: 13px; margin: 0; }
+/* A real error state, in Sunset Orange — and the entry is cleared. */
+.pin-error { color: var(--cta); font-size: 13px; margin: 0; max-width: 272px; }
 
-.pickstore-back { width: 100%; }
+.pin-change-branch {
+  width: 272px;
+  height: 48px;
+  min-height: 48px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--ink-2);
+  font-size: 14px;
+  font-weight: 500;
+}
+.pin-change-branch:active { background: var(--surface-warm); }

@@ -4,53 +4,45 @@
 }
 
 .login-brand {
-  flex: 0 0 46%;
-  background: var(--forest-deep);
+  flex: 0 0 560px;
+  background: var(--forest);
   color: #fff;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   padding: 56px;
-  position: relative;
-  overflow: hidden;
 }
-.login-brand::after {
-  content: '';
-  position: absolute;
-  right: -140px;
-  bottom: -160px;
-  width: 440px;
-  height: 440px;
-  border-radius: 50%;
-  background: rgba(102, 187, 106, 0.2);
-}
+/* An admin account governs every tenant — the panel goes darker to say so. */
+.login-admin .login-brand { background: var(--forest-deep); }
 
 .login-brand-lockup {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 .login-brand-name {
   font-family: var(--font-head);
   font-weight: 700;
-  letter-spacing: 2px;
+  font-size: 15px;
+  letter-spacing: 1.8px;
 }
 .login-brand-sub {
   font-size: 10px;
-  letter-spacing: 2px;
+  font-weight: 500;
+  letter-spacing: 1.4px;
   color: var(--leaf-pale);
 }
 
 .login-headline {
-  font-size: 40px;
-  line-height: 1.15;
+  font-size: 38px;
+  line-height: 46px;
   font-weight: 700;
 }
 .login-blurb {
   margin-top: 16px;
   max-width: 400px;
   color: var(--leaf-pale);
-  line-height: 1.5;
+  line-height: 22px;
 }
 .login-footer {
   font-size: 12px;
@@ -59,41 +51,65 @@
 
 .login-side {
   flex: 1;
+  min-width: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 20px;
   padding: 32px;
 }
 
 .login-card {
   width: 100%;
-  max-width: 420px;
+  max-width: 416px;
   background: var(--surface);
-  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 36px;
+  padding: 32px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
   box-shadow: 0 8px 24px rgba(8, 61, 43, 0.08);
 }
+.login-card h2 { font-size: 22px; font-weight: 600; }
 .login-card-sub {
   margin: 6px 0 0;
   color: var(--ink-3);
+  font-size: 13px;
+  line-height: 19px;
+}
+
+/* Gold says "attention" — this login is not an ordinary one. */
+.login-badge {
+  align-self: flex-start;
+  background: var(--gold-tint);
+  color: #8a5a00;
+  border-radius: 99px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-family: var(--font-head);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.44px;
+  text-transform: uppercase;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
 }
 .field span {
   font-size: 12px;
   font-weight: 500;
   color: var(--ink-2);
 }
+.field-recognised input {
+  border: 2px solid var(--leaf);
+  padding: 0 13px;
+}
+
+.login-submit { height: 48px; }
 
 .login-error {
   background: var(--cta-tint);
@@ -103,14 +119,28 @@
   font-weight: 500;
 }
 
-.login-hint {
-  font-size: 12px;
-  color: var(--hint);
-  text-align: center;
+.login-staff-warning {
+  background: var(--gold-tint);
+  color: #8a5a00;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 11.5px;
 }
-.login-version {
-  font-size: 12px;
-  color: var(--hint);
+
+.login-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-warm);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+.login-hint-tag {
+  font-family: var(--font-head);
+  font-weight: 600;
+  color: var(--ink-2);
 }
 
 @media (max-width: 900px) {
