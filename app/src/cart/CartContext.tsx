@@ -33,7 +33,7 @@ export interface CartLine {
   offer_applied: boolean
 }
 
-export type CartOrderType = 'counter' | 'dine_in' | 'takeaway' | 'delivery'
+export type CartOrderType = 'dine_in' | 'takeaway' | 'delivery'
 
 interface CartValue {
   lines: CartLine[]
@@ -77,7 +77,7 @@ function lineFor(p: Product, selections: CartSelection[]): CartLine {
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [lines, setLines] = useState<CartLine[]>([])
-  const [orderType, setOrderType] = useState<CartOrderType>('counter')
+  const [orderType, setOrderType] = useState<CartOrderType>('takeaway')
   const [customerId, setCustomerId] = useState<string | null>(null)
   const [customerName, setCustomerName] = useState<string | null>(null)
   const [serviceChargeRate, setServiceChargeRate] = useState('0')
@@ -126,7 +126,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setLines([])
     setCustomerId(null)
     setCustomerName(null)
-    setOrderType('counter')
+    setOrderType('takeaway')
   }, [])
 
   const setCustomer = useCallback((id: string | null, name: string | null) => {

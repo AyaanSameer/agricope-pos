@@ -46,6 +46,9 @@ interface Draft {
   offer_enabled: boolean
   offer_percent: string
   offer_ends: string // yyyy-mm-dd, empty = open-ended
+  offer_online_enabled: boolean
+  offer_online_percent: string
+  offer_online_ends: string
   option_groups: GroupDraft[]
   kitchen_station_id: string | null
   is_active: boolean
@@ -64,6 +67,9 @@ const EMPTY: Draft = {
   offer_enabled: false,
   offer_percent: '20',
   offer_ends: '',
+  offer_online_enabled: false,
+  offer_online_percent: '20',
+  offer_online_ends: '',
   option_groups: [],
   kitchen_station_id: null,
   is_active: true,
@@ -117,6 +123,9 @@ function productToDraft(p: Product): Draft {
     offer_enabled: p.offer !== null,
     offer_percent: p.offer?.percent ?? '20',
     offer_ends: p.offer?.ends_at ? p.offer.ends_at.slice(0, 10) : '',
+    offer_online_enabled: p.offer_online !== null,
+    offer_online_percent: p.offer_online?.percent ?? '20',
+    offer_online_ends: p.offer_online?.ends_at ? p.offer_online.ends_at.slice(0, 10) : '',
     option_groups: p.option_groups.map(groupToDraft),
     kitchen_station_id: p.kitchen_station_id,
     is_active: p.is_active,
@@ -134,6 +143,15 @@ function draftToInput(d: Draft): ProductInput {
     price_online: d.price_online.trim() || null,
     tax_rate: d.tax_rate,
     is_combo: d.is_combo,
+    offer_online: d.offer_online_enabled
+      ? {
+          percent: d.offer_online_percent,
+          starts_at: null,
+          ends_at: d.offer_online_ends
+            ? new Date(`${d.offer_online_ends}T23:59:59`).toISOString()
+            : null,
+        }
+      : null,
     offer: d.offer_enabled
       ? {
           percent: d.offer_percent,
@@ -252,26 +270,33 @@ export function CatalogPage() {
   const stations = stationsQuery.data?.data ?? []
   const products = productsQuery.data?.data ?? []
 
-  // The offer preview: exactly what resolveUnitPrice will hand the till.
-  const preview =
-    draft && draft.price
-      ? resolveUnitPrice(
-          {
-            price: draft.price,
-            price_online: null,
-            offer: draft.offer_enabled
-              ? {
-                  percent: draft.offer_percent || '0',
-                  starts_at: null,
-                  ends_at: draft.offer_ends
-                    ? new Date(`${draft.offer_ends}T23:59:59`).toISOString()
-                    : null,
-                }
-              : null,
-          },
-          'store',
-        )
-      : null
+  // The offer preview: exactly what resolveUnitPrice will hand each till.
+  const draftPriced = draft
+    ? {
+        price: draft.price || '0',
+        price_online: draft.price_online || null,
+        offer: draft.offer_enabled
+          ? {
+              percent: draft.offer_percent || '0',
+              starts_at: null,
+              ends_at: draft.offer_ends
+                ? new Date(`${draft.offer_ends}T23:59:59`).toISOString()
+                : null,
+            }
+          : null,
+        offer_online: draft.offer_online_enabled
+          ? {
+              percent: draft.offer_online_percent || '0',
+              starts_at: null,
+              ends_at: draft.offer_online_ends
+                ? new Date(`${draft.offer_online_ends}T23:59:59`).toISOString()
+                : null,
+            }
+          : null,
+      }
+    : null
+  const preview = draft && draft.price ? resolveUnitPrice(draftPriced!, 'store') : null
+  const previewOnline = draft && draft.price ? resolveUnitPrice(draftPriced!, 'online') : null
   const draftDays = draft?.offer_enabled ? daysLeft(draft.offer_ends) : null
 
   return (
@@ -385,13 +410,23 @@ export function CatalogPage() {
                   <span className="cat-more">+{p.category_ids.length - 1}</span>
                 )}
               </span>
-              <span>
-                {p.offer ? (
-                  <span className={offerActive(p.offer) ? 'cat-offer live' : 'cat-offer'}>
-                    −{p.offer.percent}%
+              <span className="cat-offers">
+                {!p.offer && !p.offer_online && <span className="cat-dash">—</span>}
+                {p.offer && (
+                  <span
+                    className={offerActive(p.offer) ? 'cat-offer live' : 'cat-offer'}
+                    title="In-store discount"
+                  >
+                    −{p.offer.percent}% store
                   </span>
-                ) : (
-                  <span className="cat-dash">—</span>
+                )}
+                {p.offer_online && (
+                  <span
+                    className={offerActive(p.offer_online) ? 'cat-offer live' : 'cat-offer'}
+                    title="Online discount"
+                  >
+                    −{p.offer_online.percent}% online
+                  </span>
                 )}
               </span>
               <span className="num cat-prices">
@@ -615,14 +650,14 @@ export function CatalogPage() {
                 <div className={draft.offer_enabled ? 'offer-panel on' : 'offer-panel'}>
                   <div className="offer-head">
                     <div>
-                      <div className="offer-name">Run a discount</div>
-                      <div className="offer-hint">Shows a struck-through price on the till</div>
+                      <div className="offer-name">In-store discount</div>
+                      <div className="offer-hint">Counter, dine-in &amp; takeaway tills</div>
                     </div>
                     <button
                       type="button"
                       className={draft.offer_enabled ? 'toggle on' : 'toggle'}
                       aria-pressed={draft.offer_enabled}
-                      aria-label="Run a discount"
+                      aria-label="Run an in-store discount"
                       onClick={() => setDraft({ ...draft, offer_enabled: !draft.offer_enabled })}
                     >
                       <span className="knob" />
@@ -654,12 +689,90 @@ export function CatalogPage() {
 
                       {preview && (
                         <div className="offer-preview">
-                          <span className="offer-preview-label">On the till</span>
+                          <span className="offer-preview-label">In store</span>
                           <span className="offer-preview-now">QAR {fmt(preview.price)}</span>
                           {preview.offer_applied && (
                             <>
                               <span className="offer-preview-was">{fmt(preview.original)}</span>
                               <span className="cat-offer live">−{draft.offer_percent}%</span>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                <div className={draft.offer_online_enabled ? 'offer-panel on' : 'offer-panel'}>
+                  <div className="offer-head">
+                    <div>
+                      <div className="offer-name">Online discount</div>
+                      <div className="offer-hint">Delivery &amp; online orders only — set it apart from the shop</div>
+                    </div>
+                    <button
+                      type="button"
+                      className={draft.offer_online_enabled ? 'toggle on' : 'toggle'}
+                      aria-pressed={draft.offer_online_enabled}
+                      aria-label="Run an online discount"
+                      onClick={() =>
+                        setDraft({ ...draft, offer_online_enabled: !draft.offer_online_enabled })
+                      }
+                    >
+                      <span className="knob" />
+                    </button>
+                  </div>
+
+                  {draft.offer_online_enabled && (
+                    <>
+                      <div className="editor-row">
+                        <label className="field">
+                          <span>Percent off</span>
+                          <input
+                            inputMode="numeric"
+                            pattern="\d+"
+                            value={draft.offer_online_percent}
+                            onChange={(e) =>
+                              setDraft({ ...draft, offer_online_percent: e.target.value })
+                            }
+                            required
+                          />
+                        </label>
+                        <label className="field">
+                          <span>Ends</span>
+                          <input
+                            type="date"
+                            value={draft.offer_online_ends}
+                            onChange={(e) =>
+                              setDraft({ ...draft, offer_online_ends: e.target.value })
+                            }
+                          />
+                        </label>
+                      </div>
+
+                      {draft.offer_enabled && (
+                        <button
+                          type="button"
+                          className="offer-copy"
+                          onClick={() =>
+                            setDraft({
+                              ...draft,
+                              offer_online_percent: draft.offer_percent,
+                              offer_online_ends: draft.offer_ends,
+                            })
+                          }
+                        >
+                          Match the in-store discount
+                        </button>
+                      )}
+
+                      {previewOnline && (
+                        <div className="offer-preview">
+                          <span className="offer-preview-label">Online</span>
+                          <span className="offer-preview-now">QAR {fmt(previewOnline.price)}</span>
+                          {previewOnline.offer_applied && (
+                            <>
+                              <span className="offer-preview-was">{fmt(previewOnline.original)}</span>
+                              <span className="cat-offer live">−{draft.offer_online_percent}%</span>
                             </>
                           )}
                         </div>

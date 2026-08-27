@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { listOrders, refundOrder, voidOrder } from '../../api/orders'
+import { addOrderItems, listOrders, refundOrder, voidOrder } from '../../api/orders'
 import type { OrderStatus } from '../../api/orders'
 import { ApiError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
+import { AddItemsModal } from '../../components/AddItemsModal'
 import { ApprovalPinModal } from '../../components/ApprovalPinModal'
 import { fmt, fmtQAR } from '../../lib/money'
 import './orders.css'
@@ -19,10 +20,11 @@ const STATUS_STYLE: Record<OrderStatus, string> = {
 export function OrdersPage() {
   const { activeStore } = useAuth()
   const queryClient = useQueryClient()
-  const [status, setStatus] = useState<OrderStatus | null>(null)
+  const [status, setStatus] = useState<OrderStatus | null>('open')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [pinAction, setPinAction] = useState<'void' | 'refund' | null>(null)
   const [pinError, setPinError] = useState<string | null>(null)
+  const [addingItems, setAddingItems] = useState(false)
 
   const ordersQuery = useQuery({
     queryKey: ['orders', { store: activeStore?.id, status }],
@@ -52,7 +54,7 @@ export function OrdersPage() {
       </div>
 
       <div className="orders-filters">
-        {([null, 'completed', 'open', 'void', 'refunded'] as (OrderStatus | null)[]).map((s) => (
+        {(['open', 'completed', 'void', 'refunded', null] as (OrderStatus | null)[]).map((s) => (
           <button
             key={s ?? 'all'}
             type="button"
@@ -99,7 +101,11 @@ export function OrdersPage() {
             </div>
             <p className="muted small">
               {selected.cashier_name} · {new Date(selected.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} · {selected.order_type.replace('_', '-')}
-              {selected.table_name ? ` · ${selected.table_name}` : ''}
+              {selected.table_name
+                ? ` · ${selected.table_name}`
+                : selected.order_type === 'dine_in'
+                  ? ' · no table yet'
+                  : ''}
               {selected.customer_name ? ` · ${selected.customer_name}` : ''}
             </p>
             <div className="orders-sep" />
@@ -134,6 +140,15 @@ export function OrdersPage() {
             <div className="orders-actions">
               {selected.status === 'open' && (
                 <>
+                  {selected.order_type === 'dine_in' && !selected.table_id && (
+                    <button
+                      type="button"
+                      className="btn-secondary orders-act"
+                      onClick={() => setAddingItems(true)}
+                    >
+                      + Add items
+                    </button>
+                  )}
                   <Link to={`/charge/${selected.id}`} className="btn-primary orders-act">Take payment</Link>
                   <button type="button" className="btn-secondary orders-act danger" onClick={() => { setPinError(null); setPinAction('void') }}>
                     Void…
@@ -155,6 +170,19 @@ export function OrdersPage() {
           </aside>
         )}
       </div>
+
+      {addingItems && selected && (
+        <AddItemsModal
+          title={`Add items — ${selected.order_number}`}
+          submitLabel="to order"
+          onAdd={async (items) => {
+            await addOrderItems(selected.id, items)
+            queryClient.invalidateQueries({ queryKey: ['orders'] })
+            setAddingItems(false)
+          }}
+          onClose={() => setAddingItems(false)}
+        />
+      )}
 
       {pinAction && selected && (
         <ApprovalPinModal

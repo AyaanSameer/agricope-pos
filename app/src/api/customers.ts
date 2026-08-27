@@ -40,8 +40,17 @@ export function createCustomer(input: CustomerInput): Promise<Customer> {
   return api<Customer>('/customers', { method: 'POST', body: JSON.stringify(input) })
 }
 
-export function updateCustomer(id: string, input: Partial<CustomerInput>): Promise<Customer> {
-  return api<Customer>(`/customers/${id}`, { method: 'PATCH', body: JSON.stringify(input) })
+/** Changing `credit_limit` needs a manager/owner PIN; contact edits do not. */
+export function updateCustomer(
+  id: string,
+  input: Partial<CustomerInput>,
+  approvalPin?: string,
+): Promise<Customer> {
+  return api<Customer>(`/customers/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+    headers: approvalPin ? { 'X-Approval-Pin': approvalPin } : undefined,
+  })
 }
 
 export function getStatement(id: string): Promise<{ customer: Customer; entries: StatementEntry[] }> {

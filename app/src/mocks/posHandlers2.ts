@@ -2,6 +2,7 @@ import { http, HttpResponse, delay } from 'msw'
 import Big from 'big.js'
 import { products, requester, stations, storeBusinessId } from './db'
 import {
+  approverForPin,
   currentShift,
   customerBalance,
   customers,
@@ -316,6 +317,16 @@ export const posHandlers2 = [
     if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
     const body = (await request.json()) as Partial<(typeof customers)[number]>
     if (!body.name?.trim()) return apiError(400, 'VALIDATION_ERROR', 'A name is required.')
+    if (
+      body.credit_limit &&
+      !approverForPin(request.headers.get('X-Approval-Pin'), caller.business_id)
+    ) {
+      return apiError(
+        403,
+        'APPROVAL_REQUIRED',
+        'A manager or owner PIN is needed to set a credit limit.',
+      )
+    }
     const customer = {
       id: uid('cu'),
       business_id: caller.business_id,
@@ -342,7 +353,17 @@ export const posHandlers2 = [
     if (body.name !== undefined) customer.name = body.name
     if (body.phone !== undefined) customer.phone = body.phone
     if (body.email !== undefined) customer.email = body.email
-    if (body.credit_limit !== undefined) customer.credit_limit = body.credit_limit
+    if (body.credit_limit !== undefined && body.credit_limit !== customer.credit_limit) {
+      // Granting or changing credit is a money decision, not a contact edit.
+      if (!approverForPin(request.headers.get('X-Approval-Pin'), caller.business_id)) {
+        return apiError(
+          403,
+          'APPROVAL_REQUIRED',
+          'A manager or owner PIN is needed to set a credit limit.',
+        )
+      }
+      customer.credit_limit = body.credit_limit
+    }
     if (body.notes !== undefined) customer.notes = body.notes
     if (body.is_active !== undefined) customer.is_active = body.is_active
     return HttpResponse.json({ ...customer, balance: customerBalance(customer.id) })

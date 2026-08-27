@@ -10,6 +10,7 @@ import {
 } from '../../api/customers'
 import type { Customer } from '../../api/customers'
 import { ApiError } from '../../api/client'
+import { CreditLimitModal } from '../../components/CreditLimitModal'
 import { useAuth } from '../../auth/AuthContext'
 import { MoneyPad } from '../../components/MoneyPad'
 import { fmt, fmtQAR } from '../../lib/money'
@@ -22,6 +23,7 @@ export function CustomersPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [repaying, setRepaying] = useState(false)
   const [adding, setAdding] = useState(false)
+  const [grantingCredit, setGrantingCredit] = useState(false)
 
   const customersQuery = useQuery({
     queryKey: ['customers', search],
@@ -101,6 +103,13 @@ export function CustomersPage() {
               <div className="card stat">
                 <span>Credit limit</span>
                 <strong>{limit ? fmtQAR(limit.toFixed(2)) : 'No credit'}</strong>
+                <button
+                  type="button"
+                  className="stat-act"
+                  onClick={() => setGrantingCredit(true)}
+                >
+                  {limit ? 'Change…' : 'Give credit…'}
+                </button>
               </div>
               <div className="card stat">
                 <span>Available</span>
@@ -135,6 +144,22 @@ export function CustomersPage() {
           <div className="card cust-empty">Select a customer to see their statement.</div>
         )}
       </div>
+
+      {grantingCredit && selected && (
+        <CreditLimitModal
+          customerId={selected.id}
+          customerName={selected.name}
+          currentLimit={selected.credit_limit}
+          balance={selected.balance}
+          suggested="0.00"
+          onDone={() => {
+            setGrantingCredit(false)
+            queryClient.invalidateQueries({ queryKey: ['statement'] })
+            queryClient.invalidateQueries({ queryKey: ['customers'] })
+          }}
+          onClose={() => setGrantingCredit(false)}
+        />
+      )}
 
       {repaying && selected && (
         <RepaymentModal
@@ -251,12 +276,14 @@ function RepaymentModal({
 function NewCustomerModal({ onDone, onClose }: { onDone: () => void; onClose: () => void }) {
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
-  const [creditLimit, setCreditLimit] = useState('')
+  const [email, setEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
 
+  // A customer is a CRM record first. Credit is granted afterwards from the
+  // profile, because it needs a manager's PIN.
   const create = useMutation({
     mutationFn: () =>
-      createCustomer({ name, phone: phone || null, credit_limit: creditLimit || null }),
+      createCustomer({ name, phone: phone || null, email: email || null }),
     onSuccess: onDone,
     onError: (err) =>
       setError(err instanceof ApiError ? err.message : 'Could not save — try again.'),
@@ -277,9 +304,12 @@ function NewCustomerModal({ onDone, onClose }: { onDone: () => void; onClose: ()
         <label className="field"><span>Phone</span>
           <input value={phone} onChange={(e) => setPhone(e.target.value)} />
         </label>
-        <label className="field"><span>Credit limit (QAR — empty = no credit)</span>
-          <input inputMode="decimal" placeholder="2000.00" value={creditLimit} onChange={(e) => setCreditLimit(e.target.value)} />
+        <label className="field"><span>Email</span>
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         </label>
+        <p className="muted tiny">
+          Credit is granted from the customer's profile — it needs a manager PIN.
+        </p>
         {error && <div className="cust-error">{error}</div>}
         <div className="cust-new-actions">
           <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>

@@ -1,9 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Big from 'big.js'
-import { listCategories, listProducts } from '../../api/catalog'
-import type { Product } from '../../api/catalog'
 import {
   addOrderItems,
   assignTable,
@@ -18,10 +16,9 @@ import {
 import type { Order, OrderItem } from '../../api/orders'
 import { listStores } from '../../api/org'
 import { api, ApiError } from '../../api/client'
+import { AddItemsModal } from '../../components/AddItemsModal'
 import { ApprovalPinModal } from '../../components/ApprovalPinModal'
 import { KitchenTicketPrint } from '../../components/KitchenTicketPrint'
-import { OptionPicker } from '../../components/OptionPicker'
-import { resolveUnitPrice } from '../../lib/pricing'
 import { fmt, fmtQAR } from '../../lib/money'
 import './tab.css'
 
@@ -262,121 +259,6 @@ export function TabPage() {
           error={pinError}
           onSubmit={(pin) => removeItem.mutate({ itemId: pullingItem, pin })}
           onClose={() => setPullingItem(null)}
-        />
-      )}
-    </div>
-  )
-}
-
-function AddItemsModal({
-  onAdd,
-  onClose,
-}: {
-  onAdd: (items: { product_id: string; quantity: string; option_ids?: string[] }[]) => Promise<void>
-  onClose: () => void
-}) {
-  const [categoryId, setCategoryId] = useState<string | null>(null)
-  const [search, setSearch] = useState('')
-  const [picked, setPicked] = useState<
-    Map<string, { product_id: string; name: string; qty: number; option_ids: string[]; labels: string[] }>
-  >(new Map())
-  const [pickingOptions, setPickingOptions] = useState<Product | null>(null)
-  const [busy, setBusy] = useState(false)
-
-  function addPick(p: Product, optionIds: string[], labels: string[]) {
-    const key = [p.id, ...optionIds].join('|')
-    setPicked((prev) => {
-      const next = new Map(prev)
-      const existing = next.get(key)
-      next.set(key, {
-        product_id: p.id,
-        name: p.name,
-        qty: (existing?.qty ?? 0) + 1,
-        option_ids: optionIds,
-        labels,
-      })
-      return next
-    })
-  }
-
-  const categoriesQuery = useQuery({ queryKey: ['categories'], queryFn: listCategories })
-  const productsQuery = useQuery({
-    queryKey: ['products', { search, categoryId, showInactive: false }],
-    queryFn: () => listProducts({ search: search || undefined, category_id: categoryId ?? undefined }),
-  })
-
-  const count = useMemo(() => [...picked.values()].reduce((a, p) => a + p.qty, 0), [picked])
-
-  return (
-    <div className="tab-additems" role="dialog" aria-modal="true">
-      <div className="card tab-additems-card">
-        <div className="tab-additems-head">
-          <h3>Add round</h3>
-          <input placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
-          <button type="button" className="btn-secondary" onClick={onClose}>✕</button>
-        </div>
-        <div className="register-tabs">
-          <button type="button" className={categoryId === null ? 'chip active' : 'chip'} onClick={() => setCategoryId(null)}>All</button>
-          {categoriesQuery.data?.data.map((c) => (
-            <button key={c.id} type="button" className={categoryId === c.id ? 'chip active' : 'chip'} onClick={() => setCategoryId(c.id)}>
-              {c.name}
-            </button>
-          ))}
-        </div>
-        <div className="tab-additems-grid">
-          {productsQuery.data?.data.map((p) => {
-            const qty = [...picked.values()]
-              .filter((x) => x.product_id === p.id)
-              .reduce((a, x) => a + x.qty, 0)
-            const price = resolveUnitPrice(p, 'store').price
-            return (
-              <button
-                key={p.id}
-                type="button"
-                className={qty > 0 ? 'tile picked' : 'tile'}
-                onClick={() => {
-                  if (p.option_groups.length) setPickingOptions(p)
-                  else addPick(p, [], [])
-                }}
-              >
-                <span className="tile-name">{p.name}</span>
-                <span className="tile-price">QAR {fmt(price)}</span>
-                {qty > 0 && <span className="tile-qty">×{qty}</span>}
-              </button>
-            )
-          })}
-        </div>
-        <button
-          type="button"
-          className="btn-primary"
-          disabled={count === 0 || busy}
-          onClick={async () => {
-            setBusy(true)
-            await onAdd(
-              [...picked.values()].map((p) => ({
-                product_id: p.product_id,
-                quantity: String(p.qty),
-                option_ids: p.option_ids,
-              })),
-            )
-            setBusy(false)
-          }}
-        >
-          {busy ? 'Adding…' : `Add ${count} item${count === 1 ? '' : 's'} to tab`}
-        </button>
-      </div>
-      {pickingOptions && (
-        <OptionPicker
-          product={pickingOptions}
-          onAdd={(selections) => {
-            addPick(
-              pickingOptions,
-              selections.map((s) => s.choice_id),
-              selections.map((s) => s.label),
-            )
-            setPickingOptions(null)
-          }}
-          onClose={() => setPickingOptions(null)}
         />
       )}
     </div>

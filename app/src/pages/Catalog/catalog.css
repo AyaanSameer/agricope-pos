@@ -530,3 +530,17 @@
 }
 .editor-actions { display: flex; gap: 12px; flex: none; }
 .editor-actions button { padding: 0 20px; height: 48px; }
+
+/* Phase 15: the online discount panel mirrors the in-store one */
+.offer-copy {
+  align-self: flex-start;
+  background: transparent;
+  color: var(--forest);
+  font-size: 12px;
+  font-weight: 500;
+  min-height: 36px;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.cat-offers { display: flex; flex-direction: column; gap: 3px; align-items: flex-start; }

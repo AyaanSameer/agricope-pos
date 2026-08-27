@@ -229,7 +229,8 @@ export interface DbProduct {
   price_online: string | null // online-channel price; null = same as in-store
   tax_rate: string // % — Qatar has no VAT today, tenants elsewhere will
   is_combo: boolean
-  offer: ProductOffer | null // time-bound product discount
+  offer: ProductOffer | null // time-bound IN-STORE discount
+  offer_online: ProductOffer | null // time-bound ONLINE discount (independent)
   option_groups: DbOptionGroup[] // customisable options (e.g. Spicy)
   kitchen_station_id: string | null
   is_active: boolean
@@ -279,6 +280,7 @@ function demoProduct(
     tax_rate: '0',
     is_combo: false,
     offer: null,
+    offer_online: null,
     option_groups: [],
     kitchen_station_id: p.kitchen_station_id,
     is_active: p.is_active,
@@ -316,6 +318,9 @@ export const products: DbProduct[] = [
     is_combo: d.is_combo,
     // The files ship live discounts; open a 30-day window so the till shows them.
     offer: d.offer_percent ? { percent: d.offer_percent, starts_at: null, ends_at: inDays(30) } : null,
+    offer_online: d.offer_percent
+      ? { percent: d.offer_percent, starts_at: null, ends_at: inDays(30) }
+      : null,
     option_groups: d.flavors
       ? [
           {
@@ -355,6 +360,7 @@ export function toPublicProduct(p: DbProduct) {
     tax_rate: p.tax_rate,
     is_combo: p.is_combo,
     offer: p.offer,
+    offer_online: p.offer_online,
     option_groups: p.option_groups,
     kitchen_station_id: p.kitchen_station_id,
     station_name: stationName(p.kitchen_station_id),

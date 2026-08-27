@@ -39,6 +39,9 @@ export interface Order {
   cashier_name: string
   customer_id: string | null
   customer_name: string | null
+  /** null = this customer has no credit facility yet */
+  customer_credit_limit: string | null
+  customer_balance: string | null
   table_id: string | null
   table_name: string | null
   guest_count: number | null

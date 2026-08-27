@@ -358,6 +358,12 @@ export function toPublicOrder(o: DbOrder) {
     cashier_name: userName(o.cashier_id),
     customer_id: o.customer_id,
     customer_name: o.customer_id ? (customers.find((c) => c.id === o.customer_id)?.name ?? null) : null,
+    // Credit standing travels with the order so the charge screen can decide
+    // whether "Credit" is even offerable without a second round-trip.
+    customer_credit_limit: o.customer_id
+      ? (customers.find((c) => c.id === o.customer_id)?.credit_limit ?? null)
+      : null,
+    customer_balance: o.customer_id ? customerBalance(o.customer_id) : null,
     table_id: o.table_id,
     table_name: tableName(o.table_id),
     guest_count: o.guest_count,

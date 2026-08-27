@@ -37,8 +37,10 @@ export interface Product {
   price_online: string | null
   tax_rate: string
   is_combo: boolean
-  /** time-bound product discount */
+  /** time-bound in-store discount */
   offer: ProductOffer | null
+  /** time-bound online discount — independent of the in-store one */
+  offer_online: ProductOffer | null
   /** customisable options, e.g. Flavor: Normal/Spicy/Mix */
   option_groups: OptionGroup[]
   kitchen_station_id: string | null
@@ -88,6 +90,7 @@ export interface ProductInput {
   tax_rate: string
   is_combo?: boolean
   offer?: ProductOffer | null
+  offer_online?: ProductOffer | null
   option_groups?: OptionGroup[]
   kitchen_station_id: string | null
   is_active?: boolean

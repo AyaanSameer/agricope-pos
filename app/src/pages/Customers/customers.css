@@ -95,3 +95,15 @@
 .cust-repay-methods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .cust-error { background: var(--cta-tint); color: var(--cta); border-radius: var(--radius); padding: 10px 12px; font-weight: 500; }
 .cust-new-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* Phase 15: grant or change credit from the profile (manager PIN) */
+.stat-act {
+  align-self: flex-start;
+  background: transparent;
+  color: var(--forest);
+  font-weight: 500;
+  font-size: 12px;
+  min-height: 32px;
+  padding: 0;
+  text-decoration: underline;
+}

@@ -314,6 +314,8 @@ export const handlers = [
     if (optionGroups instanceof Response) return optionGroups
     const offer = parseOffer(body.offer)
     if (offer instanceof Response) return offer
+    const offerOnline = parseOffer(body.offer_online)
+    if (offerOnline instanceof Response) return offerOnline
     const categoryIds = Array.isArray(body.category_ids)
       ? body.category_ids
       : body.category_id
@@ -332,6 +334,7 @@ export const handlers = [
       tax_rate: String(body.tax_rate ?? '0'),
       is_combo: body.is_combo ?? false,
       offer,
+      offer_online: offerOnline,
       option_groups: optionGroups,
       kitchen_station_id: body.kitchen_station_id ?? null,
       is_active: body.is_active ?? true,
@@ -367,6 +370,11 @@ export const handlers = [
       const parsed = parseOptionGroups(body.option_groups)
       if (parsed instanceof Response) return parsed
       product.option_groups = parsed
+    }
+    if (body.offer_online !== undefined) {
+      const parsedOnline = parseOffer(body.offer_online)
+      if (parsedOnline instanceof Response) return parsedOnline
+      product.offer_online = parsedOnline
     }
     if (body.offer !== undefined) {
       const parsed = parseOffer(body.offer)

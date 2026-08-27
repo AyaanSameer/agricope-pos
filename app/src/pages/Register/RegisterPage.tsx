@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { listCategories, listProducts } from '../../api/catalog'
 import type { Product } from '../../api/catalog'
 import { createOrder } from '../../api/orders'
@@ -11,7 +11,7 @@ import { Logomark } from '../../components/Logomark'
 import { CustomerPicker } from '../../components/CustomerPicker'
 import { OptionPicker } from '../../components/OptionPicker'
 import { fmt, fmtQAR } from '../../lib/money'
-import { resolveUnitPrice } from '../../lib/pricing'
+import { offerFor, resolveUnitPrice } from '../../lib/pricing'
 import { useBarcodeScanner } from '../../lib/useBarcodeScanner'
 import './register.css'
 
@@ -21,6 +21,7 @@ export function RegisterPage() {
   const { session, activeStore } = useAuth()
   const cart = useCart()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [categoryId, setCategoryId] = useState<string | null>(null)
   const [pickingCustomer, setPickingCustomer] = useState(false)
@@ -57,6 +58,9 @@ export function RegisterPage() {
       }),
     onSuccess: (order) => {
       cart.clear()
+      // The new order must show up on Orders and the floor straight away.
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+      queryClient.invalidateQueries({ queryKey: ['floor'] })
       // Dine-in orders open as a tab: the guest orders first, a table is
       // optional and can be assigned there; counter/takeaway/online pay now.
       navigate(order.order_type === 'dine_in' ? `/tab/${order.id}` : `/charge/${order.id}`)
@@ -108,8 +112,18 @@ export function RegisterPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+          <div className="register-jump">
+            {isRestaurant && (
+              <Link to="/floor" className="register-jump-btn">
+                Tables
+              </Link>
+            )}
+            <Link to="/orders" className="register-jump-btn">
+              Orders
+            </Link>
+          </div>
           <div className="register-seg">
-            {(['counter', 'dine_in', 'takeaway', 'delivery'] as const)
+            {(['dine_in', 'takeaway', 'delivery'] as const)
               .filter((t) => t !== 'dine_in' || isRestaurant)
               .map((t) => (
                 <button
@@ -118,13 +132,7 @@ export function RegisterPage() {
                   className={cart.orderType === t ? 'seg-btn active' : 'seg-btn'}
                   onClick={() => cart.setOrderType(t)}
                 >
-                  {t === 'counter'
-                    ? 'Counter'
-                    : t === 'dine_in'
-                      ? 'Dine-in'
-                      : t === 'takeaway'
-                        ? 'Takeaway'
-                        : 'Online'}
+                  {t === 'dine_in' ? 'Dine-in' : t === 'takeaway' ? 'Takeaway' : 'Online'}
                 </button>
               ))}
           </div>
@@ -153,14 +161,17 @@ export function RegisterPage() {
         <div className="register-grid">
           {productsQuery.isPending && <div className="register-note">Loading products…</div>}
           {productsQuery.data?.data.map((p) => {
-            const resolved = resolveUnitPrice(p, cart.orderType === 'delivery' ? 'online' : 'store')
+            const channel = cart.orderType === 'delivery' ? 'online' : 'store'
+            const resolved = resolveUnitPrice(p, channel)
+            // Show the percent for THIS channel — store and online can differ.
+            const channelOffer = offerFor(p, channel)
             return (
               <button key={p.id} type="button" className="tile" onClick={() => ring(p)}>
                 <span className="tile-cat">
                   <span className="tile-dot" style={{ background: dotFor(p.category_id) }} />
                   {p.category_name ?? 'Uncategorised'}
-                  {resolved.offer_applied && p.offer && (
-                    <span className="tile-offer">−{p.offer.percent}%</span>
+                  {resolved.offer_applied && channelOffer && (
+                    <span className="tile-offer">−{channelOffer.percent}%</span>
                   )}
                 </span>
                 <span className="tile-name">{p.name}</span>
@@ -192,7 +203,7 @@ export function RegisterPage() {
               <span className="cart-customer-hint">tap to change</span>
             </>
           ) : (
-            <span className="cart-customer-hint">+ Add customer (needed for credit)</span>
+            <span className="cart-customer-hint">+ Add customer</span>
           )}
         </button>
 

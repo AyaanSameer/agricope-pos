@@ -40,6 +40,7 @@ through Swagger PRs, never just chat.
 | `VALIDATION_ERROR` | 400 | Phase 1 |
 | `NOT_FOUND` | 404 | Phase 1 |
 | `CUSTOMER_REQUIRED` | 400 | Phase 5 (credit without a customer) |
+| `APPROVAL_REQUIRED` (credit limit) | 403 | Phase 15 — `POST /customers` with a limit, and `PATCH /customers/:id` changing `credit_limit`, both need `X-Approval-Pin` |
 | `CREDIT_LIMIT_EXCEEDED` | 403 | Phase 5 |
 | `NO_OPEN_SHIFT` | 409 | Phase 6 (cash sales, refunds & repayments) |
 | `SHIFT_ALREADY_OPEN` | 409 | Phase 6 (one open shift per store) |
@@ -137,6 +138,22 @@ reporting), `barcode`, `price` (in-store, incl. tax), `price_online` (null = sam
 `option_groups[]` (`{ name, required, choices: [{ name, price_delta }] }` — e.g.
 Flavor: Normal/Spicy/Mix), `kitchen_station_id`, `is_active`. Order items snapshot the
 resolved unit price and the chosen option labels; `option_ids` go up, labels come back.
+
+## Phase 15 contract changes
+- **Products carry two independent discounts.** `offer` is the in-store discount;
+  `offer_online` is the online one. Each has its own `{percent, starts_at, ends_at}`
+  window. A channel with no offer object runs no discount — an in-store promo never
+  leaks online. `resolveUnitPrice(product, channel)` is still the only place a sell
+  price is computed.
+- **Credit limits are approval-gated.** Setting or changing `customers.credit_limit`
+  requires `X-Approval-Pin` belonging to an active manager/owner of the same business;
+  without it the API answers `403 APPROVAL_REQUIRED`. Contact edits (name, phone,
+  email, notes) stay unrestricted — customers are CRM records first.
+- **Orders expose the attached customer's credit standing** so the charge screen can
+  decide whether credit is offerable without a second call: `customer_credit_limit`
+  (null = no facility) and `customer_balance`.
+- `order_type` still accepts `counter` for historical rows, but the register no longer
+  offers it — new orders are `dine_in`, `takeaway` or `delivery`.
 
 ## Open questions for the next contract sync
 1. How does an order-level discount apportion across lines for per-line tax?

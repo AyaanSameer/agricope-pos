@@ -8,6 +8,7 @@ import { ApiError } from '../../api/client'
 import { MoneyPad } from '../../components/MoneyPad'
 import { CustomerPicker } from '../../components/CustomerPicker'
 import { DiscountModal } from '../../components/DiscountModal'
+import { CreditLimitModal } from '../../components/CreditLimitModal'
 import { fmt, fmtQAR } from '../../lib/money'
 import './charge.css'
 
@@ -28,6 +29,7 @@ export function ChargePage() {
   const [error, setError] = useState<string | null>(null)
   const [pickingCustomer, setPickingCustomer] = useState(false)
   const [discounting, setDiscounting] = useState(false)
+  const [settingLimit, setSettingLimit] = useState(false)
 
   const orderQuery = useQuery({
     queryKey: ['order', id],
@@ -162,7 +164,7 @@ export function ChargePage() {
           <span>{fmtQAR(order.amount_due)}</span>
         </div>
         <button type="button" className="charge-cust" onClick={() => setPickingCustomer(true)}>
-          {order.customer_name ? `Customer: ${order.customer_name}` : '+ Attach customer (for credit)'}
+          {order.customer_name ? `Customer: ${order.customer_name}` : '+ Attach customer'}
         </button>
         <button
           type="button"
@@ -193,6 +195,41 @@ export function ChargePage() {
             </button>
           ))}
         </div>
+
+        {method === 'credit' && (
+          <div className="charge-credit">
+            {!order.customer_id ? (
+              <>
+                <span>Credit needs a customer on the order.</span>
+                <button type="button" className="charge-credit-act" onClick={() => setPickingCustomer(true)}>
+                  Attach customer
+                </button>
+              </>
+            ) : order.customer_credit_limit === null ? (
+              <>
+                <span>{order.customer_name} has no credit facility.</span>
+                <button type="button" className="charge-credit-act" onClick={() => setSettingLimit(true)}>
+                  Give credit…
+                </button>
+              </>
+            ) : (
+              <>
+                <span>
+                  Limit {fmtQAR(order.customer_credit_limit)} · owes{' '}
+                  {fmtQAR(order.customer_balance ?? '0')} · available{' '}
+                  {fmtQAR(
+                    new Big(order.customer_credit_limit)
+                      .minus(order.customer_balance ?? '0')
+                      .toFixed(2),
+                  )}
+                </span>
+                <button type="button" className="charge-credit-act" onClick={() => setSettingLimit(true)}>
+                  Raise limit…
+                </button>
+              </>
+            )}
+          </div>
+        )}
 
         <div className="charge-amount">
           <span>{method === 'cash' ? 'Tendered' : 'Amount'}</span>
@@ -227,7 +264,20 @@ export function ChargePage() {
 
         <MoneyPad onKey={onKey} disabled={pay.isPending} />
 
-        {error && <div className="charge-error">{error}</div>}
+        {error && (
+          <div className="charge-error">
+            {error}
+            {method === 'credit' && order.customer_id && (
+              <button
+                type="button"
+                className="charge-credit-act"
+                onClick={() => setSettingLimit(true)}
+              >
+                Raise the limit…
+              </button>
+            )}
+          </div>
+        )}
 
         <button
           type="button"
@@ -249,6 +299,23 @@ export function ChargePage() {
       </div>
 
       {discounting && <DiscountModal order={order} onClose={() => setDiscounting(false)} />}
+
+      {settingLimit && order.customer_id && (
+        <CreditLimitModal
+          customerId={order.customer_id}
+          customerName={order.customer_name ?? 'this customer'}
+          currentLimit={order.customer_credit_limit}
+          balance={order.customer_balance ?? '0.00'}
+          suggested={order.amount_due}
+          onDone={() => {
+            setSettingLimit(false)
+            setError(null)
+            queryClient.invalidateQueries({ queryKey: ['order', id] })
+            queryClient.invalidateQueries({ queryKey: ['customers'] })
+          }}
+          onClose={() => setSettingLimit(false)}
+        />
+      )}
       {pickingCustomer && (
         <CustomerPicker
           onPick={(c) => {

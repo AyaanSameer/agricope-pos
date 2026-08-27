@@ -136,3 +136,27 @@
   border-radius: var(--radius);
   text-decoration: none;
 }
+
+/* Phase 15: credit standing, shown where the decision is made */
+.charge-credit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: var(--gold-tint);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #7a5a00;
+}
+.charge-credit-act {
+  background: transparent;
+  color: var(--forest);
+  font-weight: 600;
+  font-size: 13px;
+  min-height: 36px;
+  padding: 0;
+  text-decoration: underline;
+  margin-left: auto;
+}
+.charge-error .charge-credit-act { color: var(--cta); margin-left: 10px; }

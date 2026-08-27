@@ -1,0 +1,42 @@
+/* Credit-limit modal — opened mid-charge, authorised by PIN */
+.climit {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 61, 43, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 45;
+  padding: 24px;
+}
+.climit-card {
+  width: 100%;
+  max-width: 380px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+.climit-sub { color: var(--ink-3); font-size: 13px; margin: 0; line-height: 1.5; }
+.climit-amount {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--surface-warm);
+  border: 1.5px solid var(--forest);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+.climit-amount span { color: var(--ink-3); font-size: 13px; }
+.climit-amount strong { font-family: var(--font-head); font-size: 22px; }
+.climit-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.climit-warn {
+  background: var(--gold-tint);
+  color: #7a5a00;
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 500;
+}

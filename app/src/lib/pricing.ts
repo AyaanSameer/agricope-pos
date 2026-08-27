@@ -22,7 +22,16 @@ export interface ProductOffer {
 export interface PricedProduct {
   price: string
   price_online: string | null
+  /** in-store discount */
   offer: ProductOffer | null
+  /** online-channel discount; independent of the in-store one */
+  offer_online?: ProductOffer | null
+}
+
+/** The discount that applies on this channel. Channels are independent:
+ *  an in-store promo does not leak online, and vice versa. */
+export function offerFor(p: PricedProduct, channel: Channel): ProductOffer | null {
+  return channel === 'online' ? (p.offer_online ?? null) : (p.offer ?? null)
 }
 
 export function offerActive(offer: ProductOffer | null, now: Date = new Date()): boolean {
@@ -49,10 +58,11 @@ export function resolveUnitPrice(
   now: Date = new Date(),
 ): ResolvedPrice {
   const base = channel === 'online' && p.price_online !== null ? p.price_online : p.price
-  if (!offerActive(p.offer, now)) {
+  const offer = offerFor(p, channel)
+  if (!offerActive(offer, now)) {
     return { price: new Big(base).toFixed(2), original: new Big(base).toFixed(2), offer_applied: false }
   }
-  const discounted = new Big(base).times(new Big(100).minus(p.offer!.percent)).div(100)
+  const discounted = new Big(base).times(new Big(100).minus(offer!.percent)).div(100)
   return { price: discounted.toFixed(2), original: new Big(base).toFixed(2), offer_applied: true }
 }
 
