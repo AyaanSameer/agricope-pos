@@ -4,6 +4,11 @@ Multi-tenant point of sale for shops and restaurants. React SPA per till; talks 
 Node.js REST API (separate repo). See `agricope-pos-system-design.md` in `mockups/` for the full
 system design, and `CONVENTIONS.md` for the API contract ground rules.
 
+## Documents
+- `SYSTEM-DESIGN.md` — how the whole system works: roles, every screen, the money rules and
+  the visual language. Attach this when doing design work.
+- `CONVENTIONS.md` — the API contract: money as strings, error codes, the totals formula.
+
 ## Repo layout
 - `app/` — the React application (Vite + TypeScript)
 - `mockups/` — static HTML design mockups (reference only)
