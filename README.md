@@ -5,8 +5,11 @@ Node.js REST API (separate repo). See `agricope-pos-system-design.md` in `mockup
 system design, and `CONVENTIONS.md` for the API contract ground rules.
 
 ## Documents
-- `SYSTEM-DESIGN.md` — how the whole system works: roles, every screen, the money rules and
-  the visual language. Attach this when doing design work.
+- `AGRICOPE-DESIGN-SPEC.md` — **the complete specification**: all 18 screens and 19 overlays,
+  every control, the rules that constrain them, and the visual language. Attach this for design
+  work.
+- `SYSTEM-DESIGN.md` — the shorter narrative overview (superseded by the spec above for
+  screen-level detail).
 - `CONVENTIONS.md` — the API contract: money as strings, error codes, the totals formula.
 
 ## Repo layout
