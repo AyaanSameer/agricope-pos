@@ -110,7 +110,7 @@ export function ChargePage() {
           </div>
         )}
         <div className="charge-done-actions">
-          <Link className="btn-primary charge-newsale" to="/">New sale</Link>
+          <Link className="btn-primary charge-newsale" to="/register">New sale</Link>
           <Link className="btn-secondary charge-receipt" to={`/receipt/${order.id}`}>
             Receipt
           </Link>
@@ -181,7 +181,7 @@ export function ChargePage() {
       <div className="charge-pay card">
         <div className="charge-pay-head">
           <h3>Take payment</h3>
-          <button type="button" className="charge-back" onClick={() => navigate('/')}>✕</button>
+          <button type="button" className="charge-back" onClick={() => navigate("/register")}>✕</button>
         </div>
         <div className="charge-methods">
           {METHODS.map((m) => (

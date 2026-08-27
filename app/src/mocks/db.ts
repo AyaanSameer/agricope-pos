@@ -105,6 +105,8 @@ export const users: DbUser[] = [
   { id: 'u-ds-owner', name: 'Yousuf Al-Mannai', email: 'yousuf@drumsticks.qa', role: 'owner', business_id: 'b-drumsticks', store_id: null, pin: '1111', is_active: true },
   { id: 'u-ds-manager', name: 'Imran Patel', email: 'imran@drumsticks.qa', role: 'manager', business_id: 'b-drumsticks', store_id: 's-drumsticks', pin: '2222', is_active: true },
   { id: 'u-ds-cashier', name: 'Rhea Santos', email: 'rhea@drumsticks.qa', role: 'cashier', business_id: 'b-drumsticks', store_id: 's-drumsticks', pin: '3333', is_active: true },
+  // Waiters work the floor: tables, register and orders, but no drawer and no back office.
+  { id: 'u-ds-waiter', name: 'Aisha Karim', email: 'aisha@drumsticks.qa', role: 'waiter', business_id: 'b-drumsticks', store_id: 's-drumsticks', pin: '4444', is_active: true },
 ]
 
 export function storeName(store_id: string | null): string | null {

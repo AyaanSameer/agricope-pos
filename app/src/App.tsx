@@ -2,6 +2,9 @@ import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { useAuth } from './auth/AuthContext'
 import { AppShell } from './components/AppShell'
+import { HubPage } from './pages/Hub/HubPage'
+import { TooSmallPage } from './pages/TooSmall/TooSmallPage'
+import { useDevice } from './lib/useDevice'
 import { LoginPage } from './pages/Login/LoginPage'
 import { RegisterPage } from './pages/Register/RegisterPage'
 import { PickStorePage } from './pages/PickStore/PickStorePage'
@@ -46,6 +49,14 @@ function RequireAdmin() {
   return <Outlet />
 }
 
+
+/** Kitchen and Catalog need a canvas — a phone gets told so instead. */
+function RequireCanvas({ screen, children }: { screen: string; children: ReactNode }) {
+  const { phone } = useDevice()
+  if (phone) return <TooSmallPage screen={screen} />
+  return children
+}
+
 /** Server-side checks are the real security — this only keeps screens out of the wrong hands. */
 function RequireRole({ roles, children }: { roles: Role[]; children: ReactNode }) {
   const { session } = useAuth()
@@ -66,7 +77,8 @@ export default function App() {
       </Route>
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
-          <Route path="/" element={<RegisterPage />} />
+          <Route path="/" element={<HubPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route path="/charge/:id" element={<ChargePage />} />
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/receipt/:id" element={<ReceiptPage />} />
@@ -74,7 +86,14 @@ export default function App() {
           <Route path="/shifts" element={<ShiftsPage />} />
           <Route path="/floor" element={<FloorPage />} />
           <Route path="/tab/:id" element={<TabPage />} />
-          <Route path="/kds" element={<KdsPage />} />
+          <Route
+            path="/kds"
+            element={
+              <RequireCanvas screen="Kitchen">
+                <KdsPage />
+              </RequireCanvas>
+            }
+          />
           <Route
             path="/reports"
             element={
@@ -87,7 +106,9 @@ export default function App() {
             path="/catalog"
             element={
               <RequireRole roles={['owner', 'manager']}>
-                <CatalogPage />
+                <RequireCanvas screen="Catalog">
+                  <CatalogPage />
+                </RequireCanvas>
               </RequireRole>
             }
           />

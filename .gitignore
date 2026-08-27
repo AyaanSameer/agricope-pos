@@ -3,3 +3,6 @@ dist/
 .DS_Store
 *.local
 .env
+
+# Design and build archives are shared out of band, not versioned
+*.zip

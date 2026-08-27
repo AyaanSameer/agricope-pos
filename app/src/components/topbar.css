@@ -1,0 +1,75 @@
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: var(--top-h);
+  flex: none;
+  padding: 0 var(--pad);
+  background: var(--forest);
+  color: #fff;
+}
+
+.topbar-mark { display: flex; align-items: center; }
+
+.topbar-back {
+  width: 42px;
+  height: 42px;
+  min-height: 42px;
+  flex: none;
+  padding: 0;
+  border-radius: 10px;
+  background: var(--forest-tint);
+  color: #fff;
+  font-size: 20px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+}
+.topbar-back:hover { background: var(--forest-hover); }
+
+.topbar-titles { flex: 1; min-width: 0; }
+.topbar-h1 {
+  margin: 0;
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: var(--top-fs);
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.topbar-sub {
+  font-size: calc(11.5px * var(--fs));
+  color: var(--leaf-pale);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar-pin {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  min-height: 42px;
+  flex: none;
+  padding: 0 14px 0 6px;
+  border-radius: 10px;
+  background: var(--forest-tint);
+  color: #fff;
+}
+.topbar-pin:hover { background: var(--forest-hover); }
+.topbar-avatar {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 99px;
+  background: var(--leaf);
+  color: var(--leaf-ink);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-head);
+  font-size: 12px;
+  font-weight: 600;
+}
+.topbar-pin-label { font-size: 12px; font-weight: 500; }

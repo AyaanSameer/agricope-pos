@@ -42,7 +42,7 @@
 
 .register-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(var(--tile-min), 1fr));
   gap: 12px;
 }
 
@@ -80,14 +80,21 @@
 .register-footnote { font-size: 12px; color: var(--hint); }
 
 /* Phase 3: cart panel */
+/* Roomy: product grid scrolls, the cart is a flush full-height column. */
 .register-split {
+  flex: 1;
+  min-height: 0;
   display: flex;
-  gap: 16px;
-  width: 100%;
   align-items: stretch;
-  min-height: calc(100vh - 48px);
+  width: 100%;
 }
-.register-split .register { flex: 1; min-width: 0; }
+.register-split .register {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--pad);
+}
 
 .register-seg {
   display: flex;
@@ -107,15 +114,16 @@
 .seg-btn.active { background: var(--surface); color: var(--ink); }
 
 .cart {
-  flex: 0 0 330px;
+  flex: 0 0 var(--cart-w);
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  border-radius: 0;
+  padding: 20px 18px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 18px;
-  position: sticky;
-  top: 24px;
-  align-self: flex-start;
-  max-height: calc(100vh - 48px);
 }
 .cart-head { display: flex; align-items: center; justify-content: space-between; }
 .cart-head h3 { font-size: 17px; }
@@ -206,3 +214,57 @@
   white-space: nowrap;
 }
 .register-jump-btn:active { background: var(--success-tint); }
+
+
+/* ---- Dense: bill bar docks, cart rises as a sheet ----------------------- */
+@media (max-width: 1023px) {
+  .register-split { flex-direction: column; }
+  .register-split .register { padding-bottom: 8px; }
+
+  .cart-scrim {
+    position: fixed;
+    inset: 0;
+    background: var(--scrim-sheet);
+    z-index: 45;
+    animation: agFade 0.16s ease-out;
+  }
+  .cart.cart-sheet { display: none; }
+  .cart.cart-sheet.open {
+    display: flex;
+    position: fixed;
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 46;
+    flex: none;
+    max-height: 92dvh;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.2);
+    animation: agSheet 0.2s ease-out;
+  }
+
+  .bill-bar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px var(--pad);
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+  .bill-bar-total { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .bill-bar-total span { font-size: calc(10.5px * var(--fs)); color: var(--ink-3); }
+  .bill-bar-total strong {
+    font-family: var(--font-head);
+    font-size: calc(17px * var(--fs));
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .bill-bar-review { flex: none; height: 44px; min-height: 44px; padding: 0 16px; }
+}
+
+@keyframes agFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes agSheet { from { transform: translateY(100%); } to { transform: translateY(0); } }

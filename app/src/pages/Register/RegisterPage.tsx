@@ -8,6 +8,7 @@ import { listStores } from '../../api/org'
 import { useAuth } from '../../auth/AuthContext'
 import { useCart } from '../../cart/CartContext'
 import { Logomark } from '../../components/Logomark'
+import { useDevice } from '../../lib/useDevice'
 import { CustomerPicker } from '../../components/CustomerPicker'
 import { OptionPicker } from '../../components/OptionPicker'
 import { fmt, fmtQAR } from '../../lib/money'
@@ -25,6 +26,8 @@ export function RegisterPage() {
   const [search, setSearch] = useState('')
   const [categoryId, setCategoryId] = useState<string | null>(null)
   const [pickingCustomer, setPickingCustomer] = useState(false)
+  const { dense } = useDevice()
+  const [cartOpen, setCartOpen] = useState(false)
   const [pickingOptions, setPickingOptions] = useState<Product | null>(null)
   const [chargeError, setChargeError] = useState<string | null>(null)
 
@@ -92,7 +95,7 @@ export function RegisterPage() {
   if (!activeStore) {
     return (
       <div className="register-empty card">
-        <Logomark size={56} variant="two-tone" />
+        <Logomark height={56} tone="colour" />
         <h2>Pick a store to open a till</h2>
         <p>You work across all stores — the register always belongs to one.</p>
         <Link to="/pick-store" className="btn-primary register-pick">
@@ -190,7 +193,11 @@ export function RegisterPage() {
         </div>
       </div>
 
-      <aside className="cart card">
+      {dense && cartOpen && (
+        <div className="cart-scrim" onClick={() => setCartOpen(false)} aria-hidden="true" />
+      )}
+
+      <aside className={dense ? (cartOpen ? 'cart cart-sheet open' : 'cart cart-sheet') : 'cart'}>
         <div className="cart-head">
           <h3>Current sale</h3>
           <span className="cart-store">{activeStore.name}</span>
@@ -265,6 +272,27 @@ export function RegisterPage() {
           Clear sale
         </button>
       </aside>
+
+      {/* Dense: the bill docks at the bottom and opens the cart as a sheet. */}
+      {dense && !cartOpen && (
+        <div className="bill-bar">
+          <div className="bill-bar-total">
+            <span>
+              {cart.lines.length} item{cart.lines.length === 1 ? '' : 's'} ·{' '}
+              {cart.orderType === 'dine_in' ? 'Dine-in' : cart.orderType === 'takeaway' ? 'Takeaway' : 'Online'}
+            </span>
+            <strong>{fmtQAR(cart.totals.total)}</strong>
+          </div>
+          <button
+            type="button"
+            className="btn-primary bill-bar-review"
+            disabled={cart.lines.length === 0}
+            onClick={() => setCartOpen(true)}
+          >
+            Review sale ›
+          </button>
+        </div>
+      )}
 
       {pickingOptions && (
         <OptionPicker

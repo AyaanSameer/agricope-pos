@@ -1,6 +1,6 @@
 .cust-add { padding: 0 20px; }
 .cust-body { display: flex; gap: 16px; align-items: flex-start; }
-.cust-list { flex: 0 0 280px; display: flex; flex-direction: column; gap: 8px; }
+.cust-list { flex: 0 0 var(--cust-list-w); display: flex; flex-direction: column; gap: 8px; }
 .cust-row {
   background: var(--surface);
   border: 1px solid var(--border);

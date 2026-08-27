@@ -116,6 +116,13 @@ statement · repayments · balances — Shifts: open · current · movements ·
 close · report · list — Tables: `/tables/floor` — Kitchen: tickets list ·
 ticket status — Reports: summary · top-items · credit-aging.
 
+## Roles (Phase 15 — `waiter` is new, mirror in Swagger)
+`owner | manager | cashier | waiter`. A waiter works the floor and nothing else:
+Tables, Register, Orders and Kitchen — no Customers, no Shifts (they never hold the
+drawer) and no back office. Demo PINs stay one digit per role: 1111 owner ·
+2222 manager · 3333 cashier · 4444 waiter. Only the owner may delete a login or
+manage tables; Users and Settings are owner + manager.
+
 ## Reports windows (Phase 14 — new, mirror in Swagger)
 `GET /reports/summary` and `GET /reports/top-items` take `?range=today|7d|month`
 (default `today`), alongside the existing `?store_id=`. A window runs from midnight
