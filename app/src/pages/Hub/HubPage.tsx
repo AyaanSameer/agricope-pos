@@ -177,7 +177,7 @@ export function HubPage() {
         </div>
 
         <div className="hub-footer">
-          <button type="button" className="hub-foot-btn" onClick={() => navigate('/pick-store')}>
+          <button type="button" className="hub-foot-btn" onClick={() => navigate('/pick-store?change=1')}>
             Change branch
           </button>
           <button

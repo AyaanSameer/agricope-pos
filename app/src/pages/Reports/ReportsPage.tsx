@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import Big from 'big.js'
 import { api } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
-import { fmt, fmtQAR } from '../../lib/money'
+import { fmt } from '../../lib/money'
 import './reports.css'
 
 type Range = 'today' | '7d' | 'month'
@@ -31,10 +31,18 @@ interface Summary {
   }
 }
 
+interface AgingRow {
+  customer_id: string
+  name: string
+  balance: string
+  days: number
+  bucket: string
+}
+
 const RANGES: { key: Range; label: string; vs: string; items: string }[] = [
-  { key: 'today', label: 'Today', vs: 'vs yesterday', items: 'today' },
-  { key: '7d', label: '7 days', vs: 'vs previous 7 days', items: 'this week' },
-  { key: 'month', label: 'Month', vs: 'vs previous 30 days', items: 'this month' },
+  { key: 'today', label: 'Today', vs: 'vs yesterday', items: 'Top items' },
+  { key: '7d', label: '7 days', vs: 'vs previous 7 days', items: 'Top items this week' },
+  { key: 'month', label: 'Month', vs: 'vs previous 30 days', items: 'Top items this month' },
 ]
 
 /** Cash carries the structure colour; credit is the one that hurts. */
@@ -45,29 +53,66 @@ const METHODS: { key: string; label: string; color: string }[] = [
   { key: 'credit', label: 'Credit', color: 'var(--cta)' },
 ]
 
-/** Only the genuinely overdue bucket gets colour. */
+/** Colour only the genuinely overdue buckets. */
 const BUCKETS: { key: string; label: string; tone: string }[] = [
-  { key: 'current', label: 'Current', tone: 'ok' },
+  { key: 'current', label: 'Current', tone: 'quiet' },
   { key: '30', label: '30–59 days', tone: 'quiet' },
   { key: '60', label: '60–89 days', tone: 'warn' },
   { key: '90+', label: '90+ days', tone: 'over' },
 ]
 
-/** Percent movement against the previous window — null when there is nothing to compare. */
-function movement(now: string | number, before: string | number | undefined): number | null {
+const ORDER_TYPES: { key: string; label: string }[] = [
+  { key: 'counter', label: 'Counter' },
+  { key: 'dine_in', label: 'Dine-in' },
+  { key: 'takeaway', label: 'Takeaway' },
+  { key: 'delivery', label: 'Online' },
+]
+
+/**
+ * A KPI moves either as a rate or as a count. Money rates read as percentages;
+ * counts and balances read as the actual change, because "+12 orders" says more
+ * than "+5.9%".
+ */
+type Delta = { text: string; up: boolean } | null
+
+function pctDelta(now: string | number, before: string | number | undefined): Delta {
   if (before === undefined) return null
   const prev = new Big(before)
   if (prev.eq(0)) return null
-  return new Big(now).minus(prev).div(prev).times(100).round(1).toNumber()
+  const pct = new Big(now).minus(prev).div(prev).times(100).round(1)
+  const up = pct.gte(0)
+  return { text: `${up ? '+' : '−'}${pct.abs().toFixed(1)}%`, up }
 }
 
-function Delta({ pct, vs }: { pct: number | null; vs: string }) {
-  if (pct === null) return <span className="rp-delta none">no comparison {vs}</span>
-  const up = pct >= 0
+function countDelta(now: number, before: number | undefined): Delta {
+  if (before === undefined) return null
+  const diff = now - before
+  if (diff === 0) return { text: '±0', up: true }
+  return { text: `${diff > 0 ? '+' : '−'}${Math.abs(diff)}`, up: diff > 0 }
+}
+
+function moneyDelta(amount: string): Delta {
+  const v = new Big(amount)
+  if (v.eq(0)) return { text: '±0', up: true }
+  return { text: `${v.gt(0) ? '+' : '−'}${fmt(v.abs().toFixed(2))}`, up: v.gt(0) }
+}
+
+function Kpi({ label, value, delta, vs }: { label: string; value: string; delta: Delta; vs: string }) {
   return (
-    <span className={up ? 'rp-delta up' : 'rp-delta down'}>
-      {up ? '▲' : '▼'} {Math.abs(pct).toFixed(1)}% <em>{vs}</em>
-    </span>
+    <div className="rp-kpi">
+      <span className="rp-kpi-label">{label}</span>
+      <strong className="rp-kpi-value">{value}</strong>
+      {delta ? (
+        <span className="rp-kpi-move">
+          <span className={delta.up ? 'rp-pill up' : 'rp-pill down'}>{delta.text}</span>
+          <em>{vs}</em>
+        </span>
+      ) : (
+        <span className="rp-kpi-move">
+          <em>no comparison</em>
+        </span>
+      )}
+    </div>
   )
 }
 
@@ -95,17 +140,10 @@ export function ReportsPage() {
   const agingQuery = useQuery({
     queryKey: ['credit-aging'],
     queryFn: () =>
-      api<{ buckets: Record<string, string> }>('/reports/credit-aging'),
+      api<{ data: AgingRow[]; buckets: Record<string, string> }>('/reports/credit-aging'),
   })
 
   const s = summaryQuery.data
-
-  const today = new Date().toLocaleDateString('en-GB', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
 
   const hours = s
     ? Object.entries(s.by_hour)
@@ -127,24 +165,32 @@ export function ReportsPage() {
         return {
           ...m,
           amount,
-          pct: methodTotal.gt(0) ? amount.div(methodTotal).times(100).round(0).toNumber() : 0,
+          pct: methodTotal.gt(0) ? amount.div(methodTotal).times(100).toNumber() : 0,
         }
       })
     : []
 
+  const typeTotal = s
+    ? Object.values(s.by_type).reduce((a, v) => a.plus(v), new Big(0))
+    : new Big(0)
+  const split = s
+    ? ORDER_TYPES.map((t) => ({
+        ...t,
+        amount: new Big(s.by_type[t.key] ?? '0'),
+      })).filter((t) => t.amount.gt(0))
+    : []
+
   const items = topQuery.data?.data ?? []
-  const topRevenue = items.reduce((m, i) => (new Big(i.revenue).gt(m) ? new Big(i.revenue) : m), new Big(0))
   const buckets = agingQuery.data?.buckets ?? {}
+  const owing = (agingQuery.data?.data ?? []).slice(0, 5)
+
+  // Credit outstanding has no `previous` — but the window's own movement is the delta.
+  const creditMove = s ? new Big(s.credit_charged).minus(s.credit_repaid).toFixed(2) : '0.00'
 
   return (
     <div className="page page-wide">
       <div className="page-head">
-        <div>
-          <h2>Reports</h2>
-          <p className="page-sub">
-            {activeStore ? activeStore.name : 'All branches'} · {today}
-          </p>
-        </div>
+        <div />
         <div className="rp-range" role="tablist" aria-label="Reporting period">
           {RANGES.map((r) => (
             <button
@@ -166,26 +212,16 @@ export function ReportsPage() {
       ) : (
         <>
           <div className="rp-kpis">
-            <div className="rp-kpi">
-              <span className="rp-kpi-label">Gross sales</span>
-              <strong className="rp-kpi-value">{fmtQAR(s.gross_sales)}</strong>
-              <Delta pct={movement(s.gross_sales, s.previous?.gross_sales)} vs={meta.vs} />
-            </div>
-            <div className="rp-kpi">
-              <span className="rp-kpi-label">Orders</span>
-              <strong className="rp-kpi-value">{s.order_count}</strong>
-              <Delta pct={movement(s.order_count, s.previous?.order_count)} vs={meta.vs} />
-            </div>
-            <div className="rp-kpi">
-              <span className="rp-kpi-label">Average order</span>
-              <strong className="rp-kpi-value">{fmtQAR(s.average_order)}</strong>
-              <Delta pct={movement(s.average_order, s.previous?.average_order)} vs={meta.vs} />
-            </div>
-            <div className="rp-kpi">
-              <span className="rp-kpi-label">Discounts given</span>
-              <strong className="rp-kpi-value">{fmtQAR(s.discount_total)}</strong>
-              <Delta pct={movement(s.discount_total, s.previous?.discount_total)} vs={meta.vs} />
-            </div>
+            <Kpi label="Gross sales" value={`QAR ${fmt(s.gross_sales)}`}
+              delta={pctDelta(s.gross_sales, s.previous?.gross_sales)} vs={meta.vs} />
+            <Kpi label="Orders" value={String(s.order_count)}
+              delta={countDelta(s.order_count, s.previous?.order_count)} vs={meta.vs} />
+            <Kpi label="Average order" value={`QAR ${fmt(s.average_order)}`}
+              delta={pctDelta(s.average_order, s.previous?.average_order)} vs={meta.vs} />
+            <Kpi label="Discounts given" value={`QAR ${fmt(s.discount_total)}`}
+              delta={pctDelta(s.discount_total, s.previous?.discount_total)} vs={meta.vs} />
+            <Kpi label="Credit outstanding" value={`QAR ${fmt(s.credit_outstanding)}`}
+              delta={moneyDelta(creditMove)} vs={meta.vs} />
           </div>
 
           <div className="rp-grid">
@@ -194,7 +230,7 @@ export function ReportsPage() {
                 <h3>Sales by hour</h3>
                 {peak && peak.value.gt(0) && (
                   <span className="rp-peak">
-                    Peak {String(peak.hour).padStart(2, '0')}:00 · QAR {fmt(peak.value.toFixed(2))}
+                    Peak {String(peak.hour).padStart(2, '0')}:00
                   </span>
                 )}
               </header>
@@ -217,80 +253,104 @@ export function ReportsPage() {
               </div>
             </section>
 
-            <section className="rp-card rp-mix">
+            <section className="rp-card">
               <header className="rp-card-head">
                 <h3>Payment mix</h3>
               </header>
-              <div className="rp-stack" aria-hidden="true">
-                {mix
-                  .filter((m) => m.amount.gt(0))
-                  .map((m) => (
-                    <span
-                      key={m.key}
-                      className="rp-stack-seg"
-                      style={{ width: `${m.pct}%`, background: m.color }}
-                    />
-                  ))}
-                {methodTotal.eq(0) && <span className="rp-stack-empty" />}
-              </div>
-              <div className="rp-mix-rows">
+              <div className="rp-mix">
                 {mix.map((m) => (
                   <div key={m.key} className="rp-mix-row">
-                    <span className="rp-dot" style={{ background: m.color }} />
-                    <span className="rp-mix-name">{m.label}</span>
-                    <span className="rp-mix-amount">{fmt(m.amount.toFixed(2))}</span>
-                    <span className="rp-mix-pct">{m.pct}%</span>
+                    <div className="rp-mix-top">
+                      <span className="rp-mix-name">{m.label}</span>
+                      <span className="rp-mix-amount">{fmt(m.amount.toFixed(2))}</span>
+                    </div>
+                    <span className="rp-track">
+                      <span
+                        className="rp-track-fill"
+                        style={{ width: `${m.pct}%`, background: m.color }}
+                      />
+                    </span>
                   </div>
                 ))}
               </div>
             </section>
 
-            <section className="rp-card rp-top">
+            <section className="rp-card">
               <header className="rp-card-head">
-                <h3>Top items {meta.items}</h3>
+                <h3>{meta.items}</h3>
               </header>
               {items.length === 0 && <p className="rp-empty">Nothing sold yet.</p>}
-              {items.map((item, i) => (
-                <div key={item.name} className="rp-item">
-                  <span className="rp-rank">{i + 1}</span>
-                  <div className="rp-item-main">
+              <div className="rp-items">
+                {items.map((item, i) => (
+                  <div key={item.name} className="rp-item">
+                    <span className="rp-rank">{i + 1}</span>
                     <span className="rp-item-name">{item.name}</span>
-                    <span className="rp-share">
-                      <span
-                        className="rp-share-fill"
-                        style={{
-                          width: topRevenue.gt(0)
-                            ? `${new Big(item.revenue).div(topRevenue).times(100).toNumber()}%`
-                            : '0%',
-                        }}
-                      />
-                    </span>
-                  </div>
-                  <div className="rp-item-figures">
+                    <span className="rp-item-qty">×{item.quantity}</span>
                     <span className="rp-item-revenue">{fmt(item.revenue)}</span>
-                    <span className="rp-item-qty">{item.quantity} sold</span>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </section>
 
-            <section className="rp-card rp-aging">
+            <section className="rp-card">
               <header className="rp-card-head">
                 <h3>Credit ageing</h3>
-                <span className="rp-tag">FIFO</span>
+                <span className="rp-out">
+                  QAR {fmt(s.credit_outstanding)}
+                  <em>out</em>
+                </span>
               </header>
-              {BUCKETS.map((b) => (
-                <div key={b.key} className={`rp-bucket ${b.tone}`}>
-                  <span className="rp-bucket-label">{b.label}</span>
-                  <span className="rp-bucket-amount">{fmt(buckets[b.key] ?? '0.00')}</span>
-                </div>
-              ))}
-              <p className="rp-note">
-                Payments settle the oldest charge first, so the 90+ bucket only clears when the
-                debt genuinely does.
-              </p>
+              <div className="rp-buckets">
+                {BUCKETS.map((b) => (
+                  <div key={b.key} className={`rp-bucket ${b.tone}`}>
+                    <span>{b.label}</span>
+                    <strong>{fmt(buckets[b.key] ?? '0.00')}</strong>
+                  </div>
+                ))}
+              </div>
+              {owing.length > 0 && (
+                <>
+                  <div className="rp-subhead">Who owes it</div>
+                  <div className="rp-owing">
+                    {owing.map((r) => (
+                      <div key={r.customer_id} className="rp-owing-row">
+                        <span className="rp-owing-name">{r.name}</span>
+                        <span className="rp-owing-days">{r.days} days</span>
+                        <span className={r.days >= 60 ? 'rp-owing-amount late' : 'rp-owing-amount'}>
+                          {fmt(r.balance)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </section>
+
+            <section className="rp-card rp-split">
+              <header className="rp-card-head">
+                <h3>Order-type split</h3>
+              </header>
+              {split.length === 0 && <p className="rp-empty">No completed orders yet.</p>}
+              <div className="rp-split-rows">
+                {split.map((t) => (
+                  <div key={t.key} className="rp-split-row">
+                    <span className="rp-split-label">{t.label}</span>
+                    <strong className="rp-split-amount">{fmt(t.amount.toFixed(2))}</strong>
+                    <span className="rp-split-pct">
+                      {typeTotal.gt(0)
+                        ? `${t.amount.div(typeTotal).times(100).round(0).toString()}%`
+                        : '0%'}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </section>
           </div>
+
+          <p className="rp-note">
+            Payments settle the oldest charge first, so the 90+ bucket only clears when the debt
+            genuinely does.
+          </p>
         </>
       )}
     </div>

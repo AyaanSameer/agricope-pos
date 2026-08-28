@@ -9,6 +9,7 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
+  flex: none;
 }
 .rp-range-opt {
   height: 36px;
@@ -27,55 +28,72 @@
   font-weight: 600;
 }
 
-/* ---- KPI row ----------------------------------------------------------- */
+/* ---- KPI row ------------------------------------------------------------ */
 .rp-kpis {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
 }
 .rp-kpi {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 18px 20px;
+  border-radius: var(--radius-lg);
+  padding: 14px 16px 15px;
   display: flex;
   flex-direction: column;
   gap: 6px;
   min-width: 0;
 }
 .rp-kpi-label {
-  font-family: var(--font-head);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.8px;
+  font-size: calc(10px * var(--fs));
+  font-weight: 500;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-3);
 }
 .rp-kpi-value {
   font-family: var(--font-head);
-  font-size: 30px;
-  font-weight: 700;
-  color: var(--forest);
-  line-height: 1.1;
+  font-size: calc(23px * var(--fs));
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.015em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
 }
-.rp-delta { font-size: 12px; font-weight: 500; }
-.rp-delta em { font-style: normal; color: var(--hint); font-weight: 400; }
-.rp-delta.up { color: #2e7d32; }
-.rp-delta.down { color: var(--cta); }
-.rp-delta.none { color: var(--hint); font-weight: 400; }
+.rp-kpi-move {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.rp-kpi-move em { font-style: normal; font-size: 10.5px; color: var(--hint); }
 
-/* ---- Card grid --------------------------------------------------------- */
+/* Direction, not judgement: up is green, down is orange, on every KPI. */
+.rp-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-family: var(--font-head);
+  font-size: 10.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.rp-pill.up { background: #e1eddd; color: var(--forest); }
+.rp-pill.down { background: var(--cta-tint); color: var(--cta); }
+
+/* ---- Card grid ---------------------------------------------------------- */
 .rp-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 400px;
-  gap: 20px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
   align-items: start;
 }
 .rp-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 20px 22px;
+  border-radius: var(--radius-lg);
+  padding: 16px 18px 18px;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -83,47 +101,42 @@
 }
 .rp-card-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
 }
-.rp-card-head h3 { font-size: 16px; font-weight: 600; }
+.rp-card-head h3 { font-size: calc(14px * var(--fs)); font-weight: 600; }
 
 .rp-peak {
   display: inline-flex;
   align-items: center;
-  height: 22px;
-  padding: 0 10px;
+  height: 20px;
+  padding: 0 8px;
   border-radius: 99px;
   background: var(--gold-tint);
-  color: #8a5a00;
+  color: var(--gold-ink);
   font-family: var(--font-head);
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 600;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
-.rp-tag {
-  display: inline-flex;
-  align-items: center;
-  height: 22px;
-  padding: 0 10px;
-  border-radius: 99px;
-  background: var(--surface-warm);
+.rp-out {
+  text-align: right;
+  font-size: 10.5px;
   color: var(--ink-3);
-  font-family: var(--font-head);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.4px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
+.rp-out em { display: block; font-style: normal; color: var(--hint); }
 
-/* ---- Sales by hour ----------------------------------------------------- */
+/* ---- Sales by hour ------------------------------------------------------ */
 .rp-bars {
   display: flex;
   align-items: flex-end;
-  gap: 10px;
-  height: 220px;
-  padding-top: 8px;
+  gap: 4px;
+  height: 130px;
 }
 .rp-barcol {
   flex: 1;
@@ -133,122 +146,153 @@
   flex-direction: column;
   justify-content: flex-end;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 .rp-bar {
   width: 100%;
-  max-width: 34px;
+  max-width: 18px;
   background: var(--leaf);
-  border-radius: 4px 4px 0 0;
+  border-radius: 3px 3px 0 0;
   min-height: 4px;
 }
 /* Deep Forest marks the busiest hour. */
 .rp-bar.peak { background: var(--forest); }
-.rp-bar-label { font-size: 11px; color: var(--ink-3); }
+.rp-bar-label { font-size: 9px; color: var(--hint); }
 
-/* ---- Payment mix ------------------------------------------------------- */
-.rp-stack {
-  display: flex;
-  height: 14px;
-  border-radius: 99px;
-  overflow: hidden;
-  background: var(--surface-warm);
-}
-.rp-stack-seg { display: block; height: 100%; }
-.rp-stack-empty { flex: 1; background: var(--surface-warm); }
-
-.rp-mix-rows { display: flex; flex-direction: column; }
-.rp-mix-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 7px 0;
-}
-.rp-dot { width: 9px; height: 9px; flex: none; border-radius: 50%; }
-.rp-mix-name { flex: 1; font-size: 13.5px; color: var(--ink-2); }
+/* ---- Payment mix -------------------------------------------------------- */
+.rp-mix { display: flex; flex-direction: column; gap: 12px; }
+.rp-mix-row { display: flex; flex-direction: column; gap: 6px; }
+.rp-mix-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.rp-mix-name { font-size: 12.5px; color: var(--ink-2); }
 .rp-mix-amount {
   font-family: var(--font-head);
   font-weight: 600;
-  font-size: 14px;
-  color: var(--ink);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
 }
-.rp-mix-pct { width: 34px; text-align: right; font-size: 12px; color: var(--hint); }
+.rp-track {
+  display: block;
+  height: 6px;
+  border-radius: 99px;
+  background: var(--beige);
+  overflow: hidden;
+}
+.rp-track-fill { display: block; height: 100%; border-radius: 99px; }
 
-/* ---- Top items --------------------------------------------------------- */
+/* ---- Top items ---------------------------------------------------------- */
+.rp-items { display: flex; flex-direction: column; }
 .rp-item {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 6px 0;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 0;
+  border-top: 1px solid var(--border);
 }
-.rp-rank {
-  width: 24px;
-  height: 24px;
-  flex: none;
-  border-radius: 50%;
-  background: var(--success-tint);
-  color: var(--forest);
-  display: grid;
-  place-items: center;
-  font-family: var(--font-head);
-  font-size: 11px;
-  font-weight: 600;
-}
-.rp-item-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.rp-item:first-child { border-top: none; padding-top: 0; }
+.rp-rank { width: 12px; flex: none; font-size: 10.5px; color: var(--hint); }
 .rp-item-name {
-  font-size: 13.5px;
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.rp-share {
-  display: block;
-  height: 4px;
-  border-radius: 99px;
-  background: var(--surface-warm);
-  max-width: 240px;
+.rp-item-qty { font-size: 10.5px; color: var(--hint); font-variant-numeric: tabular-nums; }
+.rp-item-revenue {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
 }
-.rp-share-fill {
-  display: block;
-  height: 100%;
-  border-radius: 99px;
-  background: var(--leaf);
-}
-.rp-item-figures {
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-}
-.rp-item-revenue { font-family: var(--font-head); font-weight: 600; font-size: 14px; }
-.rp-item-qty { font-size: 11px; color: var(--hint); }
 
-/* ---- Credit ageing ----------------------------------------------------- */
+/* ---- Credit ageing ------------------------------------------------------ */
+.rp-buckets { display: flex; flex-direction: column; gap: 6px; }
 .rp-bucket {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 13px 16px;
+  gap: 10px;
+  padding: 10px 12px;
   border-radius: 8px;
+  font-size: 12.5px;
 }
-.rp-bucket-label { font-size: 13.5px; }
-.rp-bucket-amount { font-family: var(--font-head); font-weight: 600; font-size: 15px; }
-/* Colour only where it means something. */
-.rp-bucket.ok { background: #eef5ec; color: var(--ink); }
+.rp-bucket strong {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+/* Only the genuinely overdue buckets take colour. */
 .rp-bucket.quiet { background: var(--surface-warm); color: var(--ink); }
-.rp-bucket.warn { background: #fdf6e3; color: #8a5a00; }
+.rp-bucket.warn { background: var(--gold-tint); color: var(--gold-ink); }
 .rp-bucket.over { background: var(--cta-tint); color: var(--cta); }
 
-.rp-note {
-  margin: 2px 0 0;
+.rp-subhead {
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hint);
+}
+.rp-owing { display: flex; flex-direction: column; }
+.rp-owing-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+}
+.rp-owing-row:first-child { border-top: none; padding-top: 0; }
+.rp-owing-name {
+  flex: 1;
+  min-width: 0;
   font-size: 12px;
-  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rp-owing-days { font-size: 10px; color: var(--hint); white-space: nowrap; }
+.rp-owing-amount {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.rp-owing-amount.late { color: var(--cta); }
+
+/* ---- Order-type split --------------------------------------------------- */
+.rp-split-rows { display: flex; flex-direction: column; gap: 8px; }
+.rp-split-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  background: var(--surface-warm);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.rp-split-label { flex: 1; min-width: 0; font-size: 12px; color: var(--ink-2); }
+.rp-split-amount {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.rp-split-pct { font-size: 10.5px; color: var(--hint); width: 30px; text-align: right; }
+
+.rp-note {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--hint);
   line-height: 1.45;
 }
 
-@media (max-width: 1180px) {
-  .rp-grid { grid-template-columns: minmax(0, 1fr); }
+/* ---- Dense -------------------------------------------------------------- */
+@media (max-width: 1279px) {
+  .rp-kpis { grid-template-columns: repeat(3, 1fr); }
+  .rp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 767px) {
   .rp-kpis { grid-template-columns: repeat(2, 1fr); }
+  .rp-grid { grid-template-columns: minmax(0, 1fr); }
 }

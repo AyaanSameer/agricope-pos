@@ -18,7 +18,7 @@ function looksLikePlatformAdmin(email: string) {
 }
 
 export function LoginPage() {
-  const { signIn } = useAuth()
+  const { signIn, businessSession } = useAuth()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -125,15 +125,38 @@ export function LoginPage() {
             {login.isPending ? 'Signing in…' : isAdmin ? 'Open the console' : 'Sign in'}
           </button>
 
+          {/* The till is already signed in as a business — skip straight to the PIN. */}
+          {!isAdmin && businessSession && (
+            <button
+              type="button"
+              className="login-switch"
+              onClick={() => navigate('/pick-store')}
+            >
+              Switch cashier with PIN
+            </button>
+          )}
+
           {isAdmin ? (
             <div className="login-staff-warning">
               Staff access · actions here affect every tenant
             </div>
           ) : (
-            <div className="login-hint">
-              <span className="login-hint-tag">Demo</span>
-              demo@agricope.qa · drumsticks@agricope.qa — demo123
-            </div>
+            <>
+              <div className="login-demo">
+                <span className="login-demo-tag">Demo</span>
+                <code>demo@agricope.qa · drumsticks@agricope.qa · demo123</code>
+              </div>
+              <p className="login-note">
+                Login is per business, not per person. The PIN identifies who is on the till.
+              </p>
+              <button
+                type="button"
+                className="login-admin-link"
+                onClick={() => setEmail('admin@agricope.qa')}
+              >
+                Use platform administrator credentials →
+              </button>
+            </>
           )}
         </form>
       </main>

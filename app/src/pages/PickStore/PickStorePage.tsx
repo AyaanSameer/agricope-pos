@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { useAuth } from '../../auth/AuthContext'
 import { ApiError } from '../../api/client'
@@ -15,10 +15,15 @@ const PIN_LENGTH = 4
  * branch remembered, straight to the PIN.
  */
 export function PickStorePage() {
-  const { businessSession, session, activeStore, setActiveStore, identify, signOut } = useAuth()
+  const { businessSession, activeStore, setActiveStore, identify, signOut } = useAuth()
   const navigate = useNavigate()
-  // If the till already has its branch (e.g. after a lock), jump to the PIN.
-  const [stage, setStage] = useState<'store' | 'pin'>(activeStore ? 'pin' : 'store')
+  // If the till already has its branch (e.g. after a lock), jump to the PIN —
+  // unless the person came here deliberately to move the till to another branch.
+  const [searchParams] = useSearchParams()
+  const changingBranch = searchParams.get('change') === '1'
+  const [stage, setStage] = useState<'store' | 'pin'>(
+    activeStore && !changingBranch ? 'pin' : 'store',
+  )
   const [backOffice, setBackOffice] = useState(false)
   const [pin, setPin] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -41,11 +46,6 @@ export function PickStorePage() {
   }, [pin, stage])
 
   if (!businessSession) return null
-  if (session) {
-    // Already identified — nothing to do here.
-    navigate('/', { replace: true })
-    return null
-  }
 
   const stores = businessSession.stores
 
