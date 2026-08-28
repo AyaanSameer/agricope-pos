@@ -41,7 +41,7 @@ export function CustomersPage() {
   const available = limit && balance ? limit.minus(balance) : null
 
   return (
-    <div className="page">
+    <div className="page cust-page">
       <div className="page-head">
         <div>
           <h2>Customers</h2>
@@ -67,9 +67,15 @@ export function CustomersPage() {
               onClick={() => setSelectedId(c.id)}
             >
               <span className="cust-name">{c.name}</span>
-              <span className={Number(c.balance) > 0 ? 'cust-bal owes' : 'cust-bal'}>
-                {Number(c.balance) > 0 ? `Owes ${fmt(c.balance)}` : 'Settled'}
-                {c.credit_limit === null ? ' · no credit' : ''}
+              <span className="cust-phone">{c.phone ?? 'no phone'}</span>
+              <span className="cust-row-foot">
+                <span className={c.credit_limit === null ? 'cust-credit none' : 'cust-credit'}>
+                  <em>{c.credit_limit === null ? 'No credit' : 'Credit'}</em>
+                  {c.credit_limit !== null && <b>{fmt(c.credit_limit)}</b>}
+                </span>
+                <span className={Number(c.balance) > 0 ? 'cust-bal owes' : 'cust-bal'}>
+                  {Number(c.balance) > 0 ? fmt(c.balance) : '—'}
+                </span>
               </span>
             </button>
           ))}
@@ -77,14 +83,39 @@ export function CustomersPage() {
 
         {selected ? (
           <div className="cust-profile">
-            <div className="card cust-profile-head">
+            <div className="cust-profile-head">
+              <span className="cust-avatar">
+                {selected.name
+                  .split(' ')
+                  .map((w) => w[0])
+                  .slice(0, 2)
+                  .join('')
+                  .toUpperCase()}
+              </span>
               <div>
                 <h3>{selected.name}</h3>
                 <p className="muted small">
                   {selected.phone ?? 'no phone'} {selected.email ? `· ${selected.email}` : ''}
-                  {selected.notes ? ` · ${selected.notes}` : ''}
                 </p>
               </div>
+            </div>
+
+            <div className="cust-stats">
+              <div className="stat">
+                <span>Credit limit</span>
+                <strong>{limit ? fmt(limit.toFixed(2)) : 'No credit'}</strong>
+              </div>
+              <div className={balance && balance.gt(0) ? 'stat owing' : 'stat'}>
+                <span>Outstanding</span>
+                <strong>{fmt(selected.balance)}</strong>
+              </div>
+              <div className={available ? 'stat available' : 'stat'}>
+                <span>Available</span>
+                <strong>{available ? fmt(available.toFixed(2)) : '—'}</strong>
+              </div>
+            </div>
+
+            <div className="cust-actions">
               <button
                 type="button"
                 className="btn-primary cust-receive"
@@ -93,32 +124,16 @@ export function CustomersPage() {
               >
                 Receive payment
               </button>
-            </div>
-
-            <div className="cust-stats">
-              <div className="card stat">
-                <span>Outstanding</span>
-                <strong className={balance && balance.gt(0) ? 'owes' : ''}>{fmtQAR(selected.balance)}</strong>
-              </div>
-              <div className="card stat">
-                <span>Credit limit</span>
-                <strong>{limit ? fmtQAR(limit.toFixed(2)) : 'No credit'}</strong>
-                <button
-                  type="button"
-                  className="stat-act"
-                  onClick={() => setGrantingCredit(true)}
-                >
-                  {limit ? 'Change…' : 'Give credit…'}
-                </button>
-              </div>
-              <div className="card stat">
-                <span>Available</span>
-                <strong className="ok">{available ? fmtQAR(available.toFixed(2)) : '—'}</strong>
-              </div>
+              <button type="button" className="cust-limit" onClick={() => setGrantingCredit(true)}>
+                {limit ? 'Change limit · PIN' : 'Give credit · PIN'}
+              </button>
             </div>
 
             <div className="card cust-statement">
-              <div className="cust-st-head">Statement — newest first</div>
+              <div className="cust-st-head">
+                <span>Statement</span>
+                <em>Append-only · nothing is edited in place</em>
+              </div>
               {statementQuery.data?.entries.map((e) => (
                 <div key={e.id} className="cust-st-row">
                   <span className="muted small">
@@ -135,9 +150,6 @@ export function CustomersPage() {
               {statementQuery.data?.entries.length === 0 && (
                 <div className="cust-st-empty">No credit history yet.</div>
               )}
-              <div className="cust-st-foot">
-                Balance is the sum of the ledger — nothing is ever edited in place.
-              </div>
             </div>
           </div>
         ) : (

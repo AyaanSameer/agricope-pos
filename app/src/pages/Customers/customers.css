@@ -1,46 +1,164 @@
-.cust-add { padding: 0 20px; }
-.cust-body { display: flex; gap: 16px; align-items: flex-start; }
-.cust-list { flex: 0 0 var(--cust-list-w); display: flex; flex-direction: column; gap: 8px; }
+.cust-add { padding: 0 18px; height: 44px; min-height: 44px; }
+
+/* Two panes, both flush: the list against the left edge with its own rule,
+   the profile filling the rest. Dense drills down instead. */
+.cust-page { padding: 0; gap: 0; }
+.cust-page > .page-head { padding: var(--pad) var(--pad) 0; }
+.cust-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+}
+.cust-list {
+  flex: 0 0 var(--cust-list-w);
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--pad);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 .cust-row {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   text-align: left;
   padding: 12px 14px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
-.cust-row.selected { border: 2px solid var(--forest); background: var(--success-tint); }
-.cust-name { font-weight: 500; }
-.cust-bal { font-size: 12px; color: var(--hint); }
+.cust-row:hover { border-color: var(--border-strong); }
+/* Selected is a leaf border on a warm ground — never a fill. */
+.cust-row.selected { border-color: var(--leaf); background: var(--surface-warm); }
+.cust-name { font-weight: 500; font-size: 13.5px; }
+.cust-phone { font-size: 11px; color: var(--ink-3); }
+.cust-row-foot { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+.cust-credit {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--leaf-plate-3);
+  border-radius: 7px;
+  padding: 5px 9px;
+}
+.cust-credit em { font-style: normal; font-size: 9px; color: var(--forest); }
+.cust-credit b {
+  font-family: var(--font-head);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--forest);
+  font-variant-numeric: tabular-nums;
+}
+.cust-credit.none { background: var(--beige); }
+.cust-credit.none em { color: var(--hint); }
+.cust-bal {
+  margin-left: auto;
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--hint);
+  font-variant-numeric: tabular-nums;
+}
 .cust-bal.owes { color: var(--cta); }
 .owes { color: var(--cta); }
 .ok { color: var(--forest); }
 .tiny { font-size: 11px; }
 
-.cust-profile { flex: 1; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-.cust-profile-head {
+.cust-profile {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--pad);
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 18px;
-  gap: 12px;
+  flex-direction: column;
+  gap: 14px;
 }
-.cust-receive { padding: 0 18px; }
-.cust-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-.stat { padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
-.stat span { font-size: 12px; color: var(--ink-3); }
-.stat strong { font-family: var(--font-head); font-size: 18px; }
-
-.cust-statement { overflow: hidden; }
-.cust-st-head {
-  background: var(--surface-warm);
-  padding: 10px 16px;
+.cust-profile-head { display: flex; align-items: center; gap: 12px; }
+.cust-profile-head h3 { font-family: var(--font-head); font-size: 19px; font-weight: 600; }
+.cust-avatar {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 99px;
+  background: var(--leaf-plate);
+  color: var(--forest);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-head);
   font-size: 12px;
+  font-weight: 700;
+}
+
+.cust-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.stat {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.stat span {
+  font-size: 10px;
   font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--ink-3);
 }
+.stat strong {
+  font-family: var(--font-head);
+  font-size: 21px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+/* Money owed and money still available say so in colour. */
+.stat.owing { background: var(--cta-tint); border-color: #f0cdbf; }
+.stat.owing span,
+.stat.owing strong { color: var(--cta); }
+.stat.available { background: var(--success-tint); border-color: var(--leaf-plate-2); }
+.stat.available span,
+.stat.available strong { color: var(--forest); }
+
+.cust-actions { display: flex; gap: 10px; }
+.cust-receive { padding: 0 20px; height: var(--ctl-h); }
+.cust-limit {
+  height: var(--ctl-h);
+  min-height: var(--ctl-h);
+  padding: 0 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--ink-2);
+  font-weight: 500;
+}
+.cust-limit:hover { border-color: var(--hint); }
+
+.cust-statement {
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.cust-st-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--surface-warm);
+  padding: 10px 16px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.cust-st-head em { font-style: normal; letter-spacing: 0; text-transform: none; font-size: 10.5px; color: var(--hint); }
 .cust-st-row {
   display: grid;
   grid-template-columns: 60px 100px 1fr 90px 90px;
@@ -58,7 +176,28 @@
 .cust-st-note { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cust-st-empty { padding: 18px; color: var(--ink-3); }
 .cust-st-foot { padding: 10px 16px; font-size: 11px; color: var(--hint); background: var(--surface-warm); }
-.cust-empty { flex: 1; padding: 40px; color: var(--ink-3); text-align: center; }
+.cust-empty {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  place-items: center;
+  padding: 40px;
+  color: var(--ink-3);
+  text-align: center;
+}
+
+/* Dense: the list is the screen; picking someone drills into the profile. */
+@media (max-width: 1023px) {
+  .cust-body { flex-direction: column; }
+  .cust-list {
+    flex: none;
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .cust-stats { grid-template-columns: 1fr; }
+  .cust-actions { flex-direction: column; }
+}
 
 .cust-modal {
   position: fixed;
