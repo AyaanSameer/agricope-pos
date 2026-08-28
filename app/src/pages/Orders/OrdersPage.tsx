@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Big from 'big.js'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { addOrderItems, listOrders, refundOrder, voidOrder } from '../../api/orders'
@@ -31,6 +32,11 @@ export function OrdersPage() {
     queryFn: () => listOrders({ store_id: activeStore?.id, status: status ?? undefined }),
   })
   const selected = ordersQuery.data?.data.find((o) => o.id === selectedId) ?? null
+  // What is still owed on the selected order — the design calls it out in gold.
+  const paidSoFar = selected
+    ? selected.payments.reduce((a, p) => a.plus(p.amount), new Big(0))
+    : new Big(0)
+  const dueNow = selected ? new Big(selected.total).minus(paidSoFar) : new Big(0)
 
   const act = useMutation({
     mutationFn: ({ action, pin }: { action: 'void' | 'refund'; pin: string }) =>
@@ -45,7 +51,7 @@ export function OrdersPage() {
   })
 
   return (
-    <div className="page orders-page">
+    <div className={selected ? 'page orders-page with-drawer' : 'page orders-page'}>
       <div className="page-head">
         <div>
           <h2>Orders{activeStore ? ` — ${activeStore.name}` : ''}</h2>
@@ -69,7 +75,7 @@ export function OrdersPage() {
       <div className="orders-body">
         <div className="card orders-table">
           <div className="orders-row orders-head-row">
-            <span>Order</span><span>Time</span><span>Cashier</span><span>Type</span>
+            <span>Order</span><span>Time · cashier</span><span>Type</span>
             <span className="num">Total</span><span>Status</span>
           </div>
           {ordersQuery.isPending && <div className="orders-loading">Loading…</div>}
@@ -81,8 +87,10 @@ export function OrdersPage() {
               onClick={() => setSelectedId(o.id)}
             >
               <span className="orders-num">{o.order_number}</span>
-              <span className="muted">{new Date(o.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
-              <span className="muted">{o.cashier_name.split(' ')[0]}</span>
+              <span className="muted">
+                {new Date(o.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} ·{' '}
+                {o.cashier_name.split(' ')[0]}
+              </span>
               <span className="muted">{o.order_type.replace('_', '-')}</span>
               <span className="num strong">{fmt(o.total)}</span>
               <span><span className={`st ${STATUS_STYLE[o.status]}`}>{o.status.toUpperCase()}</span></span>
@@ -94,13 +102,27 @@ export function OrdersPage() {
         </div>
 
         {selected && (
-          <aside className="card orders-detail">
+          <>
+            <div
+              className="orders-scrim"
+              onClick={() => setSelectedId(null)}
+              aria-hidden="true"
+            />
+            <aside className="orders-detail">
             <div className="orders-detail-head">
               <h3>{selected.order_number}</h3>
               <span className={`st ${STATUS_STYLE[selected.status]}`}>{selected.status.toUpperCase()}</span>
+              <button
+                type="button"
+                className="orders-close"
+                aria-label="Close"
+                onClick={() => setSelectedId(null)}
+              >
+                ✕
+              </button>
             </div>
             <p className="muted small">
-              {selected.cashier_name} · {new Date(selected.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} · {selected.order_type.replace('_', '-')}
+              {new Date(selected.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} · {selected.order_type.replace('_', '-')} · {selected.cashier_name}
               {selected.table_name
                 ? ` · ${selected.table_name}`
                 : selected.order_type === 'dine_in'
@@ -137,6 +159,11 @@ export function OrdersPage() {
               </div>
             ))}
             {selected.note && <p className="orders-note">“{selected.note}”</p>}
+            {paidSoFar.gt(0) && dueNow.gt(0) && (
+              <div className="orders-due">
+                {fmt(paidSoFar.toFixed(2))} paid · {fmt(dueNow.toFixed(2))} due
+              </div>
+            )}
             <div className="orders-actions">
               {selected.status === 'open' && (
                 <>
@@ -168,6 +195,7 @@ export function OrdersPage() {
               )}
             </div>
           </aside>
+          </>
         )}
       </div>
 

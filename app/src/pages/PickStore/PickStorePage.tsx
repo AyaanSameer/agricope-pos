@@ -27,6 +27,8 @@ export function PickStorePage() {
   const [backOffice, setBackOffice] = useState(false)
   const [pin, setPin] = useState('')
   const [error, setError] = useState<string | null>(null)
+  // Remounts the card per attempt so a repeated wrong PIN shakes every time.
+  const [attempt, setAttempt] = useState(0)
 
   const unlock = useMutation({
     mutationFn: (fullPin: string) => identify(fullPin, backOffice ? null : (activeStore?.id ?? null)),
@@ -40,6 +42,7 @@ export function PickStorePage() {
   useEffect(() => {
     if (stage === 'pin' && pin.length === PIN_LENGTH && !unlock.isPending) {
       setError(null)
+      setAttempt((n) => n + 1)
       unlock.mutate(pin)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -64,7 +67,7 @@ export function PickStorePage() {
       : (activeStore?.name ?? businessSession.business.name)
     return (
       <div className="pickstore pickstore-pin-screen">
-        <div className="pin-card">
+        <div className={error ? 'pin-card ag-shake' : 'pin-card'} key={attempt}>
           <div className="pin-branch">
             <span className="dot" />
             {tillLabel}

@@ -1,9 +1,15 @@
 .orders-filters { display: flex; gap: 6px; flex-wrap: wrap; }
 .orders-body { display: flex; gap: 16px; align-items: flex-start; }
-.orders-table { flex: 1; overflow: hidden; }
+.orders-table {
+  flex: 1;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
 .orders-row {
   display: grid;
-  grid-template-columns: 1.4fr 0.7fr 0.9fr 0.9fr 0.9fr 1fr;
+  grid-template-columns: 1.2fr 1.4fr 0.9fr 0.9fr 0.9fr;
   gap: 10px;
   align-items: center;
   padding: 12px 16px;
@@ -37,23 +43,60 @@
 .st-void { background: var(--cta-tint); color: var(--cta); }
 .st-refund { background: #e7e2d2; color: var(--ink-3); }
 
+/* The list makes room for the drawer rather than sliding under it. */
+.orders-page.with-drawer { padding-right: calc(var(--pad) + 380px); }
+
+/* Roomy: a full-height drawer flush to the right edge, below the topbar.
+   Dense: the same content as a bottom sheet. */
+.orders-scrim { display: none; }
 .orders-detail {
-  flex: 0 0 330px;
+  position: fixed;
+  top: var(--top-h);
+  right: 0;
+  bottom: 0;
+  width: 380px;
+  z-index: 30;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
   padding: 18px;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  position: sticky;
-  top: 24px;
+  animation: agFade 0.16s ease both;
 }
-.orders-detail-head { display: flex; justify-content: space-between; align-items: center; }
+.orders-detail-head { display: flex; align-items: center; gap: 10px; }
+.orders-detail-head h3 { flex: 1; min-width: 0; font-family: var(--font-mono); font-size: 14px; font-weight: 600; }
+.orders-close {
+  width: 30px;
+  height: 30px;
+  min-height: 30px;
+  flex: none;
+  padding: 0;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.orders-close:hover { border-color: var(--hint); }
+
+/* Money still owed reads as attention, not alarm. */
+.orders-due {
+  background: var(--gold-tint);
+  color: var(--gold-ink);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
 .orders-sep { border-top: 1px solid var(--border); margin: 4px 0; }
 .orders-line { display: flex; justify-content: space-between; font-size: 13px; gap: 10px; }
 .orders-line.total { font-weight: 700; font-family: var(--font-head); font-size: 15px; }
 .orders-note { font-size: 12px; color: var(--ink-3); font-style: italic; }
-.orders-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.orders-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 .orders-act {
-  flex: 1;
+  width: 100%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -64,3 +107,34 @@
   text-align: center;
 }
 .orders-act.danger { color: var(--cta); border-color: var(--cta-tint); }
+
+
+/* Dense: the drawer becomes a bottom sheet with a scrim behind it. */
+@media (max-width: 1023px) {
+  .orders-page.with-drawer { padding-right: var(--pad); }
+  .orders-row { grid-template-columns: 1.2fr 1.4fr 0.9fr 0.9fr; }
+  .orders-row > :nth-child(3) { display: none; }
+
+  .orders-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: var(--scrim-sheet);
+    z-index: 45;
+    animation: agFade 0.18s ease both;
+  }
+  .orders-detail {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    max-height: 86%;
+    z-index: 46;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.2);
+    animation: agSheet 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}

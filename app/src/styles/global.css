@@ -249,3 +249,93 @@ input:focus, select:focus, button:focus-visible {
   display: block;
   flex: none;
 }
+
+/* ---- Motion ------------------------------------------------------------
+   Three movements, taken from the design prototype: scrims fade, centre
+   modals rise, bottom sheets slide up from below the fold. Nothing else
+   moves on entry. Hover is a 0.12–0.14s colour or lift, never a bounce. */
+@keyframes agFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes agUp {
+  from { transform: translateY(14px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes agSheet {
+  from { transform: translateY(101%); }
+  to { transform: none; }
+}
+/* A wrong PIN shakes the pad — the one place motion carries a message. */
+@keyframes agShake {
+  0%, 100% { transform: translateX(0); }
+  15% { transform: translateX(-7px); }
+  30% { transform: translateX(6px); }
+  45% { transform: translateX(-4px); }
+  60% { transform: translateX(3px); }
+  80% { transform: translateX(-1px); }
+}
+
+.ag-scrim { animation: agFade 0.16s ease both; }
+.ag-scrim-sheet { animation: agFade 0.18s ease both; }
+.ag-modal { animation: agUp 0.22s ease both; }
+.ag-modal-lift { animation: agUp 0.24s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.ag-sheet { animation: agSheet 0.26s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.ag-shake { animation: agShake 0.4s ease both; }
+
+/* Interactive surfaces settle rather than snap. */
+.hub-tile,
+.tile,
+.cat-row,
+.chip,
+.hub-foot-btn,
+.rp-range-opt { transition: transform 0.13s, border-color 0.13s, background 0.12s, color 0.12s; }
+
+button { transition: background 0.12s, border-color 0.13s, color 0.12s; }
+
+/* Motion is decoration here; the layout never depends on it. */
+@media (prefers-reduced-motion: reduce) {
+  .ag-scrim,
+  .ag-scrim-sheet,
+  .ag-modal,
+  .ag-modal-lift,
+  .ag-sheet,
+  .ag-shake { animation: none; }
+  *,
+  *::before,
+  *::after { transition-duration: 0.01ms !important; }
+}
+
+/* Every overlay in the app enters the same way: the scrim fades, the thing
+   on top of it rises. Listed by root class so call sites stay plain. */
+.confirm,
+.cpick,
+.climit,
+.disc-modal,
+.pinswitch,
+.tab-additems,
+.kticket-overlay,
+.cust-modal,
+.cat-modal,
+.admin-modal,
+.users-modal,
+.staff-modal { animation: agFade 0.16s ease both; }
+
+.confirm > *,
+.cpick > *,
+.climit > *,
+.disc-modal > *,
+.tab-additems > *,
+.kticket-overlay > *,
+.cust-modal > *,
+.cat-modal > *,
+.admin-modal > *,
+.users-modal > *,
+.staff-modal > * { animation: agUp 0.22s ease both; }
+
+/* The PIN pad lifts on a softer curve — it is the one you wait for. */
+.pinswitch > * { animation: agUp 0.24s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* Beats the overlay's own entry animation — a shake must always win. */
+.ag-shake,
+.pinswitch > .ag-shake { animation: agShake 0.4s ease both; }

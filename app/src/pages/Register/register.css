@@ -226,7 +226,7 @@
     inset: 0;
     background: var(--scrim-sheet);
     z-index: 45;
-    animation: agFade 0.16s ease-out;
+    animation: agFade 0.18s ease both;
   }
   .cart.cart-sheet { display: none; }
   .cart.cart-sheet.open {
@@ -243,7 +243,7 @@
     border-top: 1px solid var(--border);
     border-radius: 20px 20px 0 0;
     box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.2);
-    animation: agSheet 0.2s ease-out;
+    animation: agSheet 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   .bill-bar {
@@ -266,5 +266,3 @@
   .bill-bar-review { flex: none; height: 44px; min-height: 44px; padding: 0 16px; }
 }
 
-@keyframes agFade { from { opacity: 0; } to { opacity: 1; } }
-@keyframes agSheet { from { transform: translateY(100%); } to { transform: translateY(0); } }

@@ -1,51 +1,131 @@
 .optpick {
   position: fixed;
   inset: 0;
-  background: rgba(20, 32, 24, 0.55);
+  background: var(--scrim-panel);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 60;
-  padding: 20px;
+  padding: 24px;
 }
 
 .optpick-card {
-  width: min(460px, 100%);
+  background: var(--surface);
+  border-radius: 18px;
+  padding: 22px;
+  width: 100%;
+  max-width: 380px;
+  max-height: 100%;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 22px;
-  max-height: 85vh;
-  overflow-y: auto;
+  gap: 16px;
 }
 
-.optpick-head h3 { font-family: var(--font-head); font-size: 19px; }
-.optpick-desc { margin: 6px 0 0; font-size: 12.5px; color: var(--ink-3); line-height: 1.5; }
+.optpick-head { display: flex; flex-direction: column; gap: 6px; }
+.optpick-title {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 17px;
+  color: var(--ink);
+}
 
 .optpick-group { display: flex; flex-direction: column; gap: 8px; }
-.optpick-group-name { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-2); }
-.optpick-optional { color: var(--ink-3); font-weight: 500; text-transform: none; letter-spacing: 0; }
-
-.optpick-choices { display: flex; flex-wrap: wrap; gap: 8px; }
-
-.optpick-choice {
-  min-height: var(--touch);
-  padding: 0 18px;
-  border-radius: 10px;
-  background: var(--surface-2, #f1f1ec);
-  border: 1.5px solid transparent;
-  font-weight: 500;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-.optpick-choice.active {
-  background: var(--leaf);
-  color: var(--leaf-ink);
-  border-color: var(--forest);
+.optpick-group-head { display: flex; align-items: center; gap: 8px; }
+.optpick-group-name {
+  font-family: var(--font-head);
   font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--hint);
 }
-.optpick-delta { font-size: 12px; color: var(--ink-2); }
-.optpick-choice.active .optpick-delta { color: inherit; }
+.optpick-tag {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 9.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  border-radius: 5px;
+  padding: 3px 6px;
+  background: var(--surface-warm);
+  color: var(--ink-3);
+}
+.optpick-tag.required { background: var(--gold-tint); color: var(--gold-ink); }
 
-.optpick-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.optpick-choices { display: flex; flex-direction: column; gap: 8px; }
+
+/* Full-width rows with a real radio — a thumb target, not a chip. */
+.optpick-choice {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  height: 52px;
+  min-height: 52px;
+  padding: 0 15px;
+  border-radius: 11px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  text-align: left;
+}
+.optpick-choice:hover { border-color: var(--border-strong); }
+.optpick-radio {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 99px;
+  border: 2px solid var(--border-strong);
+  background: transparent;
+  transition: border-color 0.13s, background 0.13s;
+}
+.optpick-choice.picked {
+  background: var(--surface-warm);
+  border-color: var(--forest);
+}
+.optpick-choice.picked .optpick-radio {
+  border-color: var(--forest);
+  background: var(--forest);
+}
+.optpick-choice-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--ink);
+}
+.optpick-delta {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 12.5px;
+  color: var(--forest);
+}
+
+.optpick-actions { display: flex; gap: 8px; }
+.optpick-cancel,
+.optpick-add {
+  height: 52px;
+  min-height: 52px;
+  border-radius: 11px;
+}
+.optpick-cancel {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--ink-2);
+  font-weight: 500;
+  font-size: 14px;
+}
+.optpick-cancel:hover { border-color: var(--hint); }
+/* The primary action is twice the width — it is the one you mean. */
+.optpick-add {
+  flex: 2;
+  background: var(--forest);
+  border: 0;
+  color: #fff;
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 15px;
+}
+.optpick-add:hover { background: var(--forest-deep); }
+.optpick-add:disabled { opacity: 0.55; }

@@ -16,6 +16,8 @@ export function PinSwitchOverlay({ onClose }: { onClose: () => void }) {
   const { session, activeStore, switchByPin } = useAuth()
   const [pin, setPin] = useState('')
   const [error, setError] = useState<string | null>(null)
+  // Remounts the card per attempt so a repeated wrong PIN shakes every time.
+  const [attempt, setAttempt] = useState(0)
 
   const switchMutation = useMutation({
     mutationFn: (fullPin: string) => switchByPin(fullPin),
@@ -29,6 +31,7 @@ export function PinSwitchOverlay({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     if (pin.length === PIN_LENGTH && !switchMutation.isPending) {
       setError(null)
+      setAttempt((n) => n + 1)
       switchMutation.mutate(pin)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -45,7 +48,7 @@ export function PinSwitchOverlay({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="pinswitch" role="dialog" aria-modal="true" aria-label="Switch user">
-      <div className="pinswitch-card">
+      <div className={error ? 'pinswitch-card ag-shake' : 'pinswitch-card'} key={attempt}>
         <div className="pinswitch-badge">Handing over the till</div>
 
         {outgoing && (

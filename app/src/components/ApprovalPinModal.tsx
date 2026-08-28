@@ -25,18 +25,21 @@ export function ApprovalPinModal({
   onClose: () => void
 }) {
   const [pin, setPin] = useState('')
+  // Remounts the card per attempt so a repeated wrong PIN shakes every time.
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     if (pin.length === PIN_LENGTH && !busy) {
       onSubmit(pin)
       setPin('')
+      setAttempt((n) => n + 1)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pin])
 
   return (
     <div className="pinswitch" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="pinswitch-card">
+      <div className={error ? 'pinswitch-card ag-shake' : 'pinswitch-card'} key={attempt}>
         <h2>{title}</h2>
         <p className="pinswitch-sub">{message}</p>
         <PinDots filled={pin.length} length={PIN_LENGTH} />
