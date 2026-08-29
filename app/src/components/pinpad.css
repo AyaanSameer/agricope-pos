@@ -8,6 +8,23 @@
 .pinpad-md { --key: 72px; --key-gap: 12px; --key-radius: 14px; --key-size: 24px; }
 .pinpad-lg { --key: 76px; --key-gap: 14px; --key-radius: 16px; --key-size: 26px; }
 
+/* Charge: the keypad fills its column and the keys stand at --key-h. */
+.pinpad-fill {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  justify-content: stretch;
+}
+.pinpad-fill .pinpad-key {
+  width: auto;
+  height: var(--key-h);
+  min-height: var(--key-h);
+  border-radius: 12px;
+  background: var(--surface);
+  font-size: calc(21px * var(--fs));
+  font-weight: 600;
+}
+.pinpad-fill .pinpad-key-back { font-size: calc(17px * var(--fs)); }
+
 .pinpad-key {
   width: var(--key);
   height: var(--key);

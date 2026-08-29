@@ -115,22 +115,32 @@ export function FloorPage() {
                 }
               }}
             >
+              {/* One structure for every card: header, body slot, footer. */}
               <span className="ftable-top">
                 <strong>{t.name}</strong>
                 <span className="ftable-zone">{t.zone}</span>
                 <i className={`dot ${state}`} />
               </span>
-              {t.order ? (
-                <>
-                  <span className="ftable-meta">
-                    {t.order.guest_count ?? '—'} guests · {t.order.minutes_open} min
-                    {t.order.unsent_count > 0 ? ` · ${t.order.unsent_count} unsent` : ''}
-                  </span>
-                  <span className="ftable-total">QAR {fmt(t.order.total)}</span>
-                </>
-              ) : (
-                <span className="ftable-free">Seats {t.seats} — tap to seat</span>
-              )}
+              <span className="ftable-body">
+                {t.order && (
+                  <>
+                    <span className="ftable-meta">
+                      {t.order.guest_count ?? '—'} guests · {t.order.minutes_open} min
+                    </span>
+                    {t.order.unsent_count > 0 && (
+                      <span className="ftable-unsent">
+                        {t.order.unsent_count} item{t.order.unsent_count === 1 ? '' : 's'} not sent
+                      </span>
+                    )}
+                  </>
+                )}
+              </span>
+              <span className="ftable-foot">
+                <span className="ftable-action">
+                  {t.order ? 'Tap to open the tab' : `Seats ${t.seats} — tap to seat`}
+                </span>
+                <span className="ftable-total">{t.order ? `QAR ${fmt(t.order.total)}` : '—'}</span>
+              </span>
             </button>
           )
         })}

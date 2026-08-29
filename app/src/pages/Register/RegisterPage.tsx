@@ -210,13 +210,19 @@ export function RegisterPage() {
               <span className="cart-customer-hint">tap to change</span>
             </>
           ) : (
-            <span className="cart-customer-hint">+ Add customer</span>
+            <span className="cart-customer-hint">+ Add customer (needed for credit)</span>
           )}
         </button>
 
         <div className="cart-lines">
           {cart.lines.length === 0 && (
-            <div className="cart-empty">Tap products to start the sale.</div>
+            <div className="cart-empty">
+              <div className="cart-empty-icon" aria-hidden="true">▤</div>
+              <span className="cart-empty-head">Nothing on the sale yet</span>
+              <span className="cart-empty-sub">
+                Tap a product tile, or scan a barcode into the search field.
+              </span>
+            </div>
           )}
           {cart.lines.map((l, i) => (
             <div key={l.key} className="cart-line">
@@ -259,9 +265,11 @@ export function RegisterPage() {
         >
           {charge.isPending
             ? 'Starting…'
-            : cart.orderType === 'dine_in'
-              ? `Open tab · ${fmtQAR(cart.totals.total)}`
-              : `Charge · ${fmtQAR(cart.totals.total)}`}
+            : cart.lines.length === 0
+              ? 'Charge'
+              : cart.orderType === 'dine_in'
+                ? `Open tab · ${fmtQAR(cart.totals.total)}`
+                : `Charge · ${fmtQAR(cart.totals.total)}`}
         </button>
         <button
           type="button"

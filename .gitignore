@@ -6,3 +6,5 @@ dist/
 
 # Design and build archives are shared out of band, not versioned
 *.zip
+design_handoff_agricope_pos/
+app/public/_design/

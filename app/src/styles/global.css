@@ -123,6 +123,21 @@
 
 * { box-sizing: border-box; }
 
+/* Scrollbars are part of the palette: #CFC9B6 on the warm ground, never grey. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 99px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--desk); background-clip: padding-box; }
+
 html, body, #root { height: 100%; }
 
 body {
@@ -170,7 +185,8 @@ input:focus, select:focus, button:focus-visible {
   font-family: var(--font-head);
 }
 .btn-primary:active { background: var(--forest-deep); }
-.btn-primary:disabled { opacity: 0.6; cursor: default; }
+.btn-primary:disabled,
+.btn-secondary:disabled { opacity: 0.55; cursor: default; }
 
 .btn-secondary {
   background: var(--surface);

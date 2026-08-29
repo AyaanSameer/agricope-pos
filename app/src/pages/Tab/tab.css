@@ -1,10 +1,19 @@
-.tab-page { display: flex; gap: 16px; width: 100%; align-items: flex-start; }
-.tab-note { padding: 24px; color: var(--ink-3); }
+.tab-page {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--pad);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+.tab-note { padding: var(--pad); color: var(--ink-3); }
+/* Content actions, right-aligned above both columns — never a second nav bar. */
+.tab-head { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex: none; }
+/* Both columns start at the same y and the items card stops at the bill. */
+.tab-cols { display: flex; gap: 16px; align-items: flex-start; }
 .tab-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
-.tab-head { display: flex; align-items: center; gap: 10px; }
-.tab-back { padding: 0 14px; }
-.tab-title { flex: 1; }
-.tab-title h2 { font-size: 20px; }
 
 .tab-items { overflow: hidden; }
 .tab-items-head {
@@ -27,8 +36,25 @@
 .tab-badge.sent { background: #e7e2d2; color: var(--ink-3); }
 .tab-badge.new { background: var(--gold-tint); color: #9a7200; }
 .tab-item-info { flex: 1; display: flex; flex-direction: column; gap: 1px; }
-.tab-pull { background: transparent; color: var(--cta); font-size: 12px; min-height: 40px; }
-.tab-item-total { font-weight: 600; min-width: 60px; text-align: right; }
+/* Fixed column so the label never clips mid-word. */
+.tab-pull {
+  background: transparent;
+  color: var(--cta);
+  font-size: calc(12.5px * var(--fs));
+  font-weight: 500;
+  min-height: 40px;
+  width: 62px;
+  flex: none;
+  padding: 0;
+}
+.tab-item-total {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  min-width: 60px;
+  text-align: right;
+  flex: none;
+}
 .tab-add {
   width: 100%;
   background: transparent;
@@ -44,7 +70,7 @@
   flex-direction: column;
   gap: 8px;
   position: sticky;
-  top: 24px;
+  top: 0;
   min-height: 340px;
 }
 .tab-perguest { font-size: 12px; color: var(--ink-3); background: var(--surface-warm); border-radius: 8px; padding: 8px 10px; }
@@ -55,7 +81,19 @@
   font-weight: 600;
   min-height: 52px;
 }
-.tab-send:disabled { opacity: 0.5; }
+.tab-send:disabled { opacity: 0.55; }
+/* Nothing left to fire is a status, so it reads as one. */
+.tab-fired {
+  background: var(--gold-tint);
+  color: var(--gold-ink);
+  border-radius: 12px;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  font-size: calc(13px * var(--fs));
+}
 .tab-charge {
   display: inline-flex;
   align-items: center;

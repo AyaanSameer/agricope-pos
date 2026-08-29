@@ -95,33 +95,24 @@ export function TabPage() {
 
   return (
     <div className="tab-page">
-      <div className="tab-main">
-        <div className="tab-head">
-          <button type="button" className="btn-secondary tab-back" onClick={() => navigate('/floor')}>
-            ← Floor
+      {/* The topbar carries the table, the guests and the order number; these are
+          content actions on the tab itself, not a second nav bar. */}
+      <div className="tab-head">
+        {order.order_type === 'dine_in' && !order.table_id && order.status === 'open' && (
+          <button type="button" className="btn-secondary" onClick={() => setAssigningTable(true)}>
+            Assign table
           </button>
-          <div className="tab-title">
-            <h2>
-              {order.table_name ?? (order.order_type === 'dine_in' ? 'Dine-in' : order.order_type)} — open tab
-            </h2>
-            <p className="page-sub">
-              {order.guest_count ?? '—'} guests · {order.order_number} · {order.cashier_name}
-              {order.order_type === 'dine_in' && !order.table_id && ' · no table yet'}
-            </p>
-          </div>
-          {order.order_type === 'dine_in' && !order.table_id && order.status === 'open' && (
-            <button type="button" className="btn-secondary" onClick={() => setAssigningTable(true)}>
-              Assign table
-            </button>
-          )}
-          <button type="button" className="btn-secondary" onClick={() => setSplitting(true)} disabled={order.items.length === 0}>
-            Split bill
-          </button>
-          <button type="button" className="btn-secondary" onClick={() => setMerging(true)}>
-            Merge
-          </button>
-        </div>
+        )}
+        <button type="button" className="btn-secondary" onClick={() => setSplitting(true)} disabled={order.items.length === 0}>
+          Split bill
+        </button>
+        <button type="button" className="btn-secondary" onClick={() => setMerging(true)}>
+          Merge
+        </button>
+      </div>
 
+      <div className="tab-cols">
+      <div className="tab-main">
         <div className="card tab-items">
           <div className="tab-items-head">
             <span>Items</span>
@@ -160,7 +151,7 @@ export function TabPage() {
               )}
               {i.sent_to_kitchen_at && (
                 <button type="button" className="tab-pull" onClick={() => removeItem.mutate({ itemId: i.id })}>
-                  Pull…
+                  Pull
                 </button>
               )}
               <span className="tab-item-total">{fmt(i.line_total)}</span>
@@ -183,22 +174,25 @@ export function TabPage() {
         <div className="trow total"><span>Total</span><span>{fmtQAR(order.total)}</span></div>
         {perGuest && <div className="tab-perguest">≈ {fmt(perGuest)} per guest ({order.guest_count})</div>}
         <div className="tab-side-grow" />
-        <button
-          type="button"
-          className="tab-send"
-          disabled={unsent.length === 0 || send.isPending}
-          onClick={() => send.mutate()}
-        >
-          {send.isPending
-            ? 'Firing…'
-            : unsent.length > 0
-              ? `Send ${unsent.length} item${unsent.length === 1 ? '' : 's'} to kitchen`
-              : 'Kitchen is up to date'}
-        </button>
+        {unsent.length > 0 || send.isPending ? (
+          <button
+            type="button"
+            className="tab-send"
+            disabled={send.isPending}
+            onClick={() => send.mutate()}
+          >
+            {send.isPending
+              ? 'Firing…'
+              : `Send ${unsent.length} item${unsent.length === 1 ? '' : 's'} to kitchen`}
+          </button>
+        ) : (
+          <div className="tab-fired">Kitchen is up to date</div>
+        )}
         <Link to={`/charge/${order.id}`} className="btn-primary tab-charge">
           Charge · {fmtQAR(order.total)}
         </Link>
       </aside>
+      </div>
 
       {addingItems && (
         <AddItemsModal

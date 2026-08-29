@@ -1,6 +1,7 @@
 import { Outlet, useLocation, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { listStores } from '../api/org'
+import { getOrder } from '../api/orders'
 import { useAuth } from '../auth/AuthContext'
 import { Topbar } from './Topbar'
 import './shell.css'
@@ -22,6 +23,14 @@ export function AppShell() {
   const { pathname } = useLocation()
   const params = useParams()
   const storesQuery = useQuery({ queryKey: ['stores'], queryFn: listStores, enabled: !!session })
+  // The open tab names its table in the topbar, so the page never repeats it.
+  // Same query key as TabPage — this reads the cache rather than re-fetching.
+  const tabId = pathname.startsWith('/tab/') ? params.id : undefined
+  const tabOrder = useQuery({
+    queryKey: ['order', tabId],
+    queryFn: () => getOrder(tabId!),
+    enabled: !!tabId,
+  })
   if (!session) return null
 
   const store = storesQuery.data?.data.find((s) => s.id === activeStore?.id)
@@ -31,23 +40,33 @@ export function AppShell() {
   const CHROME: Record<string, Chrome> = {
     '/': { title: till, subtitle: `${user.name} · ${user.role}`, backTo: null },
     '/register': { title: 'Register', subtitle: 'Ring up a sale' },
-    '/floor': { title: 'Tables', subtitle: store?.name ?? till },
+    '/floor': { title: 'Tables', subtitle: 'The floor right now' },
     '/orders': { title: 'Orders', subtitle: "Today's queue" },
     '/customers': { title: 'Customers', subtitle: 'Accounts and credit' },
-    '/kds': { title: 'Kitchen', subtitle: store?.name ?? till },
-    '/catalog': { title: 'Catalog', subtitle: 'Products, prices, offers' },
-    '/shifts': { title: 'Shifts', subtitle: 'Drawer and cash moves' },
-    '/reports': { title: 'Reports', subtitle: till },
-    '/staff': { title: 'Staff', subtitle: 'Attendance' },
-    '/users': { title: 'Users', subtitle: 'Logins and PINs' },
+    '/kds': { title: 'Kitchen', subtitle: 'Tickets by station' },
+    '/catalog': { title: 'Catalog', subtitle: 'Products and prices' },
+    '/shifts': { title: 'Shifts', subtitle: 'The cash drawer' },
+    '/reports': { title: 'Reports', subtitle: 'The day, so far' },
+    '/staff': { title: 'Staff', subtitle: 'Who is on the floor' },
+    '/users': { title: 'Users', subtitle: 'Till logins for this business' },
     '/settings': { title: 'Settings', subtitle: 'Branch settings' },
   }
 
   let chrome: Chrome = CHROME[pathname] ?? { title: 'Agricope', subtitle: till }
   if (pathname.startsWith('/charge/')) chrome = { title: 'Charge', subtitle: 'Take payment' }
-  if (pathname.startsWith('/receipt/')) chrome = { title: 'Receipt', subtitle: till, backTo: '/orders' }
-  if (pathname.startsWith('/tab/')) chrome = { title: 'Open tab', subtitle: store?.name ?? till, backTo: '/floor' }
-  void params
+  if (pathname.startsWith('/receipt/')) chrome = { title: 'Receipt', subtitle: 'Share or print', backTo: '/orders' }
+  if (pathname.startsWith('/tab/')) {
+    const o = tabOrder.data
+    chrome = {
+      title: o ? `${o.table_name ?? 'Dine-in'} — open tab` : 'Open tab',
+      subtitle: o
+        ? `${o.guest_count ?? '—'} guests · ${o.order_number} · ${o.cashier_name}${
+            o.order_type === 'dine_in' && !o.table_id ? ' · no table yet' : ''
+          }`
+        : "One table's bill",
+      backTo: '/floor',
+    }
+  }
 
   return (
     <div className="shell">

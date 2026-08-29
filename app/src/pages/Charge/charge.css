@@ -1,162 +1,314 @@
+/* Charge is a screen, not a modal: two equal columns that fill the till.
+   Left is what is owed and what has been taken; right is how to take it.
+   Under ~700px the auto-fit grid folds to one column on its own. */
 .charge {
-  display: flex;
-  gap: 16px;
-  width: 100%;
-  max-width: 980px;
-  align-items: flex-start;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--pad);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr));
+  gap: 13px;
+  align-content: start;
 }
-.charge-note { padding: 24px; color: var(--ink-3); }
+.charge-note { padding: var(--pad); color: var(--ink-3); }
 
-.charge-summary {
-  flex: 0 0 340px;
-  padding: 20px;
+.charge-side { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+/* What is still owed — the one number a cashier reads across the counter. */
+.charge-due {
+  background: var(--gold-tint);
+  border: 1px solid var(--gold);
+  border-radius: 16px;
+  padding: 17px 18px;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background: var(--surface-warm);
 }
-.charge-sum-head { display: flex; justify-content: space-between; align-items: center; }
-.badge-open {
-  font-size: 10px;
-  font-weight: 600;
-  background: var(--gold-tint);
-  color: #9a7200;
-  border-radius: 99px;
-  padding: 3px 9px;
+.charge-due-eyebrow {
+  font-size: calc(11.5px * var(--fs));
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gold-ink);
 }
-.charge-sum-line { display: flex; justify-content: space-between; font-size: 13px; }
-.charge-sum-line.muted { color: var(--ink-3); }
-.charge-sum-sep { border-top: 1px solid var(--border); margin: 6px 0; }
-.charge-sum-total {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.charge-due-amount {
   font-family: var(--font-head);
   font-weight: 700;
-  font-size: 16px;
-  padding: 4px 0;
+  font-size: calc(34px * var(--fs));
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
 }
-.charge-paid-label { font-size: 10px; letter-spacing: 1px; color: var(--hint); font-weight: 600; }
-.charge-paid {
+.charge-due-paid { font-size: calc(12px * var(--fs)); color: var(--gold-ink); }
+
+.charge-order {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 17px;
   display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  background: var(--success-tint);
-  border-radius: 8px;
-  padding: 8px 10px;
-  text-transform: capitalize;
+  flex-direction: column;
+  gap: 12px;
 }
-.charge-due {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: var(--gold-tint);
-  border-radius: 10px;
-  padding: 12px 14px;
-  font-weight: 700;
-  color: #7a5a00;
-  font-family: var(--font-head);
-}
-.charge-cust {
-  background: transparent;
-  border: 1px dashed var(--border);
+.charge-order-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.charge-order-num { font-family: var(--font-head); font-weight: 600; font-size: calc(14px * var(--fs)); }
+.charge-order-type { font-size: calc(11.5px * var(--fs)); color: var(--ink-3); }
+.charge-order-lines { display: flex; flex-direction: column; gap: 9px; }
+.charge-order-line { display: flex; align-items: baseline; gap: 10px; }
+.charge-order-qty {
+  font-family: var(--font-mono);
+  font-size: calc(11.5px * var(--fs));
   color: var(--ink-3);
-  font-size: 13px;
+  flex: none;
+}
+.charge-order-name { font-size: calc(13px * var(--fs)); flex: 1; min-width: 0; }
+.charge-order-opts { color: var(--ink-3); }
+.charge-order-total {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: calc(13px * var(--fs));
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+.charge-order-sep { height: 1px; background: var(--border); }
+.charge-order-totals { display: flex; flex-direction: column; gap: 7px; }
+.charge-trow { display: flex; justify-content: space-between; gap: 10px; }
+.charge-trow span { font-size: calc(12.5px * var(--fs)); color: var(--ink-2); white-space: nowrap; }
+.charge-trow span:last-child {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.charge-trow-total { padding-top: 4px; }
+.charge-trow-total span { font-family: var(--font-head); font-weight: 600; font-size: calc(15px * var(--fs)); color: var(--ink); }
+.charge-trow-total span:last-child { font-weight: 700; font-size: calc(17px * var(--fs)); color: var(--forest); }
+
+.charge-acts { display: flex; flex-direction: column; gap: 8px; }
+/* Dashed is the add-affordance: attach a customer, apply a discount. */
+.charge-dashed {
+  border: 1px dashed var(--border-strong);
+  background: var(--surface-warm);
+  color: var(--forest);
+  border-radius: 11px;
+  min-height: var(--ctl-h);
+  width: 100%;
+  padding: 8px 14px;
+  font-weight: 500;
+  font-size: calc(13px * var(--fs));
+}
+.charge-dashed-plain { background: transparent; }
+.charge-dashed:hover:not(:disabled) { border-color: var(--leaf); }
+.charge-dashed:disabled { opacity: 0.55; border-color: var(--border); color: var(--hint); cursor: default; }
+
+.charge-taken {
+  background: var(--success-tint);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.charge-taken-eyebrow {
+  font-size: calc(11px * var(--fs));
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--forest);
+}
+.charge-taken-row { display: flex; justify-content: space-between; gap: 10px; }
+.charge-taken-row span { font-size: calc(12.5px * var(--fs)); color: var(--forest); text-transform: capitalize; }
+.charge-taken-row span:last-child {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-transform: none;
 }
 
-.charge-pay { flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-.charge-pay-head { display: flex; justify-content: space-between; align-items: center; }
-.charge-back { background: transparent; color: var(--hint); min-width: 44px; font-size: 16px; }
-.charge-methods { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+/* ---- Taking the money ---------------------------------------------------- */
+.charge-pay { display: flex; flex-direction: column; gap: 11px; min-width: 0; }
+.charge-methods { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .method {
-  min-height: 52px;
+  height: var(--ctl-h);
+  min-height: var(--ctl-h);
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--ink-2);
+  border-radius: 10px;
   font-weight: 500;
+  font-size: calc(13px * var(--fs));
 }
+.method:hover { border-color: var(--leaf); }
 .method.active {
-  border: 2px solid var(--forest);
-  background: var(--success-tint);
+  border-color: var(--leaf);
+  background: var(--leaf-plate-4);
   color: var(--forest);
   font-weight: 600;
 }
-.charge-amount, .charge-changerow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: var(--surface-warm);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 12px 16px;
-}
-.charge-amount span, .charge-changerow span { color: var(--ink-3); font-size: 13px; }
-.charge-amount strong { font-family: var(--font-head); font-size: 24px; }
-.charge-changerow { background: var(--success-tint); border-color: var(--leaf-pale); }
-.charge-changerow strong { font-family: var(--font-head); font-size: 18px; color: var(--forest); }
-.charge-chips { display: flex; gap: 8px; flex-wrap: wrap; }
-.charge-error { background: var(--cta-tint); color: var(--cta); border-radius: var(--radius); padding: 12px 14px; font-weight: 500; }
-.charge-record { min-height: 56px; font-size: 15px; }
-.charge-note-sub { font-size: 12px; color: var(--hint); margin: 0; text-align: center; }
 
+.charge-amount {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 15px 17px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.charge-amount-eyebrow {
+  font-size: calc(11px * var(--fs));
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--hint);
+}
+.charge-amount-value {
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: calc(30px * var(--fs));
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.charge-changerow {
+  background: var(--success-tint);
+  border: 1px solid var(--leaf);
+  border-radius: 12px;
+  padding: 13px 15px;
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: calc(14px * var(--fs));
+  color: var(--forest);
+}
+
+.charge-ref-field { display: flex; flex-direction: column; gap: 6px; }
+.charge-ref-field span { font-weight: 500; font-size: calc(11.5px * var(--fs)); color: var(--ink-1); }
+.charge-ref {
+  min-height: var(--ctl-h);
+  font-family: var(--font-mono);
+  font-size: calc(13px * var(--fs));
+}
+
+.charge-chips { display: grid; grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); gap: 6px; }
+.charge-quick {
+  border: 1px solid var(--border);
+  background: var(--surface-warm);
+  color: var(--forest);
+  border-radius: 10px;
+  height: var(--ctl-h);
+  min-height: var(--ctl-h);
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: calc(13px * var(--fs));
+  font-variant-numeric: tabular-nums;
+}
+.charge-quick:hover { border-color: var(--leaf); }
+
+.charge-error {
+  background: var(--cta-tint);
+  color: var(--cta);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-weight: 500;
+}
+.charge-record {
+  border-radius: 12px;
+  min-height: calc(var(--ctl-h) + 12px);
+  font-size: calc(16px * var(--fs));
+}
+.charge-record:hover:not(:disabled) { background: var(--forest-deep); }
+.charge-note-sub { font-size: calc(11.5px * var(--fs)); color: var(--hint); margin: 0; line-height: 1.55; }
+
+/* ---- Paid ---------------------------------------------------------------- */
+.charge-paid-col {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 0;
+}
 .charge-done {
-  max-width: 440px;
-  margin: 48px auto;
-  padding: 40px;
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--leaf);
+  border-radius: 16px;
+  padding: 26px 22px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   text-align: center;
 }
 .charge-done-check {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
+  width: 62px;
+  height: 62px;
+  flex: none;
+  border-radius: 99px;
   background: var(--success-tint);
   color: var(--forest);
-  font-size: 30px;
+  font-size: 27px;
   display: grid;
   place-items: center;
 }
-.charge-done-num { color: var(--ink-3); margin: 0; }
-.charge-change {
-  background: var(--gold-tint);
-  border-radius: 10px;
-  padding: 12px 20px;
-  font-size: 15px;
+.charge-done-head {
+  width: 100%;
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: calc(27px * var(--fs));
+  color: var(--forest);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
-.charge-done-actions { display: flex; gap: 10px; margin-top: 8px; }
+.charge-done-meta { width: 100%; font-size: calc(12.5px * var(--fs)); color: var(--ink-3); text-transform: capitalize; }
+.charge-done-change {
+  width: 100%;
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: calc(14px * var(--fs));
+  background: var(--success-tint);
+  color: var(--forest);
+  border-radius: 10px;
+  padding: 11px 14px;
+}
+.charge-done-actions { display: flex; gap: 8px; width: 100%; padding-top: 4px; }
 .charge-newsale, .charge-receipt {
+  flex: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: var(--touch);
-  padding: 0 26px;
-  border-radius: var(--radius);
+  min-height: calc(var(--ctl-h) + 4px);
+  border-radius: 11px;
   text-decoration: none;
 }
+.charge-newsale { font-family: var(--font-head); font-weight: 600; font-size: calc(14px * var(--fs)); }
+.charge-receipt { color: var(--forest); font-weight: 500; font-size: calc(13.5px * var(--fs)); }
+.charge-receipt:hover { border-color: var(--leaf); }
 
-/* Phase 15: credit standing, shown where the decision is made */
+/* Credit standing, shown where the decision is made. */
 .charge-credit {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
   background: var(--gold-tint);
-  border-radius: 10px;
-  padding: 12px 14px;
-  font-size: 13px;
-  color: #7a5a00;
+  border-radius: 12px;
+  padding: 13px 15px;
+  font-size: calc(12.5px * var(--fs));
+  color: var(--gold-ink);
+  line-height: 1.45;
 }
 .charge-credit-act {
   background: transparent;
   color: var(--forest);
   font-weight: 600;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   min-height: 36px;
   padding: 0;
   text-decoration: underline;
   margin-left: auto;
 }
 .charge-error .charge-credit-act { color: var(--cta); margin-left: 10px; }
+
+/* Dense: one column, and the keypad follows the chips. */
+@media (max-width: 1023px) {
+  .charge { grid-template-columns: 1fr; }
+}
