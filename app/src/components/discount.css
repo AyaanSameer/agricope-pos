@@ -1,7 +1,7 @@
 .disc-modal {
   position: fixed;
   inset: 0;
-  background: rgba(8, 61, 43, 0.55);
+  background: var(--scrim-modal);
   display: flex;
   align-items: center;
   justify-content: center;

@@ -176,6 +176,28 @@
 .cust-st-note { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cust-st-empty { padding: 18px; color: var(--ink-3); }
 .cust-st-foot { padding: 10px 16px; font-size: 11px; color: var(--hint); background: var(--surface-warm); }
+/* An empty list says so and offers the way out of it. */
+.cust-list-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--ink-3);
+  font-size: calc(13px * var(--fs));
+}
+.cust-list-empty-add {
+  min-height: var(--ctl-h);
+  padding: 0 16px;
+  border: 1px dashed var(--border-strong);
+  background: var(--surface);
+  color: var(--forest);
+  font-weight: 500;
+  font-size: calc(13px * var(--fs));
+}
+.cust-list-empty-add:hover { border-color: var(--leaf); }
+
 .cust-empty {
   flex: 1;
   min-width: 0;
@@ -202,7 +224,7 @@
 .cust-modal {
   position: fixed;
   inset: 0;
-  background: rgba(8, 61, 43, 0.55);
+  background: var(--scrim-modal);
   display: flex;
   align-items: center;
   justify-content: center;

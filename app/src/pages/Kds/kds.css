@@ -1,45 +1,72 @@
-/* The KDS runs in its own dark world — glanceable across a hot kitchen. */
+/* The KDS runs in its own dark world — glanceable across a hot kitchen. It is
+   a screen under the topbar like any other, not a fixed overlay. */
 .kds {
-  position: fixed;
-  inset: 0;
-  left: 232px; /* sidebar stays for navigation back */
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
   background: #05261a;
   display: flex;
   flex-direction: column;
-  z-index: 5;
+  overflow: hidden;
 }
 .kds-head {
+  flex: none;
   display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 14px 22px;
-  background: #0a5038;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 20px;
+  background: var(--forest);
 }
-.kds-head h2 { color: #fff; font-size: 18px; }
-.kds-stations { display: flex; gap: 6px; }
+.kds-head-top { display: flex; align-items: center; gap: 12px; }
+.kds-head h2 {
+  color: #fff;
+  font-size: calc(17px * var(--fs));
+  font-weight: 600;
+  white-space: nowrap;
+}
+.kds-stations { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+.kds-stations:empty { display: none; }
 .kds-station {
-  min-height: 42px;
-  padding: 0 16px;
-  border-radius: 99px;
-  background: #11543c;
-  color: #b7c9b4;
-  font-weight: 500;
+  height: var(--ctl-h);
+  min-height: var(--ctl-h);
+  padding: 0 18px;
+  border-radius: 9px;
+  border: 1px solid #176048;
+  background: transparent;
+  color: var(--leaf-pale);
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: calc(13.5px * var(--fs));
+  white-space: nowrap;
+  flex: none;
 }
-.kds-station.active { background: var(--leaf); color: #06301f; font-weight: 600; }
-.kds-clock { margin-left: auto; color: #fff; font-family: var(--font-head); font-weight: 700; font-size: 20px; }
+.kds-station.active { background: var(--leaf); border-color: var(--leaf); color: var(--leaf-ink); }
+.kds-clock {
+  margin-left: auto;
+  color: #fff;
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: calc(19px * var(--fs));
+  font-variant-numeric: tabular-nums;
+}
 
 .kds-board {
   flex: 1;
+  min-height: 0;
   display: flex;
-  gap: 14px;
-  padding: 18px 22px;
-  align-items: flex-start;
-  overflow-x: auto;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  overflow-y: auto;
 }
 .kds-quiet { color: #9fb89c; padding: 20px; }
 
 .kds-ticket {
-  flex: 0 0 240px;
+  flex: 1 1 var(--tkw);
+  min-width: var(--tkw);
+  max-width: 100%;
+  min-height: calc(183px * var(--fs));
   background: #11543c;
   border-radius: 12px;
   overflow: hidden;

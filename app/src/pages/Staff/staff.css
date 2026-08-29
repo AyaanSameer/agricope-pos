@@ -115,7 +115,7 @@
 .staff-modal {
   position: fixed;
   inset: 0;
-  background: rgba(20, 32, 24, 0.55);
+  background: var(--scrim-modal);
   display: flex;
   align-items: center;
   justify-content: center;

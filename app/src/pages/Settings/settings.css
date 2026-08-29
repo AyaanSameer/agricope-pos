@@ -1,4 +1,6 @@
-.settings-list { display: flex; flex-direction: column; gap: 14px; max-width: 760px; }
+/* A settings column reads better capped and centred than stretched to the till. */
+.settings-page > * { width: 100%; max-width: min(760px, var(--hub-max)); margin-inline: auto; }
+.settings-list { display: flex; flex-direction: column; gap: 14px; }
 .settings-loading { color: var(--ink-3); padding: 18px; }
 .settings-error {
   background: var(--cta-tint);

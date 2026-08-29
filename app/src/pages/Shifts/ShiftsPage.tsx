@@ -119,7 +119,9 @@ export function ShiftsPage() {
           </div>
           <div className="card movements">
             <h3>Cash movements</h3>
-            {shift.movements.length === 0 && <p className="muted">No paid in / out yet.</p>}
+            {shift.movements.length === 0 && (
+              <p className="muted movements-empty">No paid in / out yet.</p>
+            )}
             {shift.movements.map((m) => (
               <div key={m.id} className="movement">
                 <span className={`st ${m.type === 'paid_in' ? 'st-done' : 'st-void'}`}>

@@ -319,6 +319,7 @@ export function AdminPage() {
           title="Log out?"
           message="This signs the Agricope console out on this device."
           confirmLabel="Log out"
+          danger
           onConfirm={signOut}
           onCancel={() => setConfirmingLogout(false)}
         />

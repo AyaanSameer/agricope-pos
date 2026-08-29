@@ -1,7 +1,7 @@
 .confirm {
   position: fixed;
   inset: 0;
-  background: rgba(20, 32, 24, 0.55);
+  background: var(--scrim-confirm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -11,6 +11,7 @@
 
 .confirm-card {
   width: min(380px, 100%);
+  border-radius: var(--radius-modal);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -20,4 +21,6 @@
 .confirm-card p { margin: 0; font-size: 13.5px; color: var(--ink-2); line-height: 1.5; }
 
 .confirm-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
-.confirm-danger { background: var(--danger, #c0392b); }
+/* Out-specifies .btn-primary — a destructive action is never forest green. */
+.confirm .confirm-danger { background: var(--danger); }
+.confirm .confirm-danger:hover:not(:disabled) { background: var(--cta-hover); }

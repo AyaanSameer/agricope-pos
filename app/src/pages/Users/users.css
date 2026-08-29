@@ -35,7 +35,7 @@
 
 .users-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.2fr) 130px 160px 70px 170px;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.1fr) 118px minmax(0, 1fr) 62px 168px;
   gap: 12px;
   align-items: center;
   padding: 12px 18px;
@@ -116,7 +116,14 @@
 /* Gold marks the account that governs the business. */
 .users-role.owner { background: var(--gold-tint); color: #8a5a00; }
 
-.users-branch { font-size: 13px; color: var(--ink-2); }
+.users-branch {
+  font-size: 13px;
+  color: var(--ink-2);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .users-pin { color: var(--ink-2); letter-spacing: 1px; }
 
 .users-actions { display: flex; gap: 8px; justify-content: flex-end; }
@@ -133,7 +140,8 @@
 }
 .users-btn:active { background: var(--surface-warm); }
 /* Sunset Orange is destructive, and only destructive. */
-.users-btn.danger { color: var(--cta); border-color: #f0cdbf; }
+.users-btn.danger { color: var(--cta); border-color: var(--border); }
+.users-btn.danger:hover { border-color: var(--cta); }
 .users-btn.danger:active { background: var(--cta-tint); }
 
 .users-loading { padding: 20px; color: var(--ink-3); }
@@ -141,7 +149,7 @@
 .users-modal {
   position: fixed;
   inset: 0;
-  background: rgba(8, 61, 43, 0.55);
+  background: var(--scrim-modal);
   display: flex;
   align-items: center;
   justify-content: center;

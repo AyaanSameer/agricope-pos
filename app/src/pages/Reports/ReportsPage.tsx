@@ -184,8 +184,11 @@ export function ReportsPage() {
   const buckets = agingQuery.data?.buckets ?? {}
   const owing = (agingQuery.data?.data ?? []).slice(0, 5)
 
-  // Credit outstanding has no `previous` — but the window's own movement is the delta.
+  // Credit outstanding has no `previous` — but the window's own movement is the
+  // delta. With nothing owed there is nothing to compare, so the pill goes away
+  // rather than claiming a change against a zero balance.
   const creditMove = s ? new Big(s.credit_charged).minus(s.credit_repaid).toFixed(2) : '0.00'
+  const creditDelta = s && new Big(s.credit_outstanding).eq(0) ? null : moneyDelta(creditMove)
 
   return (
     <div className="page page-wide">
@@ -221,7 +224,7 @@ export function ReportsPage() {
             <Kpi label="Discounts given" value={`QAR ${fmt(s.discount_total)}`}
               delta={pctDelta(s.discount_total, s.previous?.discount_total)} vs={meta.vs} />
             <Kpi label="Credit outstanding" value={`QAR ${fmt(s.credit_outstanding)}`}
-              delta={moneyDelta(creditMove)} vs={meta.vs} />
+              delta={creditDelta} vs={meta.vs} />
           </div>
 
           <div className="rp-grid">
@@ -292,7 +295,7 @@ export function ReportsPage() {
               </div>
             </section>
 
-            <section className="rp-card">
+            <section className="rp-card rp-aging">
               <header className="rp-card-head">
                 <h3>Credit ageing</h3>
                 <span className="rp-out">

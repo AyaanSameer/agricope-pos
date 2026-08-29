@@ -2,8 +2,19 @@
 .shifts-actions { display: flex; gap: 8px; }
 .shifts-close { padding: 0 18px; }
 
-.shifts-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; align-items: start; }
+/* Same-row cards stand at the same height. */
+.shifts-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; align-items: stretch; }
 .xreport, .movements { padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+/* An empty movements list sits in the middle of the card, not at its top. */
+.movements-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin: 0;
+  padding: 24px 0;
+}
 .xrows { display: flex; flex-direction: column; }
 .xrow {
   display: grid;

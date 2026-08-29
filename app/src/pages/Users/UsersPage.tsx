@@ -6,6 +6,7 @@ import type { UserInput } from '../../api/org'
 import type { Role, UserRecord } from '../../api/types'
 import { ApiError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
+import { ConfirmDialog } from '../../components/ConfirmDialog'
 import './users.css'
 
 type Draft = UserInput & { id?: string }
@@ -24,13 +25,19 @@ export function UsersPage() {
   const usersQuery = useQuery({ queryKey: ['users'], queryFn: listUsers })
   const storesQuery = useQuery({ queryKey: ['stores'], queryFn: listStores })
   const [draft, setDraft] = useState<Draft | null>(null)
+  const [deleting, setDeleting] = useState<UserRecord | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const remove = useMutation({
     mutationFn: (id: string) => deleteUser(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
-    onError: (err) =>
-      window.alert(err instanceof ApiError ? err.message : 'Could not delete — try again.'),
+    onSuccess: () => {
+      setDeleting(null)
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+    },
+    onError: (err) => {
+      setDeleting(null)
+      window.alert(err instanceof ApiError ? err.message : 'Could not delete — try again.')
+    },
   })
 
   const save = useMutation({
@@ -117,11 +124,7 @@ export function UsersPage() {
                   type="button"
                   className="users-btn danger"
                   disabled={remove.isPending}
-                  onClick={() => {
-                    if (window.confirm(`Delete ${u.name}? Their login and PIN stop working immediately.`)) {
-                      remove.mutate(u.id)
-                    }
-                  }}
+                  onClick={() => setDeleting(u)}
                 >
                   Delete
                 </button>
@@ -200,6 +203,19 @@ export function UsersPage() {
             </div>
           </form>
         </div>
+      )}
+
+      {/* Deleting a login is the owner's call, and it asks first. */}
+      {deleting && (
+        <ConfirmDialog
+          title={`Delete ${deleting.name}?`}
+          message="Their login and PIN stop working immediately. Past receipts and shifts keep their name — nothing already recorded changes."
+          confirmLabel={remove.isPending ? 'Deleting…' : 'Delete login'}
+          danger
+          busy={remove.isPending}
+          onConfirm={() => remove.mutate(deleting.id)}
+          onCancel={() => setDeleting(null)}
+        />
       )}
     </div>
   )

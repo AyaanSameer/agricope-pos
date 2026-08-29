@@ -57,7 +57,12 @@ export function KdsPage() {
   return (
     <div className="kds">
       <header className="kds-head">
-        <h2>Kitchen display</h2>
+        <div className="kds-head-top">
+          <h2>Kitchen — {stations.find((s) => s.id === activeStation)?.name ?? 'all stations'}</h2>
+          <span className="kds-clock">
+            {new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        </div>
         <div className="kds-stations">
           {stations.map((s) => (
             <button
@@ -70,9 +75,6 @@ export function KdsPage() {
             </button>
           ))}
         </div>
-        <span className="kds-clock">
-          {new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-        </span>
       </header>
 
       <div className="kds-board">

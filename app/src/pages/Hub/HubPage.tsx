@@ -195,6 +195,7 @@ export function HubPage() {
           title="Sign out?"
           message={`This signs ${activeStore ? `the till at ${activeStore.name}` : 'this till'} out of the business. The next person signs the business in again and enters their PIN.`}
           confirmLabel="Sign out"
+          danger
           onConfirm={signOut}
           onCancel={() => setConfirmingSignOut(false)}
         />

@@ -1,7 +1,7 @@
 .optpick {
   position: fixed;
   inset: 0;
-  background: var(--scrim-panel);
+  background: var(--scrim-modal);
   display: flex;
   align-items: center;
   justify-content: center;

@@ -30,7 +30,7 @@ export function SettingsPage() {
   const visible = activeStore ? stores.filter((s) => s.id === activeStore.id) : stores
 
   return (
-    <div className="page">
+    <div className="page settings-page">
       <div className="page-head">
         <div>
           <h2>Settings</h2>
@@ -105,8 +105,8 @@ export function SettingsPage() {
                 <span className="settings-effect-tag">Effect</span>
                 <span className="settings-effect-text">
                   {store.kitchen_mode === 'printer'
-                    ? 'Kitchen disappears from the sidebar · “Send to kitchen” opens a printable ticket instead'
-                    : 'Kitchen appears in the sidebar · a sent round lands on the KDS board at the pass'}
+                    ? 'Kitchen disappears from the hub · “Send to kitchen” opens a printable ticket instead'
+                    : 'Kitchen appears on the hub · a sent round lands on the KDS board at the pass'}
                 </span>
               </div>
             </div>

@@ -83,12 +83,18 @@
 .rp-pill.down { background: var(--cta-tint); color: var(--cta); }
 
 /* ---- Card grid ---------------------------------------------------------- */
+/* One 4-column grid, two full rows — no card left alone on a third.
+   Row 1: sales by hour (2) · payment mix (1) · top items (1)
+   Row 2: credit ageing (2) · order-type split (2) */
 .rp-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
-  align-items: start;
+  align-items: stretch;
 }
+.rp-hours { grid-column: span 2; }
+.rp-aging { grid-column: span 2; }
+.rp-split { grid-column: span 2; }
 .rp-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -158,6 +164,7 @@
 /* Deep Forest marks the busiest hour. */
 .rp-bar.peak { background: var(--forest); }
 .rp-bar-label { font-size: 9px; color: var(--hint); }
+.rp-bars .rp-empty { margin: auto; }
 
 /* ---- Payment mix -------------------------------------------------------- */
 .rp-mix { display: flex; flex-direction: column; gap: 12px; }
@@ -291,8 +298,10 @@
 @media (max-width: 1279px) {
   .rp-kpis { grid-template-columns: repeat(3, 1fr); }
   .rp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rp-hours, .rp-aging, .rp-split { grid-column: span 2; }
 }
 @media (max-width: 767px) {
   .rp-kpis { grid-template-columns: repeat(2, 1fr); }
   .rp-grid { grid-template-columns: minmax(0, 1fr); }
+  .rp-hours, .rp-aging, .rp-split { grid-column: span 1; }
 }

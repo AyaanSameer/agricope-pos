@@ -79,6 +79,14 @@ export function CustomersPage() {
               </span>
             </button>
           ))}
+          {customersQuery.data?.data.length === 0 && (
+            <div className="cust-list-empty">
+              <span>{search ? 'No customer matches that.' : 'No customers yet'}</span>
+              <button type="button" className="cust-list-empty-add" onClick={() => setAdding(true)}>
+                + New customer
+              </button>
+            </div>
+          )}
         </div>
 
         {selected ? (

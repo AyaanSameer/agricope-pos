@@ -1,5 +1,5 @@
 /* Add-items modal — shared by the tab and the orders page */
-.tab-additems { position: fixed; inset: 0; background: rgba(8,61,43,0.55); display: flex; align-items: center; justify-content: center; z-index: 40; padding: 24px; }
+.tab-additems { position: fixed; inset: 0; background: var(--scrim-modal); display: flex; align-items: center; justify-content: center; z-index: 40; padding: 24px; }
 .tab-additems-card { width: 100%; max-width: 720px; max-height: 90vh; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
 .tab-additems-head { display: flex; gap: 10px; align-items: center; }
 .tab-additems-head h3 { margin-right: auto; }

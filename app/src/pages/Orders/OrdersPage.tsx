@@ -76,7 +76,7 @@ export function OrdersPage() {
         <div className="card orders-table">
           <div className="orders-row orders-head-row">
             <span>Order</span><span>Time · cashier</span><span>Type</span>
-            <span className="num">Total</span><span>Status</span>
+            <span className="num">Total · QAR</span><span>Status</span>
           </div>
           {ordersQuery.isPending && <div className="orders-loading">Loading…</div>}
           {ordersQuery.data?.data.map((o) => (
