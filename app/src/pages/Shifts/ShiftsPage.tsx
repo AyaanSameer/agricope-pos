@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Big from 'big.js'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../api/client'
 import { ApiError } from '../../api/client'
@@ -71,26 +72,17 @@ export function ShiftsPage() {
 
   return (
     <div className="page">
-      <div className="page-head">
-        <div>
-          <h2>Shift &amp; cash drawer — {activeStore.name}</h2>
-          <p className="page-sub">
-            {shift
-              ? `Open since ${new Date(shift.opened_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} · ${shift.opened_by_name}`
-              : 'No open shift — cash is locked until one opens'}
-          </p>
+      {shift && (
+        <div className="shifts-actions">
+          <button type="button" className="shifts-move" onClick={() => setMovementOpen(true)}>
+            + Paid in / out
+          </button>
+          <button type="button" className="btn-primary shifts-close" onClick={() => setClosing(true)}>
+            Close shift…
+          </button>
+          <span className="shifts-state">Shift open</span>
         </div>
-        {shift && (
-          <div className="shifts-actions">
-            <button type="button" className="btn-secondary" onClick={() => setMovementOpen(true)}>
-              + Paid in / out
-            </button>
-            <button type="button" className="btn-primary shifts-close" onClick={() => setClosing(true)}>
-              Close shift…
-            </button>
-          </div>
-        )}
-      </div>
+      )}
 
       {!shift && !lastZ && <OpenShiftCard storeId={activeStore.id} onDone={refresh} />}
 
@@ -114,7 +106,10 @@ export function ShiftsPage() {
       {shift && (
         <div className="shifts-grid">
           <div className="card xreport">
-            <h3>X report — live drawer math</h3>
+            <div className="xreport-head">
+              <h3>X report — live drawer math</h3>
+              <span className="xreport-when">mid-shift</span>
+            </div>
             <XReportRows report={shift} />
           </div>
           <div className="card movements">
@@ -128,12 +123,16 @@ export function ShiftsPage() {
                   {m.type === 'paid_in' ? 'PAID IN' : 'PAID OUT'}
                 </span>
                 <div className="movement-info">
-                  <span>{m.reason}</span>
-                  <span className="muted small">
-                    {new Date(m.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} · {m.created_by_name}
+                  <span className="movement-reason">{m.reason}</span>
+                  <span className="movement-meta">
+                    {m.created_by_name} ·{' '}
+                    {new Date(m.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
-                <span className="strong">{m.type === 'paid_in' ? '+' : '−'}{fmt(m.amount)}</span>
+                <span className={m.type === 'paid_in' ? 'movement-amt' : 'movement-amt out'}>
+                  {m.type === 'paid_in' ? '+' : '−'}
+                  {fmt(m.amount)}
+                </span>
               </div>
             ))}
           </div>
@@ -141,15 +140,22 @@ export function ShiftsPage() {
       )}
 
       <div className="card shifts-history">
-        <div className="shifts-history-head">Shift history</div>
+        <div className="shifts-hrow shifts-hhead">
+          <span>Date</span>
+          <span>Who</span>
+          <span>Open – close</span>
+          <span>Outcome</span>
+        </div>
         {historyQuery.data?.data.map((s) => (
           <div key={s.id} className="shifts-hrow">
             <span>{new Date(s.opened_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</span>
             <span className="muted">{s.opened_by_name}</span>
-            <span className="muted">
+            <span className="shifts-htime">
               {new Date(s.opened_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-              {' — '}
-              {s.closed_at ? new Date(s.closed_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'open'}
+              {' – '}
+              {s.closed_at
+                ? new Date(s.closed_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+                : 'now'}
             </span>
             <span>
               {s.status === 'open' ? (
@@ -228,65 +234,196 @@ function OpenShiftCard({ storeId, onDone }: { storeId: string; onDone: () => voi
   )
 }
 
+/* Reasons a drawer opens outside a sale. "Other" keeps the free-text path,
+   so nothing that used to be recordable stops being recordable. */
+const PAID_OUT_REASONS = ['Supplier delivery', 'Petty cash', 'Bought change', 'Staff advance']
+const PAID_IN_REASONS = ['Change float top-up', 'Owner deposit', 'Till correction']
+
 function MovementModal({ shiftId, onDone, onClose }: { shiftId: string; onDone: () => void; onClose: () => void }) {
-  const { value, onKey } = useMoneyEntry()
+  const { value, setValue, onKey } = useMoneyEntry()
   const [type, setType] = useState<'paid_in' | 'paid_out'>('paid_out')
-  const [reason, setReason] = useState('')
+  const [reason, setReason] = useState(PAID_OUT_REASONS[0])
+  const [otherReason, setOtherReason] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const reasons = type === 'paid_out' ? PAID_OUT_REASONS : PAID_IN_REASONS
+  const finalReason = reason === 'Other' ? otherReason.trim() : reason
   const save = useMutation({
-    mutationFn: () => api(`/shifts/${shiftId}/movements`, { method: 'POST', body: JSON.stringify({ type, amount: value, reason }) }),
+    mutationFn: () =>
+      api(`/shifts/${shiftId}/movements`, {
+        method: 'POST',
+        body: JSON.stringify({ type, amount: value, reason: finalReason }),
+      }),
     onSuccess: onDone,
     onError: (err) => setError(err instanceof ApiError ? err.message : 'Could not record — try again.'),
   })
+
+  function pickType(next: 'paid_in' | 'paid_out') {
+    setType(next)
+    setReason((next === 'paid_out' ? PAID_OUT_REASONS : PAID_IN_REASONS)[0])
+  }
+
   return (
     <div className="cust-modal" role="dialog" aria-modal="true">
-      <div className="card cust-repay">
-        <h3>Cash in / out</h3>
-        <div className="cust-repay-methods">
-          <button type="button" className={type === 'paid_out' ? 'method active' : 'method'} onClick={() => setType('paid_out')}>Paid out</button>
-          <button type="button" className={type === 'paid_in' ? 'method active' : 'method'} onClick={() => setType('paid_in')}>Paid in</button>
+      <div className="card shift-modal">
+        <div className="shift-modal-head">
+          <div className="shift-modal-title">
+            <h3>Cash paid {type === 'paid_out' ? 'out' : 'in'}</h3>
+            <p>Every movement lands on the X report and the Z report.</p>
+          </div>
+          <button type="button" className="shift-modal-close" aria-label="Close" onClick={onClose}>
+            ✕
+          </button>
         </div>
-        <input placeholder="Reason — e.g. bought change, petty cash" value={reason} onChange={(e) => setReason(e.target.value)} />
-        <div className="cust-repay-amount"><span>Amount</span><strong>{value ? `QAR ${value}` : 'QAR 0.00'}</strong></div>
-        <MoneyPad onKey={onKey} disabled={save.isPending} />
+
+        <div className="shift-seg" role="radiogroup" aria-label="Direction">
+          <button
+            type="button"
+            role="radio"
+            aria-checked={type === 'paid_out'}
+            className={type === 'paid_out' ? 'shift-seg-btn active' : 'shift-seg-btn'}
+            onClick={() => pickType('paid_out')}
+          >
+            Paid out
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={type === 'paid_in'}
+            className={type === 'paid_in' ? 'shift-seg-btn active' : 'shift-seg-btn'}
+            onClick={() => pickType('paid_in')}
+          >
+            Paid in
+          </button>
+        </div>
+
+        <label className="shift-field">
+          <span>Reason</span>
+          <select value={reason} onChange={(e) => setReason(e.target.value)}>
+            {reasons.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+            <option value="Other">Other…</option>
+          </select>
+        </label>
+        {reason === 'Other' && (
+          <input
+            className="shift-other"
+            autoFocus
+            placeholder="What was the cash for?"
+            value={otherReason}
+            onChange={(e) => setOtherReason(e.target.value)}
+          />
+        )}
+
+        <div className="shift-amount">
+          <span className="shift-amount-eyebrow">Amount</span>
+          <span className="shift-amount-value">{value ? `QAR ${value}` : 'QAR 0.00'}</span>
+        </div>
+
+        <div className="shift-quick">
+          {['50.00', '100.00', '250.00'].map((v) => (
+            <button key={v} type="button" className="shift-quick-btn" onClick={() => setValue(v)}>
+              {v}
+            </button>
+          ))}
+        </div>
+
+        <MoneyPad onKey={onKey} disabled={save.isPending} size="fill" />
         {error && <div className="cust-error">{error}</div>}
-        <button type="button" className="btn-primary" disabled={!value || !reason.trim() || save.isPending} onClick={() => save.mutate()}>
-          Record
+        <button
+          type="button"
+          className="btn-primary shift-submit"
+          disabled={!value || !finalReason || save.isPending}
+          onClick={() => save.mutate()}
+        >
+          {save.isPending
+            ? 'Recording…'
+            : `Record paid ${type === 'paid_out' ? 'out' : 'in'} · ${fmtQAR(value || '0')}`}
         </button>
-        <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
       </div>
     </div>
   )
 }
 
 function CloseShiftModal({ shift, onDone, onClose }: { shift: ShiftReport; onDone: (z: ShiftReport) => void; onClose: () => void }) {
-  const { value, onKey } = useMoneyEntry()
+  const { value, setValue, onKey } = useMoneyEntry()
   const [error, setError] = useState<string | null>(null)
   const close = useMutation({
-    mutationFn: () => api<ShiftReport>(`/shifts/${shift.id}/close`, { method: 'POST', body: JSON.stringify({ counted_cash: value || '0' }) }),
+    mutationFn: () =>
+      api<ShiftReport>(`/shifts/${shift.id}/close`, {
+        method: 'POST',
+        body: JSON.stringify({ counted_cash: value || '0' }),
+      }),
     onSuccess: onDone,
     onError: (err) => setError(err instanceof ApiError ? err.message : 'Could not close — try again.'),
   })
-  const overShort =
-    value !== '' ? (Number(value) - Number(shift.live_expected_cash)).toFixed(2) : null
+  const expected = new Big(shift.live_expected_cash)
+  const overShort = value !== '' ? new Big(value).minus(expected).toFixed(2) : null
+  // Expected, then the two round figures either side of it a drawer usually
+  // lands on — so the common counts are one tap rather than six.
+  const down50 = expected.minus(expected.mod(50)).toFixed(2)
+  const down100 = expected.minus(expected.mod(100)).toFixed(2)
+
   return (
     <div className="cust-modal" role="dialog" aria-modal="true">
-      <div className="card cust-repay">
-        <h3>Close shift — count the drawer</h3>
-        <p className="muted small">Expected: {fmtQAR(shift.live_expected_cash)} (server-computed)</p>
-        <div className="cust-repay-amount"><span>Counted</span><strong>{value ? `QAR ${value}` : 'QAR 0.00'}</strong></div>
+      <div className="card shift-modal">
+        <div className="shift-modal-head">
+          <div className="shift-modal-title">
+            <h3>Close the shift</h3>
+            <p>
+              Expected in drawer {fmtQAR(shift.live_expected_cash)} — count the cash and enter what
+              is actually there.
+            </p>
+          </div>
+          <button type="button" className="shift-modal-close" aria-label="Close" onClick={onClose}>
+            ✕
+          </button>
+        </div>
+
+        <div className="shift-amount">
+          <span className="shift-amount-eyebrow">Counted</span>
+          <span className="shift-amount-value">{value ? `QAR ${value}` : 'QAR 0.00'}</span>
+        </div>
+
+        <div className="shift-quick">
+          <button
+            type="button"
+            className="shift-quick-btn"
+            onClick={() => setValue(expected.toFixed(2))}
+          >
+            Expected
+          </button>
+          <button type="button" className="shift-quick-btn" onClick={() => setValue(down50)}>
+            {fmt(down50)}
+          </button>
+          <button type="button" className="shift-quick-btn" onClick={() => setValue(down100)}>
+            {fmt(down100)}
+          </button>
+        </div>
+
         {overShort !== null && (
           <div className={Number(overShort) === 0 ? 'overshort ok-bg' : 'overshort bad-bg'}>
-            {Number(overShort) === 0 ? 'Drawer balances exactly' : `${Number(overShort) > 0 ? 'Over' : 'Short'} QAR ${Math.abs(Number(overShort)).toFixed(2)}`}
+            {Number(overShort) === 0
+              ? 'Drawer balances exactly'
+              : `${Number(overShort) > 0 ? 'Over' : 'Short'} ${fmtQAR(Math.abs(Number(overShort)).toFixed(2))}`}
           </div>
         )}
-        <MoneyPad onKey={onKey} disabled={close.isPending} />
+
+        <MoneyPad onKey={onKey} disabled={close.isPending} size="fill" />
         {error && <div className="cust-error">{error}</div>}
-        <button type="button" className="btn-primary" disabled={value === '' || close.isPending} onClick={() => close.mutate()}>
+        <button
+          type="button"
+          className="btn-primary shift-submit"
+          disabled={value === '' || close.isPending}
+          onClick={() => close.mutate()}
+        >
           {close.isPending ? 'Closing…' : 'Close shift & produce Z report'}
         </button>
-        <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
-        <p className="muted tiny">Closing is permanent — the Z report becomes the record of this drawer.</p>
+        <p className="shift-note">
+          Closing is permanent — the Z report becomes the record of this drawer.
+        </p>
       </div>
     </div>
   )
