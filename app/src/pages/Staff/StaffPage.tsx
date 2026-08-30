@@ -94,14 +94,7 @@ export function StaffPage() {
 
   return (
     <div className="page page-wide">
-      <div className="page-head">
-        <div>
-          <h2>Staff</h2>
-          <p className="page-sub">
-            {activeStore ? activeStore.name : 'All branches'} · {onFloor} on the floor now ·
-            check-ins write the attendance log
-          </p>
-        </div>
+      <div className="staff-top">
         <button
           type="button"
           className="btn-primary staff-add"
@@ -117,20 +110,20 @@ export function StaffPage() {
       {/* The shift at a glance, before the individual cards. */}
       <div className="staff-stats">
         <div className="staff-stat">
-          <strong>{onFloor}</strong>
           <span>On the floor</span>
+          <strong>{onFloor}</strong>
         </div>
         <div className="staff-stat">
-          <strong>{staff.length - onFloor}</strong>
           <span>Off the floor</span>
+          <strong>{staff.length - onFloor}</strong>
         </div>
         <div className="staff-stat">
-          <strong>{duration(loggedToday)}</strong>
           <span>Hours logged today</span>
+          <strong>{duration(loggedToday)}</strong>
         </div>
         <div className="staff-stat">
-          <strong>{firstCheckIn(staff)}</strong>
           <span>First check-in</span>
+          <strong>{firstCheckIn(staff)}</strong>
         </div>
       </div>
 
@@ -152,8 +145,20 @@ export function StaffPage() {
                   {s.role_title} · {s.store_name ?? 'All branches'}
                 </div>
               </div>
-              <span className={s.checked_in_at ? 'staff-status in' : 'staff-status out'}>
-                {s.checked_in_at ? `In since ${timeOf(s.checked_in_at)}` : 'Off floor'}
+              <span
+                className={
+                  !s.is_active
+                    ? 'staff-status off'
+                    : s.checked_in_at
+                      ? 'staff-status in'
+                      : 'staff-status out'
+                }
+              >
+                {!s.is_active
+                  ? 'Inactive'
+                  : s.checked_in_at
+                    ? `In since ${timeOf(s.checked_in_at)}`
+                    : 'Off floor'}
               </span>
             </div>
 
@@ -218,34 +223,45 @@ export function StaffPage() {
       {draft && (
         <div className="staff-modal" role="dialog" aria-modal="true">
           <form className="staff-form card" onSubmit={onSubmit}>
-            <h3>{draft.id ? 'Edit staff member' : 'New staff member'}</h3>
+            <div className="staff-form-head">
+              <div className="staff-form-title">
+                <h3>Staff member</h3>
+                <p>Staff need no login — this is the attendance record only.</p>
+              </div>
+              <button
+                type="button"
+                className="staff-form-close"
+                aria-label="Close"
+                onClick={() => setDraft(null)}
+              >
+                ✕
+              </button>
+            </div>
             <label className="field">
               <span>Name</span>
               <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} required />
             </label>
-            <div className="staff-form-row">
-              <label className="field">
-                <span>Role</span>
-                <input
-                  placeholder="Fry cook, Counter, Cleaner…"
-                  value={draft.role_title}
-                  onChange={(e) => setDraft({ ...draft, role_title: e.target.value })}
-                  required
-                />
-              </label>
-              <label className="field">
-                <span>Branch</span>
-                <select
-                  value={draft.store_id ?? ''}
-                  onChange={(e) => setDraft({ ...draft, store_id: e.target.value || null })}
-                >
-                  <option value="">All branches</option>
-                  {stores.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
-              </label>
-            </div>
+            <label className="field">
+              <span>Role</span>
+              <input
+                placeholder="Fry cook, Counter, Cleaner…"
+                value={draft.role_title}
+                onChange={(e) => setDraft({ ...draft, role_title: e.target.value })}
+                required
+              />
+            </label>
+            <label className="field">
+              <span>Branch</span>
+              <select
+                value={draft.store_id ?? ''}
+                onChange={(e) => setDraft({ ...draft, store_id: e.target.value || null })}
+              >
+                <option value="">All branches</option>
+                {stores.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </label>
             <label className="staff-check">
               <input
                 type="checkbox"
@@ -260,7 +276,7 @@ export function StaffPage() {
                 Cancel
               </button>
               <button type="submit" className="btn-primary" disabled={save.isPending}>
-                {save.isPending ? 'Saving…' : 'Save staff'}
+                {save.isPending ? 'Saving…' : 'Save staff member'}
               </button>
             </div>
           </form>

@@ -85,18 +85,24 @@
   padding: 0 10px;
   border-radius: 99px;
   font-family: var(--font-head);
-  font-size: calc(9.5px * var(--fs));
-  font-weight: 600;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
+  font-size: calc(11px * var(--fs));
+  font-weight: 500;
   white-space: nowrap;
 }
 .staff-status.in { background: var(--success-tint); color: var(--forest); }
 .staff-status.out { background: var(--surface-warm); color: var(--ink-3); }
 
-.staff-card-mid { display: flex; flex-direction: column; gap: 2px; }
-.staff-hours { font-size: calc(13px * var(--fs)); font-weight: 500; color: var(--ink); }
-.staff-log { font-size: calc(11.5px * var(--fs)); color: var(--hint); }
+/* The day's entries sit in their own panel, the times in mono. */
+.staff-card-mid {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background: var(--surface-warm);
+  border-radius: 12px;
+  padding: 12px 13px;
+}
+.staff-hours { font-family: var(--font-head); font-weight: 600; font-size: calc(13.5px * var(--fs)); color: var(--ink); }
+.staff-log { font-family: var(--font-mono); font-size: calc(11px * var(--fs)); color: var(--ink-3); }
 
 .staff-card-actions { display: flex; gap: 10px; margin-top: auto; }
 .staff-card-actions button { flex: 1; height: var(--ctl-h); min-height: var(--ctl-h); }
@@ -129,7 +135,42 @@
   gap: 14px;
   padding: 22px;
 }
-.staff-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.staff-check { display: flex; align-items: center; gap: 8px; font-size: calc(13.5px * var(--fs)); }
+/* The modal says what a staff record is for before asking for one. */
+.staff-form-head { display: flex; align-items: flex-start; gap: 12px; }
+.staff-form-title { margin-right: auto; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.staff-form-title h3 { font-family: var(--font-head); font-weight: 600; font-size: calc(17px * var(--fs)); }
+.staff-form-title p { margin: 0; font-size: calc(12.5px * var(--fs)); color: var(--ink-3); line-height: 1.5; }
+.staff-form-close {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  flex: none;
+  padding: 0;
+  border-radius: 8px;
+  background: var(--surface-warm);
+  color: var(--ink-3);
+  font-size: calc(15px * var(--fs));
+}
+.staff-form-close:hover { background: var(--beige); }
+
+/* Whether the person can be checked in is a decision, so it sits in a panel. */
+.staff-check {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  background: var(--surface-warm);
+  border-radius: 12px;
+  padding: 13px 14px;
+  font-size: calc(13px * var(--fs));
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.staff-check input {
+  width: 20px;
+  height: 20px;
+  min-height: 0;
+  flex: none;
+  accent-color: var(--forest);
+}
 .staff-error { color: var(--danger, #c0392b); font-size: calc(13px * var(--fs)); }
 .staff-form-actions { display: flex; justify-content: flex-end; gap: 10px; }

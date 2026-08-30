@@ -79,22 +79,22 @@
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
-.rp-pill.up { background: #e1eddd; color: var(--forest); }
-.rp-pill.down { background: var(--cta-tint); color: var(--cta); }
+/* Tone follows the meaning, not the sign — more discount given is red. */
+.rp-pill.good { background: #e1eddd; color: var(--forest); }
+.rp-pill.bad { background: var(--cta-tint); color: var(--cta); }
 
 /* ---- Card grid ---------------------------------------------------------- */
-/* One 4-column grid, two full rows — no card left alone on a third.
-   Row 1: sales by hour (2) · payment mix (1) · top items (1)
-   Row 2: credit ageing (2) · order-type split (2) */
+/* Four equal columns: sales by hour, payment mix, top items, credit ageing —
+   then the order-type split alone underneath. */
 .rp-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   align-items: stretch;
 }
-.rp-hours { grid-column: span 2; }
-.rp-aging { grid-column: span 2; }
-.rp-split { grid-column: span 2; }
+.rp-grid > .rp-card { min-height: calc(300px * var(--fs)); }
+
+.rp-top { display: flex; }
 .rp-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -269,23 +269,25 @@
 .rp-owing-amount.late { color: var(--cta); }
 
 /* ---- Order-type split --------------------------------------------------- */
-.rp-split-rows { display: flex; flex-direction: column; gap: 8px; }
+/* Each order type is its own tile; an odd one out takes the full width. */
+.rp-split-rows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .rp-split-row {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  flex-direction: column;
+  gap: 5px;
   background: var(--surface-warm);
-  border-radius: 8px;
-  padding: 10px 12px;
+  border-radius: 12px;
+  padding: 13px 14px;
 }
-.rp-split-label { flex: 1; min-width: 0; font-size: calc(12px * var(--fs)); color: var(--ink-2); }
+.rp-split-row:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.rp-split-label { font-size: calc(12px * var(--fs)); color: var(--ink-2); }
 .rp-split-amount {
   font-family: var(--font-head);
   font-weight: 600;
-  font-size: calc(13px * var(--fs));
+  font-size: calc(19px * var(--fs));
   font-variant-numeric: tabular-nums;
 }
-.rp-split-pct { font-size: calc(10.5px * var(--fs)); color: var(--hint); width: 30px; text-align: right; }
+.rp-split-pct { font-size: calc(11px * var(--fs)); color: var(--hint); }
 
 .rp-note {
   margin: 0;
@@ -298,10 +300,8 @@
 @media (max-width: 1279px) {
   .rp-kpis { grid-template-columns: repeat(3, 1fr); }
   .rp-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .rp-hours, .rp-aging, .rp-split { grid-column: span 2; }
 }
 @media (max-width: 767px) {
   .rp-kpis { grid-template-columns: repeat(2, 1fr); }
   .rp-grid { grid-template-columns: minmax(0, 1fr); }
-  .rp-hours, .rp-aging, .rp-split { grid-column: span 1; }
 }

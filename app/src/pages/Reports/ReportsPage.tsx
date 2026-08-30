@@ -4,6 +4,8 @@ import Big from 'big.js'
 import { api } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import { fmt } from '../../lib/money'
+import { countDelta, moneyDelta, pctDelta } from '../../lib/delta'
+import type { Delta } from '../../lib/delta'
 import './reports.css'
 
 type Range = 'today' | '7d' | 'month'
@@ -68,35 +70,6 @@ const ORDER_TYPES: { key: string; label: string }[] = [
   { key: 'delivery', label: 'Online' },
 ]
 
-/**
- * A KPI moves either as a rate or as a count. Money rates read as percentages;
- * counts and balances read as the actual change, because "+12 orders" says more
- * than "+5.9%".
- */
-type Delta = { text: string; up: boolean } | null
-
-function pctDelta(now: string | number, before: string | number | undefined): Delta {
-  if (before === undefined) return null
-  const prev = new Big(before)
-  if (prev.eq(0)) return null
-  const pct = new Big(now).minus(prev).div(prev).times(100).round(1)
-  const up = pct.gte(0)
-  return { text: `${up ? '+' : '−'}${pct.abs().toFixed(1)}%`, up }
-}
-
-function countDelta(now: number, before: number | undefined): Delta {
-  if (before === undefined) return null
-  const diff = now - before
-  if (diff === 0) return { text: '±0', up: true }
-  return { text: `${diff > 0 ? '+' : '−'}${Math.abs(diff)}`, up: diff > 0 }
-}
-
-function moneyDelta(amount: string): Delta {
-  const v = new Big(amount)
-  if (v.eq(0)) return { text: '±0', up: true }
-  return { text: `${v.gt(0) ? '+' : '−'}${fmt(v.abs().toFixed(2))}`, up: v.gt(0) }
-}
-
 function Kpi({ label, value, delta, vs }: { label: string; value: string; delta: Delta; vs: string }) {
   return (
     <div className="rp-kpi">
@@ -104,7 +77,7 @@ function Kpi({ label, value, delta, vs }: { label: string; value: string; delta:
       <strong className="rp-kpi-value">{value}</strong>
       {delta ? (
         <span className="rp-kpi-move">
-          <span className={delta.up ? 'rp-pill up' : 'rp-pill down'}>{delta.text}</span>
+          <span className={delta.good ? 'rp-pill good' : 'rp-pill bad'}>{delta.text}</span>
           <em>{vs}</em>
         </span>
       ) : (
@@ -188,12 +161,11 @@ export function ReportsPage() {
   // delta. With nothing owed there is nothing to compare, so the pill goes away
   // rather than claiming a change against a zero balance.
   const creditMove = s ? new Big(s.credit_charged).minus(s.credit_repaid).toFixed(2) : '0.00'
-  const creditDelta = s && new Big(s.credit_outstanding).eq(0) ? null : moneyDelta(creditMove)
+  const creditDelta = s && new Big(s.credit_outstanding).eq(0) ? null : moneyDelta(creditMove, false)
 
   return (
     <div className="page page-wide">
-      <div className="page-head">
-        <div />
+      <div className="rp-top">
         <div className="rp-range" role="tablist" aria-label="Reporting period">
           {RANGES.map((r) => (
             <button
@@ -222,7 +194,7 @@ export function ReportsPage() {
             <Kpi label="Average order" value={`QAR ${fmt(s.average_order)}`}
               delta={pctDelta(s.average_order, s.previous?.average_order)} vs={meta.vs} />
             <Kpi label="Discounts given" value={`QAR ${fmt(s.discount_total)}`}
-              delta={pctDelta(s.discount_total, s.previous?.discount_total)} vs={meta.vs} />
+              delta={pctDelta(s.discount_total, s.previous?.discount_total, false)} vs={meta.vs} />
             <Kpi label="Credit outstanding" value={`QAR ${fmt(s.credit_outstanding)}`}
               delta={creditDelta} vs={meta.vs} />
           </div>
