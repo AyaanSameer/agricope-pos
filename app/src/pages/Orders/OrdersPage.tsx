@@ -6,6 +6,7 @@ import { addOrderItems, listOrders, refundOrder, voidOrder } from '../../api/ord
 import type { OrderStatus } from '../../api/orders'
 import { ApiError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
+import { useDevice } from '../../lib/useDevice'
 import { AddItemsModal } from '../../components/AddItemsModal'
 import { ApprovalPinModal } from '../../components/ApprovalPinModal'
 import { fmt, fmtQAR } from '../../lib/money'
@@ -20,6 +21,7 @@ const STATUS_STYLE: Record<OrderStatus, string> = {
 
 export function OrdersPage() {
   const { activeStore } = useAuth()
+  const { dense } = useDevice()
   const queryClient = useQueryClient()
   const [status, setStatus] = useState<OrderStatus | null>('open')
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -73,6 +75,36 @@ export function OrdersPage() {
       </div>
 
       <div className="orders-body">
+        {dense ? (
+          /* Dense: the design stacks cards — number and status up top, meta and
+             money below — in place of a table squeezed to fit. */
+          <div className="orders-cards">
+            {ordersQuery.isPending && <div className="orders-loading">Loading…</div>}
+            {ordersQuery.data?.data.map((o) => (
+              <button
+                key={o.id}
+                type="button"
+                className={selectedId === o.id ? 'orders-card selected' : 'orders-card'}
+                onClick={() => setSelectedId(o.id)}
+              >
+                <span className="orders-card-top">
+                  <span className="orders-num">{o.order_number}</span>
+                  <span className={`st ${STATUS_STYLE[o.status]}`}>{o.status.toUpperCase()}</span>
+                </span>
+                <span className="orders-card-foot">
+                  <span className="orders-card-meta">
+                    {new Date(o.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} ·{' '}
+                    {o.cashier_name.split(' ')[0]} · {o.order_type.replace('_', '-')}
+                  </span>
+                  <span className="orders-card-total">{fmt(o.total)}</span>
+                </span>
+              </button>
+            ))}
+            {ordersQuery.data?.data.length === 0 && (
+              <div className="orders-loading">No orders yet today.</div>
+            )}
+          </div>
+        ) : (
         <div className="card orders-table">
           <div className="orders-row orders-head-row">
             <span>Order</span><span>Time · cashier</span><span>Type</span>
@@ -100,6 +132,7 @@ export function OrdersPage() {
             <div className="orders-loading">No orders yet today.</div>
           )}
         </div>
+        )}
 
         {selected && (
           <>

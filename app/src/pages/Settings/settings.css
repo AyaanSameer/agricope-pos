@@ -1,5 +1,5 @@
 /* A settings column reads better capped and centred than stretched to the till. */
-.settings-page > * { width: 100%; max-width: min(760px, var(--hub-max)); margin-inline: auto; }
+.settings-page > * { width: 100%; max-width: 720px; margin-inline: auto; }
 .settings-list { display: flex; flex-direction: column; gap: 14px; }
 .settings-loading { color: var(--ink-3); padding: 18px; }
 .settings-error {
@@ -35,8 +35,7 @@
   letter-spacing: 0.4px;
   text-transform: uppercase;
 }
-.settings-type.restaurant { background: var(--gold-tint); color: #8a5a00; }
-.settings-type.retail { background: var(--success-tint); color: var(--forest); }
+.settings-type { background: var(--success-tint); color: var(--forest); }
 
 .settings-block { display: flex; flex-direction: column; gap: 14px; }
 .settings-block-title {
@@ -119,3 +118,30 @@
   color: var(--ink-2);
 }
 .settings-effect-text { font-size: calc(13px * var(--fs)); color: var(--ink-2); line-height: 1.4; }
+
+/* ---- Text-field groups: identity, receipt, approvals -------------------- */
+.settings-fields { display: flex; gap: 12px; flex-wrap: wrap; }
+.settings-field {
+  flex: 1;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.settings-field-narrow { flex: 0 1 220px; }
+.settings-field > span {
+  font-weight: 500;
+  font-size: calc(12px * var(--fs));
+  color: var(--ink-1);
+}
+.settings-save-row { display: flex; justify-content: flex-end; }
+.settings-save { padding: 0 20px; }
+
+/* Groups separate with a hairline, reading as siblings in one card. */
+.settings-block + .settings-block,
+.settings-block + form.settings-block,
+form.settings-block + .settings-block,
+form.settings-block + form.settings-block {
+  border-top: 1px solid var(--border);
+  padding-top: 18px;
+}

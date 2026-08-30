@@ -7,6 +7,19 @@
 .dot.occ { background: var(--forest); }
 .dot.warn { background: var(--gold); }
 
+/* Zone sections: an eyebrow head, then the zone's own grid. */
+.floor-zone-section { display: flex; flex-direction: column; gap: 10px; }
+.floor-zone-head { display: flex; align-items: baseline; gap: 9px; }
+.floor-zone-name {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: calc(11px * var(--fs));
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--hint);
+}
+.floor-zone-meta { font-size: calc(11.5px * var(--fs)); color: var(--hint); }
+
 .floor-grid {
   display: grid;
   /* auto-fit, so the cards fill the row instead of leaving a void on the right */

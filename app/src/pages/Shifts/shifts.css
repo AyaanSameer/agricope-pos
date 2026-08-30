@@ -66,3 +66,8 @@
 
 .zreport { max-width: 520px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
 .zreport-head { display: flex; justify-content: space-between; align-items: center; }
+
+/* Dense: X report and movements stack. */
+@media (max-width: 1023px) {
+  .shifts-grid { grid-template-columns: 1fr; }
+}

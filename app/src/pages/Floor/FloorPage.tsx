@@ -63,7 +63,6 @@ export function FloorPage() {
   }
   const tablesList = floorQuery.data?.data ?? []
   const zones = [...new Set(tablesList.map((t) => t.zone))]
-  const visible = zone ? tablesList.filter((t) => t.zone === zone) : tablesList
   const openTabs = tablesList.filter((t) => t.order)
 
   return (
@@ -99,52 +98,68 @@ export function FloorPage() {
         </div>
       </div>
 
-      <div className="floor-grid">
-        {visible.map((t) => {
-          const state = !t.order ? 'free' : t.order.minutes_open >= 60 ? 'warn' : 'occ'
-          return (
-            <button
-              key={t.id}
-              type="button"
-              className={`ftable ${state}`}
-              onClick={() => {
-                if (t.order) navigate(`/tab/${t.order.order_id}`)
-                else {
-                  setGuests(2)
-                  setSeating(t)
-                }
-              }}
-            >
-              {/* One structure for every card: header, body slot, footer. */}
-              <span className="ftable-top">
-                <strong>{t.name}</strong>
-                <span className="ftable-zone">{t.zone}</span>
-                <i className={`dot ${state}`} />
+      {/* The design groups the floor by zone: an uppercase section head with an
+          occupancy count, then that zone's own grid. The chips filter sections. */}
+      {(zone ? zones.filter((z) => z === zone) : zones).map((z) => {
+        const zoneTables = tablesList.filter((t) => t.zone === z)
+        const busy = zoneTables.filter((t) => t.order).length
+        return (
+          <section key={z} className="floor-zone-section">
+            <div className="floor-zone-head">
+              <span className="floor-zone-name">{z}</span>
+              <span className="floor-zone-meta">
+                {busy} of {zoneTables.length} occupied
               </span>
-              <span className="ftable-body">
-                {t.order && (
-                  <>
-                    <span className="ftable-meta">
-                      {t.order.guest_count ?? '—'} guests · {t.order.minutes_open} min
+            </div>
+            <div className="floor-grid">
+              {zoneTables.map((t) => {
+                const state = !t.order ? 'free' : t.order.minutes_open >= 60 ? 'warn' : 'occ'
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    className={`ftable ${state}`}
+                    onClick={() => {
+                      if (t.order) navigate(`/tab/${t.order.order_id}`)
+                      else {
+                        setGuests(2)
+                        setSeating(t)
+                      }
+                    }}
+                  >
+                    {/* One structure for every card: header, body slot, footer. */}
+                    <span className="ftable-top">
+                      <strong>{t.name}</strong>
+                      <span className="ftable-zone">{t.zone}</span>
+                      <i className={`dot ${state}`} />
                     </span>
-                    {t.order.unsent_count > 0 && (
-                      <span className="ftable-unsent">
-                        {t.order.unsent_count} item{t.order.unsent_count === 1 ? '' : 's'} not sent
+                    <span className="ftable-body">
+                      {t.order && (
+                        <>
+                          <span className="ftable-meta">
+                            {t.order.guest_count ?? '—'} guests · {t.order.minutes_open} min
+                          </span>
+                          {t.order.unsent_count > 0 && (
+                            <span className="ftable-unsent">
+                              {t.order.unsent_count} item{t.order.unsent_count === 1 ? '' : 's'} not sent
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </span>
+                    <span className="ftable-foot">
+                      <span className="ftable-action">
+                        {t.order ? 'Tap to open the tab' : `Seats ${t.seats} — tap to seat`}
                       </span>
-                    )}
-                  </>
-                )}
-              </span>
-              <span className="ftable-foot">
-                <span className="ftable-action">
-                  {t.order ? 'Tap to open the tab' : `Seats ${t.seats} — tap to seat`}
-                </span>
-                <span className="ftable-total">{t.order ? `QAR ${fmt(t.order.total)}` : '—'}</span>
-              </span>
-            </button>
-          )
-        })}
-      </div>
+                      <span className="ftable-total">{t.order ? `QAR ${fmt(t.order.total)}` : '—'}</span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+        )
+      })}
 
       {managing && (
         <ManageTablesModal storeId={activeStore.id} onClose={() => setManaging(false)} />

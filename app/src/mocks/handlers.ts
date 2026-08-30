@@ -13,12 +13,14 @@ import {
   stores,
   storeName,
   toPublicProduct,
+  serviceChargeRates,
   toPublicStore,
   toUserRecord,
   users,
 } from './db'
 import type { DbOptionGroup, DbProduct, DbUser } from './db'
 import type { ProductOffer } from '../lib/pricing'
+import { settingsFor } from './posdb'
 import { posHandlers } from './posHandlers'
 import { posHandlers2 } from './posHandlers2'
 import { posHandlers3 } from './posHandlers3'
@@ -157,14 +159,60 @@ export const handlers = [
     if (caller instanceof Response) return caller
     const store = stores.find((s) => s.id === params.id && s.business_id === caller.business_id)
     if (!store) return apiError(404, 'NOT_FOUND', 'No such branch.')
-    const body = (await request.json()) as { kitchen_mode?: 'kds' | 'printer' }
+    const body = (await request.json()) as {
+      kitchen_mode?: 'kds' | 'printer'
+      name?: string
+      address?: string
+      service_charge_rate?: string
+    }
     if (body.kitchen_mode !== undefined) {
       if (!['kds', 'printer'].includes(body.kitchen_mode)) {
         return apiError(400, 'VALIDATION_ERROR', 'kitchen_mode must be "kds" or "printer".')
       }
       store.kitchen_mode = body.kitchen_mode
     }
+    if (body.name !== undefined) {
+      if (!body.name.trim()) return apiError(400, 'VALIDATION_ERROR', 'The branch needs a name.')
+      store.name = body.name.trim()
+    }
+    if (body.address !== undefined) store.address = body.address.trim() || null
+    if (body.service_charge_rate !== undefined) {
+      const n = Number(body.service_charge_rate)
+      if (!Number.isFinite(n) || n < 0 || n > 25) {
+        return apiError(400, 'VALIDATION_ERROR', 'Service charge must be between 0 and 25%.')
+      }
+      // New tabs pick this up on their next recalculation; closed orders keep
+      // the snapshot they were rung up with.
+      serviceChargeRates[store.id] = String(n)
+    }
     return HttpResponse.json(toPublicStore(store))
+  }),
+
+  // ---- Business settings: the tenant JSONB — receipt footer, approvals ----
+  http.get('/api/v1/business-settings', async ({ request }) => {
+    await delay(200)
+    const caller = requireRole(request, ['owner', 'manager'])
+    if (caller instanceof Response) return caller
+    return HttpResponse.json(settingsFor(caller.business_id))
+  }),
+
+  http.patch('/api/v1/business-settings', async ({ request }) => {
+    await delay(250)
+    const caller = requireRole(request, ['owner', 'manager'])
+    if (caller instanceof Response) return caller
+    const st = settingsFor(caller.business_id)
+    const body = (await request.json()) as Partial<
+      Pick<typeof st, 'receipt_footer' | 'discount_approval_percent'>
+    >
+    if (body.receipt_footer !== undefined) st.receipt_footer = body.receipt_footer.trim()
+    if (body.discount_approval_percent !== undefined) {
+      const n = Number(body.discount_approval_percent)
+      if (!Number.isFinite(n) || n < 0 || n > 100) {
+        return apiError(400, 'VALIDATION_ERROR', 'The approval threshold is a percent, 0–100.')
+      }
+      st.discount_approval_percent = String(n)
+    }
+    return HttpResponse.json(st)
   }),
 
   http.get('/api/v1/users', async ({ request }) => {

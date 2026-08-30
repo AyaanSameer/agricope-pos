@@ -124,3 +124,15 @@
   max-height: 40vh;
   overflow-y: auto;
 }
+
+/* ---- Dense: the bill folds under the lines, the way --reg-dir folds the
+   register. One column, everything scrolls together. ---- */
+@media (max-width: 1023px) {
+  .tab-cols { flex-direction: column; }
+  .tab-side {
+    flex: none;
+    width: 100%;
+    position: static;
+    min-height: 0;
+  }
+}

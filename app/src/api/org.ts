@@ -5,12 +5,35 @@ export function listStores(): Promise<Paginated<Store>> {
   return api<Paginated<Store>>('/stores')
 }
 
-/** Branch settings — today just the kitchen output mode. Manager/owner only. */
-export function updateStore(
-  id: string,
-  input: { kitchen_mode?: 'kds' | 'printer' },
-): Promise<Store> {
+/** Branch settings. Manager/owner only. */
+export interface StoreSettingsInput {
+  kitchen_mode?: 'kds' | 'printer'
+  name?: string
+  address?: string
+  /** dine-in service charge, percent — "10" */
+  service_charge_rate?: string
+}
+
+export function updateStore(id: string, input: StoreSettingsInput): Promise<Store> {
   return api<Store>(`/stores/${id}`, { method: 'PATCH', body: JSON.stringify(input) })
+}
+
+/** The tenant-wide settings row: receipt footer, approval threshold. */
+export interface BusinessSettings {
+  business_name: string
+  receipt_footer: string
+  /** discounts above this percent ask for a manager PIN */
+  discount_approval_percent: string
+}
+
+export function getBusinessSettings(): Promise<BusinessSettings> {
+  return api<BusinessSettings>('/business-settings')
+}
+
+export function updateBusinessSettings(
+  input: Partial<Pick<BusinessSettings, 'receipt_footer' | 'discount_approval_percent'>>,
+): Promise<BusinessSettings> {
+  return api<BusinessSettings>('/business-settings', { method: 'PATCH', body: JSON.stringify(input) })
 }
 
 export function listUsers(): Promise<Paginated<UserRecord>> {

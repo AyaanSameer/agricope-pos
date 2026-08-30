@@ -67,6 +67,43 @@
 .st-void { background: var(--cta-tint); color: var(--cta); }
 .st-refund { background: #e7e2d2; color: var(--ink-3); }
 
+/* Dense: the queue as cards, to the prototype's numbers — radius 13, 13/14
+   padding, mono number + status chip up top, meta and the money below. */
+.orders-cards { display: flex; flex-direction: column; gap: 9px; flex: 1; min-width: 0; }
+.orders-card {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 13px;
+  padding: 13px 14px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  text-align: left;
+  min-height: 0;
+}
+.orders-card:hover { border-color: var(--leaf); }
+.orders-card.selected { border-color: var(--leaf); background: var(--surface-warm); }
+.orders-card-top { display: flex; align-items: center; gap: 9px; width: 100%; }
+.orders-card-top .orders-num { font-size: calc(12.5px * var(--fs)); }
+.orders-card-top .st { margin-left: auto; }
+.orders-card-foot { display: flex; align-items: baseline; gap: 10px; width: 100%; }
+.orders-card-meta {
+  font-size: calc(11.5px * var(--fs));
+  color: var(--ink-3);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.orders-card-total {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: calc(16px * var(--fs));
+  font-variant-numeric: tabular-nums;
+}
+
 /* The list makes room for the drawer rather than sliding under it. */
 .orders-page.with-drawer { padding-right: calc(var(--pad) + 380px); }
 
@@ -138,7 +175,6 @@
 @media (max-width: 1023px) {
   .orders-page.with-drawer { padding-right: var(--pad); }
   .orders-row { grid-template-columns: 1.2fr 1.4fr 0.9fr 0.9fr; }
-  .orders-row > :nth-child(3) { display: none; }
 
   .orders-scrim {
     display: block;
