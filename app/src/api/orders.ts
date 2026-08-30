@@ -44,6 +44,8 @@ export interface Order {
   customer_balance: string | null
   table_id: string | null
   table_name: string | null
+  /** the table's zone — "Main hall" — so a tab can say where it is */
+  table_zone: string | null
   guest_count: number | null
   subtotal: string
   discount_total: string

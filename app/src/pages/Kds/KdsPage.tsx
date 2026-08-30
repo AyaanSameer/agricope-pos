@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../api/client'
 import { listStations } from '../../api/catalog'
+import { useNow } from '../../lib/useNow'
 import './kds.css'
 
 interface Ticket {
@@ -18,6 +19,8 @@ interface Ticket {
 export function KdsPage() {
   const queryClient = useQueryClient()
   const [stationId, setStationId] = useState<string | null>(null)
+  // The KDS ages tickets by the second — a ticking clock, not a render read.
+  const now = useNow(1_000)
 
   const stationsQuery = useQuery({ queryKey: ['stations'], queryFn: listStations })
   const stations = stationsQuery.data?.data ?? []
@@ -47,7 +50,7 @@ export function KdsPage() {
   })
 
   function elapsed(t: Ticket): { label: string; cls: string } {
-    const mins = (Date.now() - new Date(t.created_at).getTime()) / 60000
+    const mins = (now - new Date(t.created_at).getTime()) / 60000
     const label = `${Math.floor(mins)}:${String(Math.floor((mins % 1) * 60)).padStart(2, '0')}`
     return { label, cls: mins >= 10 ? 'late' : mins >= 5 ? 'warn' : 'ok' }
   }

@@ -63,25 +63,9 @@ export function FloorPage() {
   }
   const tablesList = floorQuery.data?.data ?? []
   const zones = [...new Set(tablesList.map((t) => t.zone))]
-  const openTabs = tablesList.filter((t) => t.order)
 
   return (
     <div className="page">
-      <div className="page-head">
-        <div>
-          <h2>Floor — {activeStore.name}</h2>
-          <p className="page-sub">
-            {openTabs.length} open tab{openTabs.length === 1 ? '' : 's'} · QAR{' '}
-            {fmt(openTabs.reduce((a, t) => a + Number(t.order!.total), 0).toFixed(2))} on tables
-          </p>
-        </div>
-        {isOwner && (
-          <button type="button" className="btn-secondary" onClick={() => setManaging(true)}>
-            Manage tables
-          </button>
-        )}
-      </div>
-
       <div className="floor-zones">
         <button type="button" className={zone === null ? 'chip active' : 'chip'} onClick={() => setZone(null)}>
           All zones
@@ -96,6 +80,11 @@ export function FloorPage() {
           <span><i className="dot occ" /> Occupied</span>
           <span><i className="dot warn" /> 60+ min</span>
         </div>
+        {isOwner && (
+          <button type="button" className="btn-secondary floor-manage-btn" onClick={() => setManaging(true)}>
+            Manage tables
+          </button>
+        )}
       </div>
 
       {/* The design groups the floor by zone: an uppercase section head with an
@@ -127,17 +116,28 @@ export function FloorPage() {
                       }
                     }}
                   >
-                    {/* One structure for every card: header, body slot, footer. */}
+                    {/* One structure for every card: header, body slot, footer.
+                        The zone lives on the section head, not on each card. */}
                     <span className="ftable-top">
                       <strong>{t.name}</strong>
-                      <span className="ftable-zone">{t.zone}</span>
-                      <i className={`dot ${state}`} />
+                      <span className="ftable-chip">
+                        {state === 'free' ? 'Free' : state === 'warn' ? 'Over an hour' : 'Occupied'}
+                      </span>
                     </span>
                     <span className="ftable-body">
                       {t.order && (
                         <>
-                          <span className="ftable-meta">
-                            {t.order.guest_count ?? '—'} guests · {t.order.minutes_open} min
+                          <span className="ftable-stats">
+                            <span className="ftable-stat">
+                              <em>Guests</em>
+                              <b>{t.order.guest_count ?? '—'}</b>
+                            </span>
+                            <span className="ftable-stat">
+                              <em>Open</em>
+                              <b className={state === 'warn' ? 'late' : undefined}>
+                                {t.order.minutes_open} min
+                              </b>
+                            </span>
                           </span>
                           {t.order.unsent_count > 0 && (
                             <span className="ftable-unsent">
@@ -151,7 +151,7 @@ export function FloorPage() {
                       <span className="ftable-action">
                         {t.order ? 'Tap to open the tab' : `Seats ${t.seats} — tap to seat`}
                       </span>
-                      <span className="ftable-total">{t.order ? `QAR ${fmt(t.order.total)}` : '—'}</span>
+                      <span className="ftable-total">{t.order ? fmt(t.order.total) : '—'}</span>
                     </span>
                   </button>
                 )

@@ -20,6 +20,7 @@ import { AddItemsModal } from '../../components/AddItemsModal'
 import { ApprovalPinModal } from '../../components/ApprovalPinModal'
 import { KitchenTicketPrint } from '../../components/KitchenTicketPrint'
 import { fmt, fmtQAR } from '../../lib/money'
+import { useNow } from '../../lib/useNow'
 import './tab.css'
 
 /** One table's open tab: rounds accumulate, fire to the kitchen, split, merge, pay. */
@@ -34,6 +35,7 @@ export function TabPage() {
   const [pinError, setPinError] = useState<string | null>(null)
   const [printItems, setPrintItems] = useState<OrderItem[] | null>(null)
   const [assigningTable, setAssigningTable] = useState(false)
+  const now = useNow()
 
   const orderQuery = useQuery({ queryKey: ['order', id], queryFn: () => getOrder(id!), enabled: !!id })
   const order = orderQuery.data
@@ -88,6 +90,11 @@ export function TabPage() {
   if (!order) return <div className="tab-note">Tab not found.</div>
 
   const unsent = order.items.filter((i) => !i.sent_to_kitchen_at)
+  const svcRate = storesQuery.data?.data.find((s) => s.id === order.store_id)?.service_charge_rate ?? '0'
+  const minutesOpen = Math.max(0, Math.round((now - new Date(order.created_at).getTime()) / 60000))
+  const where = order.table_name
+    ? `${order.table_name}${order.table_zone ? ` · ${order.table_zone}` : ''}`
+    : order.order_number
   const perGuest =
     order.guest_count && order.guest_count > 0
       ? new Big(order.total).div(order.guest_count).toFixed(2)
@@ -95,99 +102,132 @@ export function TabPage() {
 
   return (
     <div className="tab-page">
-      {/* The topbar carries the table, the guests and the order number; these are
-          content actions on the tab itself, not a second nav bar. */}
-      <div className="tab-head">
-        {order.order_type === 'dine_in' && !order.table_id && order.status === 'open' && (
-          <button type="button" className="btn-secondary" onClick={() => setAssigningTable(true)}>
-            Assign table
-          </button>
-        )}
-        <button type="button" className="btn-secondary" onClick={() => setSplitting(true)} disabled={order.items.length === 0}>
-          Split bill
-        </button>
-        <button type="button" className="btn-secondary" onClick={() => setMerging(true)}>
-          Merge
-        </button>
-      </div>
-
       <div className="tab-cols">
       <div className="tab-main">
-        <div className="card tab-items">
-          <div className="tab-items-head">
-            <span>Items</span>
-            <span className="muted small">
-              {unsent.length > 0 ? `${unsent.length} not yet fired` : 'all fired'}
-            </span>
+        {/* The topbar names the screen; this names the table the screen is
+            about — an object header, not a second nav bar. */}
+        <header className="tab-obj">
+          <span className="tab-plate" aria-hidden="true">
+            {order.table_name ?? '—'}
+          </span>
+          <div className="tab-obj-id">
+            <h2>{where}</h2>
+            <p>
+              {order.guest_count ?? '—'} guests · open {minutesOpen} min · waiter{' '}
+              {order.cashier_name.split(' ')[0]}
+              {order.order_type === 'dine_in' && !order.table_id ? ' · no table yet' : ''}
+            </p>
           </div>
-          {order.items.length === 0 && <div className="tab-empty">No items yet — add the first round.</div>}
-          {order.items.map((i) => (
-            <div key={i.id} className="tab-item">
-              <span className={i.sent_to_kitchen_at ? 'tab-badge sent' : 'tab-badge new'}>
-                {i.sent_to_kitchen_at ? 'SENT' : 'NEW'}
-              </span>
-              <div className="tab-item-info">
-                <span className={i.sent_to_kitchen_at ? 'muted' : ''}>{i.quantity} × {i.product_name}</span>
-                {i.options.length > 0 && <span className="tiny muted">{i.options.join(' · ')}</span>}
-                {i.sent_to_kitchen_at && <span className="tiny muted">locked — manager PIN to remove</span>}
-              </div>
-              {!i.sent_to_kitchen_at && (
-                <div className="stepper">
+          {unsent.length > 0 && (
+            <button
+              type="button"
+              className="btn-primary tab-fire"
+              disabled={send.isPending}
+              onClick={() => send.mutate()}
+            >
+              {send.isPending ? 'Firing…' : `Send ${unsent.length} to kitchen`}
+            </button>
+          )}
+        </header>
+
+        <div className="tab-lines">
+          {order.items.length === 0 && (
+            <div className="tab-empty">No items yet — add the first round.</div>
+          )}
+          {order.items.map((i) => {
+            const sent = !!i.sent_to_kitchen_at
+            const each = new Big(i.unit_price).toFixed(2)
+            return (
+              <div key={i.id} className={sent ? 'tab-line sent' : 'tab-line'}>
+                <div className="tab-line-main">
+                  <div className="tab-line-head">
+                    <span className={sent ? 'tab-badge sent' : 'tab-badge new'}>
+                      {sent ? 'SENT' : 'NEW'}
+                    </span>
+                    <span className="tab-line-name">{i.product_name}</span>
+                  </div>
+                  <span className="tab-line-sub">
+                    {i.options.length > 0 && `${i.options.join(' · ')} · `}
+                    QAR {fmt(each)} each
+                  </span>
+                </div>
+                {sent ? (
                   <button
                     type="button"
-                    onClick={() =>
-                      Number(i.quantity) <= 1
-                        ? removeItem.mutate({ itemId: i.id })
-                        : changeQty.mutate({ itemId: i.id, quantity: new Big(i.quantity).minus(1).toString() })
-                    }
+                    className="tab-pull"
+                    onClick={() => removeItem.mutate({ itemId: i.id })}
                   >
-                    −
+                    Pull · PIN
                   </button>
-                  <span>{i.quantity}</span>
-                  <button type="button" onClick={() => changeQty.mutate({ itemId: i.id, quantity: new Big(i.quantity).plus(1).toString() })}>
-                    +
-                  </button>
-                </div>
-              )}
-              {i.sent_to_kitchen_at && (
-                <button type="button" className="tab-pull" onClick={() => removeItem.mutate({ itemId: i.id })}>
-                  Pull
-                </button>
-              )}
-              <span className="tab-item-total">{fmt(i.line_total)}</span>
-            </div>
-          ))}
-          <button type="button" className="tab-add" onClick={() => setAddingItems(true)}>
-            + Add items from menu
+                ) : (
+                  <div className="stepper">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        Number(i.quantity) <= 1
+                          ? removeItem.mutate({ itemId: i.id })
+                          : changeQty.mutate({ itemId: i.id, quantity: new Big(i.quantity).minus(1).toString() })
+                      }
+                    >
+                      −
+                    </button>
+                    <span>{Number(i.quantity)}</span>
+                    <button
+                      type="button"
+                      onClick={() => changeQty.mutate({ itemId: i.id, quantity: new Big(i.quantity).plus(1).toString() })}
+                    >
+                      +
+                    </button>
+                  </div>
+                )}
+                <span className="tab-line-total">{fmt(i.line_total)}</span>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="tab-acts">
+          <button type="button" className="tab-act" onClick={() => setAddingItems(true)}>
+            + Add a round
           </button>
+          <button
+            type="button"
+            className="tab-act"
+            onClick={() => setSplitting(true)}
+            disabled={order.items.length === 0}
+          >
+            Split bill
+          </button>
+          <button type="button" className="tab-act" onClick={() => setMerging(true)}>
+            Merge a tab
+          </button>
+          {order.order_type === 'dine_in' && !order.table_id && order.status === 'open' && (
+            <button type="button" className="tab-act" onClick={() => setAssigningTable(true)}>
+              Assign table
+            </button>
+          )}
         </div>
       </div>
 
       <aside className="card tab-side">
-        <h3>Bill so far</h3>
+        <h3>Running bill</h3>
         <div className="trow"><span>Subtotal</span><span>{fmt(order.subtotal)}</span></div>
         {Number(order.discount_total) > 0 && (
           <div className="trow"><span>Discount</span><span>−{fmt(order.discount_total)}</span></div>
         )}
-        <div className="trow"><span>Service charge</span><span>{fmt(order.service_charge_total)}</span></div>
         <div className="trow"><span>Incl. tax</span><span>{fmt(order.tax_total)}</span></div>
+        <div className="trow">
+          <span>Service charge {Number(svcRate)}%</span>
+          <span>{fmt(order.service_charge_total)}</span>
+        </div>
         <div className="trow total"><span>Total</span><span>{fmtQAR(order.total)}</span></div>
-        {perGuest && <div className="tab-perguest">≈ {fmt(perGuest)} per guest ({order.guest_count})</div>}
-        <div className="tab-side-grow" />
-        {unsent.length > 0 || send.isPending ? (
-          <button
-            type="button"
-            className="tab-send"
-            disabled={send.isPending}
-            onClick={() => send.mutate()}
-          >
-            {send.isPending
-              ? 'Firing…'
-              : `Send ${unsent.length} item${unsent.length === 1 ? '' : 's'} to kitchen`}
-          </button>
-        ) : (
-          <div className="tab-fired">Kitchen is up to date</div>
+        {perGuest && (
+          <div className="tab-perguest">
+            <span>Per guest</span>
+            <strong>{fmt(perGuest)}</strong>
+          </div>
         )}
+        <div className="tab-side-grow" />
         <Link to={`/charge/${order.id}`} className="btn-primary tab-charge">
           Charge · {fmtQAR(order.total)}
         </Link>

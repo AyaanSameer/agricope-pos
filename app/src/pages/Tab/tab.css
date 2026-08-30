@@ -9,91 +9,131 @@
   width: 100%;
 }
 .tab-note { padding: var(--pad); color: var(--ink-3); }
-/* Content actions, right-aligned above both columns — never a second nav bar. */
-.tab-head { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex: none; }
-/* Both columns start at the same y and the items card stops at the bill. */
-.tab-cols { display: flex; gap: 16px; align-items: flex-start; }
-.tab-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+/* Both columns start at the same y; the bill runs the height of the screen so
+   Charge sits at the bottom edge, where a thumb already is. */
+.tab-cols { display: flex; gap: 16px; align-items: stretch; flex: 1; min-height: 0; }
+.tab-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 13px; }
 
-.tab-items { overflow: hidden; }
-.tab-items-head {
-  display: flex;
-  justify-content: space-between;
-  padding: 12px 16px;
-  background: var(--surface-warm);
-  font-weight: 600;
-  font-size: calc(14px * var(--fs));
+/* The object header: which table this bill belongs to, and the one action
+   that is about the kitchen rather than the money. */
+.tab-obj { display: flex; align-items: center; gap: 13px; flex-wrap: wrap; }
+.tab-plate {
+  width: 52px;
+  height: 52px;
+  flex: none;
+  border-radius: 14px;
+  background: var(--forest);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: calc(20px * var(--fs));
 }
-.tab-empty { padding: 24px; color: var(--ink-3); }
-.tab-item {
+.tab-obj-id { display: flex; flex-direction: column; gap: 5px; margin-right: auto; min-width: 0; }
+.tab-obj-id h2 { font-family: var(--font-head); font-weight: 600; font-size: calc(19px * var(--fs)); }
+.tab-obj-id p { margin: 0; font-size: calc(12.5px * var(--fs)); color: var(--ink-3); }
+.tab-fire {
+  height: var(--ctl-h);
+  min-height: var(--ctl-h);
+  padding: 0 18px;
+  border-radius: var(--radius);
+  font-size: calc(13.5px * var(--fs));
+  white-space: nowrap;
+}
+.tab-fire:hover:not(:disabled) { background: var(--forest-deep); }
+
+/* Every round is its own card — a waiter reads one line at a time. */
+.tab-lines { display: flex; flex-direction: column; gap: 8px; }
+.tab-line {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--beige);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  padding: 13px 15px;
 }
-.tab-badge { font-size: calc(9px * var(--fs)); font-weight: 700; border-radius: 6px; padding: 3px 7px; }
-.tab-badge.sent { background: #e7e2d2; color: var(--ink-3); }
-.tab-badge.new { background: var(--gold-tint); color: #9a7200; }
-.tab-item-info { flex: 1; display: flex; flex-direction: column; gap: 1px; }
-/* Fixed column so the label never clips mid-word. */
-.tab-pull {
-  background: transparent;
-  color: var(--cta);
-  font-size: calc(12.5px * var(--fs));
-  font-weight: 500;
-  min-height: 40px;
-  width: 62px;
-  flex: none;
-  padding: 0;
-}
-.tab-item-total {
+.tab-line.sent { background: var(--surface-warm); }
+.tab-line-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.tab-line-head { display: flex; align-items: center; gap: 9px; }
+.tab-line-name { font-weight: 500; font-size: calc(13.5px * var(--fs)); }
+.tab-line-sub { font-size: calc(11.5px * var(--fs)); color: var(--ink-3); }
+.tab-line-total {
   font-family: var(--font-head);
   font-weight: 600;
+  font-size: calc(14px * var(--fs));
   font-variant-numeric: tabular-nums;
   min-width: 60px;
   text-align: right;
   flex: none;
 }
-.tab-add {
-  width: 100%;
-  background: transparent;
+
+/* What you can do to the tab, under the tab. */
+.tab-acts { display: flex; gap: 9px; flex-wrap: wrap; }
+.tab-act {
+  height: var(--ctl-h);
+  min-height: var(--ctl-h);
+  padding: 0 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
   color: var(--forest);
-  font-weight: 600;
-  min-height: 52px;
+  font-weight: 500;
+  font-size: calc(13px * var(--fs));
 }
+.tab-act:hover:not(:disabled) { border-color: var(--leaf); }
+.tab-act:disabled { opacity: 0.55; cursor: default; }
+
+.tab-empty { padding: 24px; color: var(--ink-3); }
+.tab-badge { font-size: calc(9px * var(--fs)); font-weight: 700; border-radius: 6px; padding: 3px 7px; }
+.tab-badge.sent { background: #e7e2d2; color: var(--ink-3); }
+.tab-badge.new { background: var(--gold-tint); color: #9a7200; }
+/* Pulling a fired item needs a manager, and the button says so. */
+.tab-pull {
+  flex: none;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink-3);
+  font-size: calc(12px * var(--fs));
+  font-weight: 500;
+  white-space: nowrap;
+}
+.tab-pull:hover { border-color: var(--cta); color: var(--cta); }
 
 .tab-side {
-  flex: 0 0 300px;
+  flex: 0 0 var(--cart-w);
   padding: 18px;
   display: flex;
   flex-direction: column;
   gap: 8px;
   position: sticky;
   top: 0;
-  min-height: 340px;
+  align-self: stretch;
 }
-.tab-perguest { font-size: calc(12px * var(--fs)); color: var(--ink-3); background: var(--surface-warm); border-radius: 8px; padding: 8px 10px; }
-.tab-side-grow { flex: 1; }
-.tab-send {
-  background: var(--gold);
-  color: #4a3a00;
-  font-weight: 600;
-  min-height: 52px;
-}
-.tab-send:disabled { opacity: 0.55; }
-/* Nothing left to fire is a status, so it reads as one. */
-.tab-fired {
-  background: var(--gold-tint);
-  color: var(--gold-ink);
-  border-radius: 12px;
-  min-height: 52px;
+.tab-perguest {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 500;
-  font-size: calc(13px * var(--fs));
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--surface-warm);
+  border-radius: 10px;
+  padding: 11px 13px;
+  font-size: calc(12.5px * var(--fs));
+  color: var(--ink-2);
 }
+.tab-perguest strong {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: calc(14px * var(--fs));
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.tab-side-grow { flex: 1; }
 .tab-charge {
   display: inline-flex;
   align-items: center;

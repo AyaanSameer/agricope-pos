@@ -348,6 +348,10 @@ export function tableName(id: string | null): string | null {
   return id ? (tables.find((t) => t.id === id)?.name ?? null) : null
 }
 
+export function tableZone(id: string | null): string | null {
+  return id ? (tables.find((t) => t.id === id)?.zone ?? null) : null
+}
+
 export function toPublicOrder(o: DbOrder) {
   return {
     id: o.id,
@@ -366,6 +370,7 @@ export function toPublicOrder(o: DbOrder) {
     customer_balance: o.customer_id ? customerBalance(o.customer_id) : null,
     table_id: o.table_id,
     table_name: tableName(o.table_id),
+    table_zone: tableZone(o.table_id),
     guest_count: o.guest_count,
     subtotal: o.subtotal,
     discount_total: o.discount_total,

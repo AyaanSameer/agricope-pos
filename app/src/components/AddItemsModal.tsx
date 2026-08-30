@@ -1,12 +1,11 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { listCategories, listProducts } from '../api/catalog'
+import { listProducts } from '../api/catalog'
 import type { Product } from '../api/catalog'
 import { OptionPicker } from './OptionPicker'
 import { fmt } from '../lib/money'
 import { resolveUnitPrice } from '../lib/pricing'
 import type { Channel } from '../lib/pricing'
-import { ChipRail } from './ChipRail'
 import './additems.css'
 
 /**
@@ -27,7 +26,6 @@ export function AddItemsModal({
   submitLabel?: string
   channel?: Channel
 }) {
-  const [categoryId, setCategoryId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [picked, setPicked] = useState<
     Map<string, { product_id: string; name: string; qty: number; option_ids: string[]; labels: string[] }>
@@ -51,10 +49,9 @@ export function AddItemsModal({
     })
   }
 
-  const categoriesQuery = useQuery({ queryKey: ['categories'], queryFn: listCategories })
   const productsQuery = useQuery({
-    queryKey: ['products', { search, categoryId, showInactive: false }],
-    queryFn: () => listProducts({ search: search || undefined, category_id: categoryId ?? undefined }),
+    queryKey: ['products', { search, showInactive: false }],
+    queryFn: () => listProducts({ search: search || undefined }),
   })
 
   const count = useMemo(() => [...picked.values()].reduce((a, p) => a + p.qty, 0), [picked])
@@ -63,18 +60,22 @@ export function AddItemsModal({
     <div className="tab-additems" role="dialog" aria-modal="true">
       <div className="card tab-additems-card">
         <div className="tab-additems-head">
-          <h3>{title}</h3>
-          <input placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
-          <button type="button" className="btn-secondary" onClick={onClose}>✕</button>
+          <div className="tab-additems-title">
+            <h3>{title}</h3>
+            <p>Tap to increment. The round is unsent until you fire it.</p>
+          </div>
+          <button type="button" className="tab-additems-close" aria-label="Close" onClick={onClose}>
+            ✕
+          </button>
         </div>
-        <ChipRail label="categories">
-          <button type="button" className={categoryId === null ? 'chip active' : 'chip'} onClick={() => setCategoryId(null)}>All</button>
-          {categoriesQuery.data?.data.map((c) => (
-            <button key={c.id} type="button" className={categoryId === c.id ? 'chip active' : 'chip'} onClick={() => setCategoryId(c.id)}>
-              {c.name}
-            </button>
-          ))}
-        </ChipRail>
+        <div className="tab-additems-search">
+          <span aria-hidden="true">⌕</span>
+          <input
+            placeholder="Search the menu…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
         <div className="tab-additems-grid">
           {productsQuery.data?.data.map((p) => {
             const qty = [...picked.values()]
@@ -98,9 +99,13 @@ export function AddItemsModal({
             )
           })}
         </div>
+        <div className="tab-additems-foot">
+        <button type="button" className="tab-additems-cancel" onClick={onClose}>
+          Cancel
+        </button>
         <button
           type="button"
-          className="btn-primary"
+          className="btn-primary tab-additems-add"
           disabled={count === 0 || busy}
           onClick={async () => {
             setBusy(true)
@@ -116,6 +121,7 @@ export function AddItemsModal({
         >
           {busy ? 'Adding…' : `Add ${count} item${count === 1 ? '' : 's'} ${submitLabel}`}
         </button>
+        </div>
       </div>
       {pickingOptions && (
         <OptionPicker

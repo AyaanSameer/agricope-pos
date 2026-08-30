@@ -1,25 +1,75 @@
 /* Add-items modal — shared by the tab and the orders page */
 .tab-additems { position: fixed; inset: 0; background: var(--scrim-modal); display: flex; align-items: center; justify-content: center; z-index: 40; padding: 24px; }
 .tab-additems-card { width: 100%; max-width: 620px; max-height: 90vh; padding: 22px; display: flex; flex-direction: column; gap: 12px; }
-.tab-additems-head { display: flex; gap: 10px; align-items: center; }
-.tab-additems-head h3 { margin-right: auto; }
-.tab-additems-head input { max-width: 220px; }
+.tab-additems-head { display: flex; gap: 12px; align-items: flex-start; }
+.tab-additems-title { margin-right: auto; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.tab-additems-title h3 { font-family: var(--font-head); font-weight: 600; font-size: calc(17px * var(--fs)); }
+.tab-additems-title p { margin: 0; font-size: calc(12.5px * var(--fs)); color: var(--ink-3); }
+.tab-additems-close {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  flex: none;
+  padding: 0;
+  border-radius: 8px;
+  background: var(--surface-warm);
+  color: var(--ink-3);
+  font-size: calc(15px * var(--fs));
+}
+.tab-additems-close:hover { background: var(--beige); }
+
+.tab-additems-search { position: relative; display: flex; align-items: center; }
+.tab-additems-search span {
+  position: absolute;
+  left: 14px;
+  color: var(--hint);
+  font-size: calc(14px * var(--fs));
+  pointer-events: none;
+}
+.tab-additems-search input { width: 100%; padding-left: 36px; background: var(--surface-warm); }
+
+.tab-additems-foot { display: flex; gap: 10px; }
+.tab-additems-cancel {
+  flex: 1;
+  height: calc(var(--ctl-h) + 4px);
+  min-height: calc(var(--ctl-h) + 4px);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink-2);
+  border-radius: 11px;
+  font-weight: 500;
+  font-size: calc(13.5px * var(--fs));
+}
+.tab-additems-cancel:hover { border-color: var(--leaf); }
+.tab-additems-add {
+  flex: 2;
+  height: calc(var(--ctl-h) + 4px);
+  min-height: calc(var(--ctl-h) + 4px);
+  border-radius: 11px;
+  font-size: calc(14px * var(--fs));
+}
 .tab-additems-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 10px;
   overflow-y: auto;
   padding: 2px;
+  flex: 1;
+  min-height: 0;
 }
-.tile.picked { outline: 3px solid var(--leaf); position: relative; }
+/* Picked reads from the count badge, not a heavy outline round the tile. */
+.tab-additems-grid .tile { position: relative; min-height: calc(78px * var(--fs)); }
+.tile.picked { border-color: var(--leaf); }
 .tile-qty {
   position: absolute;
-  top: 8px; right: 8px;
+  top: 10px;
+  right: 10px;
   background: var(--forest);
   color: #fff;
   border-radius: 99px;
-  font-size: calc(12px * var(--fs));
-  font-weight: 700;
-  padding: 2px 8px;
+  font-family: var(--font-head);
+  font-size: calc(11px * var(--fs));
+  font-weight: 600;
+  padding: 3px 8px;
 }
 
