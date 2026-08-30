@@ -9,6 +9,7 @@ import {
 } from '../../api/org'
 import type { StoreSettingsInput } from '../../api/org'
 import { ApiError } from '../../api/client'
+import { changeBusinessPassword } from '../../api/auth'
 import { useAuth } from '../../auth/AuthContext'
 import './settings.css'
 
@@ -19,7 +20,7 @@ import './settings.css'
  */
 export function SettingsPage() {
   const queryClient = useQueryClient()
-  const { activeStore } = useAuth()
+  const { activeStore, session } = useAuth()
   const storesQuery = useQuery({ queryKey: ['stores'], queryFn: listStores })
   const bizQuery = useQuery({ queryKey: ['business-settings'], queryFn: getBusinessSettings })
   const [error, setError] = useState<string | null>(null)
@@ -180,6 +181,8 @@ export function SettingsPage() {
               busy={saveBiz.isPending}
               onSave={(discount_approval_percent) => saveBiz.mutate({ discount_approval_percent })}
             />
+
+            {session?.user.role === 'owner' && <PasswordGroup />}
           </div>
         )}
       </div>
@@ -364,6 +367,106 @@ function ReceiptGroup({
         <div className="settings-save-row">
           <button type="submit" className="btn-primary settings-save" disabled={busy}>
             {busy ? 'Saving…' : 'Save receipt'}
+          </button>
+        </div>
+      )}
+    </form>
+  )
+}
+
+/**
+ * Owner only — the BUSINESS password, the one login every till signs in with.
+ * The server re-checks the current password and the owner role; managers
+ * never see this card.
+ */
+function PasswordGroup() {
+  const [current, setCurrent] = useState('')
+  const [next, setNext] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [message, setMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
+
+  const save = useMutation({
+    mutationFn: () => changeBusinessPassword(current, next),
+    onSuccess: () => {
+      setCurrent('')
+      setNext('')
+      setConfirm('')
+      setMessage({ kind: 'ok', text: 'Password changed — use it at the next sign-in on every till.' })
+    },
+    onError: (err) =>
+      setMessage({
+        kind: 'err',
+        text: err instanceof ApiError ? err.message : 'Could not change the password — try again.',
+      }),
+  })
+
+  function submit(e: FormEvent) {
+    e.preventDefault()
+    if (next !== confirm) {
+      setMessage({ kind: 'err', text: 'The new passwords do not match.' })
+      return
+    }
+    setMessage(null)
+    save.mutate()
+  }
+
+  return (
+    <form className="settings-block" onSubmit={submit}>
+      <div className="settings-block-head">
+        <div className="settings-block-title">Sign-in password</div>
+        <p className="settings-block-sub">
+          The business password — the one login every till signs in with. Owner only.
+        </p>
+      </div>
+      <div className="settings-fields">
+        <label className="settings-field settings-field-narrow">
+          <span>Current password</span>
+          <input
+            type="password"
+            autoComplete="current-password"
+            value={current}
+            onChange={(e) => setCurrent(e.target.value)}
+            required
+          />
+        </label>
+        <label className="settings-field settings-field-narrow">
+          <span>New password</span>
+          <input
+            type="password"
+            autoComplete="new-password"
+            minLength={8}
+            value={next}
+            onChange={(e) => setNext(e.target.value)}
+            required
+          />
+        </label>
+        <label className="settings-field settings-field-narrow">
+          <span>Repeat new password</span>
+          <input
+            type="password"
+            autoComplete="new-password"
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            required
+          />
+        </label>
+      </div>
+      <div className="settings-effect">
+        <span className="settings-effect-tag">Effect</span>
+        <span className="settings-effect-text">
+          Every till signs in with the new password from its next sign-in · signed-in tills stay
+          signed in
+        </span>
+      </div>
+      {message && (
+        <div className={message.kind === 'ok' ? 'settings-flash ok' : 'settings-flash err'}>
+          {message.text}
+        </div>
+      )}
+      {current && next && confirm && (
+        <div className="settings-save-row">
+          <button type="submit" className="btn-primary settings-save" disabled={save.isPending}>
+            {save.isPending ? 'Changing…' : 'Change password'}
           </button>
         </div>
       )}

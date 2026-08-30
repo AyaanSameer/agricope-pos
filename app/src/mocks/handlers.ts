@@ -141,6 +141,24 @@ export const handlers = [
     return HttpResponse.json(sessionFor(user))
   }),
 
+  // Owner only — the BUSINESS password, which every till signs in with.
+  http.post('/api/v1/auth/change-password', async ({ request }) => {
+    await delay(350)
+    const caller = requireRole(request, ['owner'])
+    if (caller instanceof Response) return caller
+    const business = businesses.find((b) => b.id === caller.business_id)
+    if (!business) return apiError(404, 'NOT_FOUND', 'No such business.')
+    const body = (await request.json()) as { current_password?: string; new_password?: string }
+    if (body.current_password !== business.password) {
+      return apiError(401, 'INVALID_CREDENTIALS', 'The current password is not right.')
+    }
+    if (!body.new_password || body.new_password.length < 8) {
+      return apiError(400, 'VALIDATION_ERROR', 'The new password needs at least 8 characters.')
+    }
+    business.password = body.new_password
+    return new HttpResponse(null, { status: 204 })
+  }),
+
   // ---------- org ----------
 
   http.get('/api/v1/stores', async ({ request }) => {

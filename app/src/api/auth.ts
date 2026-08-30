@@ -27,3 +27,17 @@ export function switchCashier(store_id: string | null, pin: string): Promise<Log
     body: JSON.stringify({ store_id, pin }),
   })
 }
+
+/**
+ * Owner only — changes the BUSINESS password, the one every till of this
+ * business signs in with. The current password is re-checked server-side.
+ */
+export function changeBusinessPassword(
+  current_password: string,
+  new_password: string,
+): Promise<void> {
+  return api<void>('/auth/change-password', {
+    method: 'POST',
+    body: JSON.stringify({ current_password, new_password }),
+  })
+}

@@ -159,6 +159,9 @@
   white-space: nowrap;
 }
 .admin-biz-login {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
   font-size: calc(11.5px * var(--fs));
   color: var(--ink-3);
   overflow: hidden;

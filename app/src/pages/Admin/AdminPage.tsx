@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createBranch, createBusiness, createOwner, listBusinesses } from '../../api/admin'
+import { createBranch, createBusiness, createOwner, listBusinesses, updateBusinessLogin } from '../../api/admin'
 import type { AdminBusiness } from '../../api/admin'
 import { ApiError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
@@ -29,6 +29,7 @@ type Modal =
   | { kind: 'business' }
   | { kind: 'branch'; business: AdminBusiness }
   | { kind: 'owner'; business: AdminBusiness }
+  | { kind: 'login'; business: AdminBusiness }
   | null
 
 export function AdminPage() {
@@ -71,10 +72,17 @@ export function AdminPage() {
     onSuccess: done,
     onError: fail,
   })
+  const editLogin = useMutation({
+    mutationFn: (b: AdminBusiness) =>
+      updateBusinessLogin(b.id, { email: f2, ...(f3 ? { password: f3 } : {}) }),
+    onSuccess: done,
+    onError: fail,
+  })
 
   function open(next: Exclude<Modal, null>) {
     setF1('')
-    setF2('')
+    // Editing a login starts from the current email; everything else starts blank.
+    setF2(next.kind === 'login' ? next.business.email : '')
     setF3('')
     setBranchType('restaurant')
     setError(null)
@@ -86,10 +94,12 @@ export function AdminPage() {
     if (!modal) return
     if (modal.kind === 'business') addBusiness.mutate()
     else if (modal.kind === 'branch') addBranch.mutate(modal.business)
+    else if (modal.kind === 'login') editLogin.mutate(modal.business)
     else addOwner.mutate(modal.business)
   }
 
-  const busy = addBusiness.isPending || addBranch.isPending || addOwner.isPending
+  const busy =
+    addBusiness.isPending || addBranch.isPending || addOwner.isPending || editLogin.isPending
   const businesses = businessesQuery.data?.data ?? []
   const awaitingOwner = businesses.filter((b) => b.owners.length === 0).length
 
@@ -159,7 +169,16 @@ export function AdminPage() {
                 </span>
                 <div className="admin-biz-id">
                   <div className="admin-biz-name">{b.name}</div>
-                  <div className="admin-biz-login">Login · {b.email}</div>
+                  <div className="admin-biz-login">
+                    Login · {b.email}
+                    <button
+                      type="button"
+                      className="admin-action"
+                      onClick={() => open({ kind: 'login', business: b })}
+                    >
+                      Edit
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -281,6 +300,28 @@ export function AdminPage() {
                     <input value={f2} onChange={(e) => setF2(e.target.value)} />
                   </label>
                 </div>
+              </>
+            )}
+            {modal.kind === 'login' && (
+              <>
+                <h3>Sign-in — {modal.business.name}</h3>
+                <label className="field">
+                  <span>Login email (one login for all branches)</span>
+                  <input type="email" value={f2} onChange={(e) => setF2(e.target.value)} required autoFocus />
+                </label>
+                <label className="field">
+                  <span>New password</span>
+                  <input
+                    type="text"
+                    value={f3}
+                    onChange={(e) => setF3(e.target.value)}
+                    placeholder="Leave blank to keep the current password"
+                    minLength={8}
+                  />
+                </label>
+                <p className="admin-note">
+                  Takes effect on this business's next sign-in — every till uses this one login.
+                </p>
               </>
             )}
             {modal.kind === 'owner' && (

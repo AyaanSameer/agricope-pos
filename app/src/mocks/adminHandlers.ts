@@ -1,5 +1,6 @@
 import { http, HttpResponse, delay } from 'msw'
 import {
+  admins,
   businesses,
   categories,
   products,
@@ -75,6 +76,34 @@ export const adminHandlers = [
       sort_order: 1,
     })
     return HttpResponse.json(toAdminBusiness(business), { status: 201 })
+  }),
+
+  http.patch('/api/v1/admin/businesses/:id', async ({ request, params }) => {
+    await delay(300)
+    if (!requireAdmin(request)) return apiError(401, 'UNAUTHENTICATED', 'Admin sign-in required.')
+    const business = businesses.find((b) => b.id === params.id)
+    if (!business) return apiError(404, 'NOT_FOUND', 'No such business.')
+    const body = (await request.json()) as { email?: string; password?: string }
+    if (body.email !== undefined) {
+      const email = body.email.trim().toLowerCase()
+      if (!/^\S+@\S+\.\S+$/.test(email)) {
+        return apiError(400, 'VALIDATION_ERROR', 'That does not look like an email address.')
+      }
+      if (businesses.some((b) => b.email === email && b.id !== business.id)) {
+        return apiError(400, 'VALIDATION_ERROR', 'A business already signs in with that email.')
+      }
+      if (admins.some((a) => a.email === email)) {
+        return apiError(400, 'VALIDATION_ERROR', 'That email belongs to a platform administrator.')
+      }
+      business.email = email
+    }
+    if (body.password !== undefined) {
+      if (body.password.length < 8) {
+        return apiError(400, 'VALIDATION_ERROR', 'The password needs at least 8 characters.')
+      }
+      business.password = body.password
+    }
+    return HttpResponse.json(toAdminBusiness(business))
   }),
 
   http.post('/api/v1/admin/businesses/:id/stores', async ({ request, params }) => {

@@ -146,3 +146,18 @@ form.settings-block + form.settings-block {
   border-top: 1px solid var(--border);
   padding-top: 18px;
 }
+
+/* Inline result of a password change — green when it took, red when refused. */
+.settings-flash {
+  font-size: calc(12.5px * var(--fs));
+  border-radius: var(--radius);
+  padding: 10px 12px;
+}
+.settings-flash.ok {
+  background: var(--leaf-plate);
+  color: var(--forest);
+}
+.settings-flash.err {
+  background: var(--cta-tint);
+  color: var(--cta);
+}

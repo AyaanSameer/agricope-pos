@@ -27,6 +27,20 @@ export function createBusiness(input: {
   return api<AdminBusiness>('/admin/businesses', { method: 'POST', body: JSON.stringify(input) })
 }
 
+/**
+ * Change how a business signs in — its login email and/or password. Platform
+ * admin only; takes effect on that business's next sign-in on every till.
+ */
+export function updateBusinessLogin(
+  businessId: string,
+  input: { email?: string; password?: string },
+): Promise<AdminBusiness> {
+  return api<AdminBusiness>(`/admin/businesses/${businessId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  })
+}
+
 export function createBranch(
   businessId: string,
   input: { name: string; type: 'retail' | 'restaurant'; address?: string },
