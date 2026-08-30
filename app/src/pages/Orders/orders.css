@@ -82,6 +82,7 @@
   z-index: 30;
   background: var(--surface);
   border-left: 1px solid var(--border);
+  box-shadow: -10px 0 30px rgba(15, 23, 42, 0.2);
   padding: 18px;
   overflow-y: auto;
   display: flex;

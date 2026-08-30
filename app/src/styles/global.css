@@ -354,6 +354,25 @@ button { transition: background 0.12s, border-color 0.13s, color 0.12s; }
 .users-modal > *,
 .staff-modal > * { animation: agUp 0.22s ease both; }
 
+/* §1 shape and depth. An overlay's card is radius 20 and carries the modal
+   shadow; cards on the page stay flat, held by their border alone. Listed by
+   root class for the same reason the motion above is — call sites stay plain.
+   The kitchen ticket is left out: it is an 80mm paper preview, not a panel. */
+.confirm > *,
+.cpick > *,
+.climit > *,
+.disc-modal > *,
+.pinswitch > *,
+.tab-additems > *,
+.cust-modal > *,
+.cat-modal > *,
+.admin-modal > *,
+.users-modal > *,
+.staff-modal > * {
+  border-radius: var(--radius-modal);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
+}
+
 /* The PIN pad lifts on a softer curve — it is the one you wait for. */
 .pinswitch > * { animation: agUp 0.24s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
