@@ -1,13 +1,17 @@
-/* Keys stand at --key-h (§5), so the pad tracks the device rather than the
-   72/76 the prototype happens to draw; width comes from the card they fill. */
+/* Money keys stand at --key-h so the pad tracks the device. PIN keys do not:
+   a PIN pad is the same pad on every screen and every size, so it is drawn to
+   the prototype's own 76px rather than the device's key height. */
 .pinpad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--key-gap);
   width: 100%;
+  --key-height: var(--key-h);
 }
 .pinpad-md { --key-gap: 12px; --key-radius: 14px; --key-size: 24px; }
-.pinpad-lg { --key-gap: 14px; --key-radius: 16px; --key-size: 26px; }
+.pinpad-pin { --key-gap: 8px; --key-radius: 12px; --key-size: 24px; --key-height: 76px; }
+.pinpad-pin .pinpad-key { font-weight: 600; }
+.pinpad-pin .pinpad-key-back { font-size: var(--key-size); }
 
 /* Charge: the keypad fills its column and the keys stand at --key-h. */
 .pinpad-fill {
@@ -28,8 +32,8 @@
 
 .pinpad-key {
   width: auto;
-  height: var(--key-h);
-  min-height: var(--key-h);
+  height: var(--key-height);
+  min-height: var(--key-height);
   padding: 0;
   border-radius: var(--key-radius);
   font-family: var(--font-head);
@@ -40,22 +44,22 @@
   color: var(--ink);
 }
 .pinpad-key-back { font-size: calc(var(--key-size) - 6px); }
-.pinpad-key:active { background: var(--success-tint); border-color: var(--leaf); }
+.pinpad-key:active { background: var(--success-tint); }
 .pinpad-key:disabled { opacity: 0.55; }
 
 .pin-dots {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 15px;
 }
-.pin-dots-md { gap: 14px; --dot: 15px; }
-.pin-dots-lg { gap: 16px; --dot: 16px; }
 .pin-dots .dot {
-  width: var(--dot);
-  height: var(--dot);
+  width: 17px;
+  height: 17px;
   border-radius: 50%;
-  background: var(--surface-warm);
-  border: 1.5px solid var(--border);
+  background: var(--beige);
+  border: 1px solid var(--border-strong);
+  transition: background 0.12s;
 }
 .pin-dots .dot.filled {
   background: var(--forest);

@@ -2,15 +2,14 @@ import { useEffect, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { useAuth } from '../auth/AuthContext'
 import { ApiError } from '../api/client'
-import { PinPad, PinDots } from './PinPad'
-import './pinswitch.css'
+import { PinCard } from './PinCard'
 
 const PIN_LENGTH = 4
 
 /**
- * Handing the till over. The design makes the hand-over explicit: who is
- * signing off sits above an empty avatar for whoever takes over, so nobody
- * types a PIN without seeing whose shift they are ending.
+ * Handing the till over. Same card as signing in, so the hand-over is not a
+ * different-looking prompt — the chip names who is signing off instead of
+ * which branch you are opening.
  */
 export function PinSwitchOverlay({ onClose }: { onClose: () => void }) {
   const { session, activeStore, switchByPin } = useAuth()
@@ -38,57 +37,26 @@ export function PinSwitchOverlay({ onClose }: { onClose: () => void }) {
   }, [pin])
 
   const outgoing = session?.user
-  const initials = outgoing
-    ? outgoing.name
-        .split(' ')
-        .map((w) => w[0])
-        .slice(0, 2)
-        .join('')
-    : '—'
 
   return (
-    <div className="pinswitch" role="dialog" aria-modal="true" aria-label="Switch user">
-      <div className={error ? 'pinswitch-card ag-shake' : 'pinswitch-card'} key={attempt}>
-        <div className="pinswitch-badge">Handing over the till</div>
-
-        {outgoing && (
-          <div className="pinswitch-outgoing">
-            <div className="pinswitch-out-avatar">{initials}</div>
-            <div className="pinswitch-out-info">
-              <div className="pinswitch-out-name">{outgoing.name}</div>
-              <div className="pinswitch-out-role">
-                <span>{outgoing.role}</span> · signing off
-              </div>
-            </div>
-            <span className="pinswitch-arrow" aria-hidden="true">
-              ↓
-            </span>
-          </div>
-        )}
-
-        <div className="pinswitch-incoming">
-          <div className="pinswitch-in-avatar" aria-hidden="true">
-            ?
-          </div>
-          <h2>Who is taking over?</h2>
-          {error ? (
-            <p className="pinswitch-error">{error}</p>
-          ) : (
-            <p className="pinswitch-sub">{activeStore ? activeStore.name : 'Enter your PIN'}</p>
-          )}
-        </div>
-
-        <PinDots filled={pin.length} length={PIN_LENGTH} />
-
-        <PinPad
-          disabled={switchMutation.isPending}
-          onDigit={(d) => setPin((p) => (p.length < PIN_LENGTH ? p + d : p))}
-          onBackspace={() => setPin((p) => p.slice(0, -1))}
-        />
-        <button type="button" className="pinswitch-cancel" onClick={onClose}>
-          Cancel
-        </button>
-      </div>
+    <div className="pin-scrim" role="dialog" aria-modal="true" aria-label="Switch user">
+      <PinCard
+        key={attempt}
+        chip={outgoing ? `${outgoing.name} · signing off` : (activeStore?.name ?? null)}
+        title="Who is taking over?"
+        hint={`Enter your ${PIN_LENGTH}-digit PIN`}
+        error={error}
+        filled={pin.length}
+        length={PIN_LENGTH}
+        disabled={switchMutation.isPending}
+        onDigit={(d) => setPin((p) => (p.length < PIN_LENGTH ? p + d : p))}
+        onBackspace={() => setPin((p) => p.slice(0, -1))}
+        footer={
+          <button type="button" className="pin-foot pin-foot-quiet" onClick={onClose}>
+            Cancel
+          </button>
+        }
+      />
     </div>
   )
 }

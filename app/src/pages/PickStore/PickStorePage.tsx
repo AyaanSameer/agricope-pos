@@ -4,7 +4,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useAuth } from '../../auth/AuthContext'
 import { ApiError } from '../../api/client'
 import { Logomark } from '../../components/Logomark'
-import { PinPad, PinDots } from '../../components/PinPad'
+import { PinCard } from '../../components/PinCard'
 import './pickstore.css'
 
 const PIN_LENGTH = 4
@@ -71,96 +71,93 @@ export function PickStorePage() {
       ? `${businessSession.business.name} · Back office`
       : (activeStore?.name ?? businessSession.business.name)
     return (
-      <div className="pickstore pickstore-pin-screen">
-        <div className={error ? 'pin-card ag-shake' : 'pin-card'} key={attempt}>
-          <div className="pin-branch">
-            <span className="dot" />
-            {tillLabel}
-          </div>
-
-          <div className="pin-who">
-            <div className="pin-who-avatar" aria-hidden="true">
-              ?
-            </div>
-            <h1>Who is taking the till?</h1>
-            {error ? (
-              <p className="pin-error">{error}</p>
-            ) : (
-              <p className="pin-hint">Enter your {PIN_LENGTH}-digit PIN</p>
-            )}
-          </div>
-
-          <PinDots filled={pin.length} length={PIN_LENGTH} size="lg" />
-
-          <PinPad
-            size="lg"
+      <div className="pickstore">
+        <span className="pickstore-orb pickstore-orb-1" aria-hidden="true" />
+        <span className="pickstore-orb pickstore-orb-2" aria-hidden="true" />
+        <div className="pickstore-inner pickstore-inner-pin">
+          <PinCard
+            key={attempt}
+            chip={tillLabel}
+            title="Who is taking the till?"
+            hint={`Enter your ${PIN_LENGTH}-digit PIN`}
+            error={error}
+            filled={pin.length}
+            length={PIN_LENGTH}
             disabled={unlock.isPending}
             onDigit={(d) => setPin((p) => (p.length < PIN_LENGTH ? p + d : p))}
             onBackspace={() => setPin((p) => p.slice(0, -1))}
+            footer={
+              <button
+                type="button"
+                className="pin-foot"
+                onClick={() => {
+                  setStage('store')
+                  setPin('')
+                  setError(null)
+                }}
+              >
+                ← Change branch
+              </button>
+            }
           />
 
-          <button
-            type="button"
-            className="pin-change-branch"
-            onClick={() => {
-              setStage('store')
-              setPin('')
-              setError(null)
-            }}
-          >
-            ← Change branch
+          <button type="button" className="pickstore-signout" onClick={signOut}>
+            Sign the business out
           </button>
         </div>
-
-        <button type="button" className="pickstore-signout" onClick={signOut}>
-          Sign the business out
-        </button>
       </div>
     )
   }
 
   return (
     <div className="pickstore">
-      <div className="pickstore-head">
-        <Logomark size={44} />
-        <h1>{businessSession.business.name}</h1>
-        <p>
-          {needsBranch
-            ? 'That screen belongs to a branch — pick the one this till serves.'
-            : 'Pick the branch this till serves — your PIN identifies you next.'}
-        </p>
-      </div>
+      <span className="pickstore-orb pickstore-orb-1" aria-hidden="true" />
+      <span className="pickstore-orb pickstore-orb-2" aria-hidden="true" />
+      <div className="pickstore-inner">
+        <div className="pickstore-head">
+          <Logomark height={48} />
+          <h1>{businessSession.business.name}</h1>
+          <p>
+            {needsBranch
+              ? 'That screen belongs to a branch — pick the one this till serves.'
+              : 'Which till are you opening?'}
+          </p>
+        </div>
 
-      <div className="pickstore-grid">
-        {stores.map((store) => (
-          <button
-            key={store.id}
-            type="button"
-            className="pickstore-tile"
-            onClick={() => chooseStore(store.id, store.name)}
-          >
-            <span className={`pickstore-type ${store.type}`}>
-              {store.type === 'retail' ? 'Retail' : 'Restaurant'}
-            </span>
-            <span className="pickstore-name">{store.name}</span>
-            <span className="pickstore-addr">{store.address}</span>
-          </button>
-        ))}
-        {!needsBranch && (
-          <button
-            type="button"
-            className="pickstore-tile all"
-            onClick={() => chooseStore(null, 'All stores')}
-          >
-            <span className="pickstore-name">Back office</span>
-            <span className="pickstore-addr">All branches — catalog, users, reports</span>
-          </button>
-        )}
-      </div>
+        <div className="pickstore-grid">
+          {stores.map((store) => (
+            <button
+              key={store.id}
+              type="button"
+              className="pickstore-tile"
+              onClick={() => chooseStore(store.id, store.name)}
+            >
+              <span className={`pickstore-type ${store.type}`}>
+                {store.type === 'retail' ? 'Retail' : 'Restaurant'}
+              </span>
+              <span className="pickstore-fill" />
+              <span className="pickstore-name">{store.name}</span>
+              <span className="pickstore-addr">{store.address}</span>
+            </button>
+          ))}
+          {!needsBranch && (
+            <button
+              type="button"
+              className="pickstore-tile all"
+              onClick={() => chooseStore(null, 'All stores')}
+            >
+              <span className="pickstore-type none">No till</span>
+              <span className="pickstore-fill" />
+              <span className="pickstore-name">Back office</span>
+              <span className="pickstore-addr">All branches — catalog, users, reports</span>
+            </button>
+          )}
+        </div>
 
-      <button type="button" className="pickstore-signout" onClick={signOut}>
-        Sign the business out
-      </button>
+        <button type="button" className="pickstore-signout" onClick={signOut}>
+          Sign the business out
+        </button>
+      </div>
     </div>
   )
 }

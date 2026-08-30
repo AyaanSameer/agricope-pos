@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import { PinPad, PinDots } from './PinPad'
-import './pinswitch.css'
+import { PinCard } from './PinCard'
 
 const PIN_LENGTH = 4
 
@@ -38,21 +37,23 @@ export function ApprovalPinModal({
   }, [pin])
 
   return (
-    <div className="pinswitch" role="dialog" aria-modal="true" aria-label={title}>
-      <div className={error ? 'pinswitch-card ag-shake' : 'pinswitch-card'} key={attempt}>
-        <h2>{title}</h2>
-        <p className="pinswitch-sub">{message}</p>
-        <PinDots filled={pin.length} length={PIN_LENGTH} />
-        {error && <div className="pinswitch-error">{error}</div>}
-        <PinPad
-          disabled={busy}
-          onDigit={(d) => setPin((p) => (p.length < PIN_LENGTH ? p + d : p))}
-          onBackspace={() => setPin((p) => p.slice(0, -1))}
-        />
-        <button type="button" className="btn-secondary pinswitch-cancel" onClick={onClose}>
-          Cancel
-        </button>
-      </div>
+    <div className="pin-scrim" role="dialog" aria-modal="true" aria-label={title}>
+      <PinCard
+        key={attempt}
+        title={title}
+        hint={message}
+        error={error}
+        filled={pin.length}
+        length={PIN_LENGTH}
+        disabled={busy}
+        onDigit={(d) => setPin((p) => (p.length < PIN_LENGTH ? p + d : p))}
+        onBackspace={() => setPin((p) => p.slice(0, -1))}
+        footer={
+          <button type="button" className="pin-foot pin-foot-quiet" onClick={onClose}>
+            Cancel
+          </button>
+        }
+      />
     </div>
   )
 }

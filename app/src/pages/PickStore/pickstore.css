@@ -1,13 +1,48 @@
+/* Both stages of picking a till stand on the deep forest, with the same two
+   circles bled off the corners as the login panel. */
 .pickstore {
   min-height: 100%;
   background: var(--forest-deep);
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 32px;
-  padding: 32px;
+  gap: 22px;
+  padding: 32px 20px;
 }
+
+.pickstore-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.pickstore-orb-1 {
+  right: -80px;
+  top: -70px;
+  width: 280px;
+  height: 280px;
+  background: rgba(102, 187, 106, 0.16);
+}
+.pickstore-orb-2 {
+  left: -70px;
+  bottom: -80px;
+  width: 220px;
+  height: 220px;
+  background: rgba(223, 239, 219, 0.07);
+}
+
+.pickstore-inner {
+  position: relative;
+  width: 100%;
+  max-width: 780px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+.pickstore-inner-pin { max-width: var(--pin-card-w); gap: 16px; }
 
 .pickstore-head {
   text-align: center;
@@ -15,129 +50,94 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 11px;
 }
-.pickstore-head h1 { font-size: calc(28px * var(--fs)); }
-.pickstore-head p { color: var(--leaf-pale); max-width: 440px; margin: 0; line-height: 1.5; }
+.pickstore-head h1 {
+  width: 100%;
+  font-size: calc(23px * var(--fs));
+  font-weight: 600;
+  line-height: 1.3;
+}
+.pickstore-head p {
+  width: 100%;
+  margin: 0;
+  font-size: calc(13px * var(--fs));
+  color: var(--leaf-pale);
+}
 
 .pickstore-grid {
+  width: 100%;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 14px;
-  max-width: 760px;
+  gap: 12px;
 }
 
 .pickstore-tile {
-  width: 230px;
-  min-height: 130px;
+  flex: 1 1 230px;
+  min-width: 210px;
+  max-width: 260px;
+  min-height: 132px;
   background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: center;
-  gap: 6px;
-  padding: 20px;
+  gap: 10px;
+  padding: 17px 18px;
   text-align: left;
+  transition:
+    transform 0.14s,
+    border-color 0.14s;
 }
-.pickstore-tile:active { outline: 3px solid var(--leaf); }
+.pickstore-fill { flex: 1; }
+.pickstore-tile:hover { border-color: var(--leaf); transform: translateY(-2px); }
+.pickstore-tile:active { transform: none; }
+/* The back office is not a till, so it does not read as one. */
 .pickstore-tile.all {
-  background: var(--forest-tint);
+  background: var(--forest);
+  border-color: var(--forest-tint);
   color: #fff;
 }
-.pickstore-tile.all .pickstore-addr { color: #9fb89c; }
+.pickstore-tile.all .pickstore-addr { color: var(--leaf-pale); }
 
 .pickstore-type {
-  font-size: calc(11px * var(--fs));
-  font-weight: 500;
+  font-family: var(--font-head);
+  font-size: calc(9.5px * var(--fs));
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
   border-radius: 99px;
-  padding: 3px 9px;
+  padding: 4px 9px;
 }
-.pickstore-type.retail { background: var(--success-tint); color: var(--forest); }
-.pickstore-type.restaurant { background: var(--gold-tint); color: #9a7200; }
+.pickstore-type.restaurant { background: var(--success-tint); color: var(--forest); }
+.pickstore-type.retail { background: var(--beige); color: var(--ink-2); }
+.pickstore-type.none { background: var(--forest-tint); color: var(--leaf-pale); }
 
-.pickstore-name { font-family: var(--font-head); font-weight: 600; font-size: calc(17px * var(--fs)); }
-.pickstore-addr { font-size: calc(12px * var(--fs)); color: var(--ink-3); }
+.pickstore-name {
+  width: 100%;
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: calc(15px * var(--fs));
+  line-height: 1.35;
+}
+.pickstore-addr {
+  width: 100%;
+  font-size: calc(12px * var(--fs));
+  line-height: 1.5;
+  color: var(--ink-3);
+}
 
 .pickstore-loading { color: var(--leaf-pale); }
 
 .pickstore-signout {
+  height: 44px;
+  min-height: 44px;
+  padding: 0 12px;
   background: transparent;
+  border: 0;
   color: var(--leaf-pale);
-  font-weight: 500;
+  font-size: calc(12.5px * var(--fs));
 }
-
-/* ---- PIN stage — "Who is taking the till?" ---------------------------- */
-.pickstore-pin-screen { background: var(--forest); gap: 22px; }
-
-.pin-card {
-  background: var(--surface);
-  border-radius: 20px;
-  width: 100%;
-  max-width: 348px;
-  padding: 32px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 22px;
-}
-
-/* Branch chip pinned above, so nobody signs into the wrong till. */
-.pin-branch {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 32px;
-  padding: 0 14px;
-  border-radius: 99px;
-  background: var(--surface-warm);
-  border: 1px solid var(--border);
-  font-size: calc(12px * var(--fs));
-  font-weight: 500;
-  color: var(--ink-2);
-}
-.pin-branch .dot {
-  width: 8px;
-  height: 8px;
-  flex: none;
-  border-radius: 50%;
-  background: var(--leaf);
-}
-
-.pin-who {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  text-align: center;
-}
-.pin-who-avatar {
-  width: 56px;
-  height: 56px;
-  border-radius: 99px;
-  background: var(--surface-warm);
-  color: var(--hint);
-  display: grid;
-  place-items: center;
-  font-family: var(--font-head);
-  font-size: calc(19px * var(--fs));
-  font-weight: 700;
-}
-.pin-who h1 { font-size: calc(20px * var(--fs)); font-weight: 600; }
-.pin-hint { color: var(--ink-3); font-size: calc(13px * var(--fs)); margin: 0; }
-/* A real error state, in Sunset Orange — and the entry is cleared. */
-.pin-error { color: var(--cta); font-size: calc(13px * var(--fs)); margin: 0; max-width: 272px; }
-
-.pin-change-branch {
-  width: 272px;
-  height: 48px;
-  min-height: 48px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--ink-2);
-  font-size: calc(14px * var(--fs));
-  font-weight: 500;
-}
-.pin-change-branch:active { background: var(--surface-warm); }
+.pickstore-signout:hover { text-decoration: underline; }
