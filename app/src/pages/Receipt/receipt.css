@@ -18,10 +18,12 @@
 }
 .receipt-loading { padding: 32px; color: var(--ink-3); }
 
+/* Nothing on the paper carries a hue — it prints on thermal stock, and the
+   preview says so. Greys stay for hierarchy; the brand green does not. */
 .receipt-paper {
   width: 302px; /* ~80mm at 96dpi */
   background: #fff;
-  border: 1px solid var(--border);
+  border: 1px solid #ddd;
   padding: 18px 14px;
   font-family: 'Roboto Mono', 'Courier New', monospace;
   font-size: calc(12px * var(--fs));
@@ -38,7 +40,7 @@
   font-size: calc(16px * var(--fs));
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--forest);
+  color: #000;
 }
 .receipt-addr { font-size: calc(11px * var(--fs)); color: #444; }
 /* The QR is on the paper, because the paper is what gets handed over. */

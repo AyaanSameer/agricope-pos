@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react'
 import QRCode from 'qrcode'
 import type { Order } from '../../api/orders'
-import { Logomark } from '../../components/Logomark'
 import { fmt, fmtQAR } from '../../lib/money'
 import './receipt.css'
 
@@ -18,7 +17,6 @@ export function ReceiptView({ data, qrUrl }: { data: ReceiptData; qrUrl?: string
   return (
     <div className="receipt-paper" id="receipt">
       <div className="receipt-center receipt-head">
-        <Logomark height={34} tone="colour" />
         <div className="receipt-biz">{business.name}</div>
         <div className="receipt-addr">
           {store.address}
@@ -109,7 +107,11 @@ export function ReceiptQR({ url }: { url: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   useEffect(() => {
     if (canvasRef.current) {
-      QRCode.toCanvas(canvasRef.current, url, { width: 152, margin: 1, color: { dark: '#0a5038' } })
+      QRCode.toCanvas(canvasRef.current, url, {
+        width: 152,
+        margin: 1,
+        color: { dark: '#000000', light: '#ffffff' },
+      })
     }
   }, [url])
   return <canvas ref={canvasRef} className="receipt-qr" />
