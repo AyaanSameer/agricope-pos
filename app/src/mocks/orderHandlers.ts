@@ -1,6 +1,6 @@
 import { http, HttpResponse, delay } from 'msw'
 import Big from 'big.js'
-import { products, requester, storeBusinessId, stores } from './db'
+import { products, storeBusinessId, stores } from './db'
 import type { DbUser } from './db'
 import {
   amountDue,
@@ -21,17 +21,7 @@ import {
   uid,
 } from './posdb'
 import type { DbOrder } from './posdb'
-import { seedWorld } from './seed'
-
-seedWorld()
-
-function apiError(status: number, code: string, message: string) {
-  return HttpResponse.json({ error: { code, message } }, { status })
-}
-
-function auth(request: Request) {
-  return requester(request)
-}
+import { apiError, auth } from './http'
 
 function findOrder(id: string | readonly string[], caller?: DbUser | null): DbOrder | undefined {
   const order = orders.find((o) => o.id === id)
@@ -49,7 +39,7 @@ function approval(request: Request, businessId: string) {
 const APPROVAL_REQUIRED = () =>
   apiError(403, 'APPROVAL_REQUIRED', 'A manager PIN is needed to approve this.')
 
-export const posHandlers = [
+export const orderHandlers = [
   // ---------- orders ----------
 
   http.post('/api/v1/orders', async ({ request }) => {

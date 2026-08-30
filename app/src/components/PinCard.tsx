@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { PinPad, PinDots } from './PinPad'
+import { PinPad, PinDots } from './Keypad'
 import './pincard.css'
 
 /**

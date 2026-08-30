@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../api/client'
 import { ApiError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
-import { MoneyPad } from '../../components/MoneyPad'
+import { MoneyPad } from '../../components/Keypad'
 import { fmt, fmtQAR } from '../../lib/money'
 import './shifts.css'
 

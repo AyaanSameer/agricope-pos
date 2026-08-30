@@ -1,7 +1,7 @@
 import Big from 'big.js'
 import { computeTotals } from '../lib/totals'
 import type { OrderDiscount } from '../lib/totals'
-import { products, serviceChargeRates, stores, users, storeName, storeBusinessId } from './db'
+import { products, serviceChargeRates, stores, users, storeBusinessId } from './db'
 import type { DbUser } from './db'
 import { channelForOrderType, resolveUnitPrice, withOptionDeltas } from '../lib/pricing'
 
@@ -420,4 +420,3 @@ export function orderVisibleTo(order: DbOrder, caller: DbUser): boolean {
   return storeBusinessId(order.store_id) === caller.business_id
 }
 
-export { storeName }

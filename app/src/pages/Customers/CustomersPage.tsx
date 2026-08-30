@@ -12,7 +12,7 @@ import type { Customer } from '../../api/customers'
 import { ApiError } from '../../api/client'
 import { CreditLimitModal } from '../../components/CreditLimitModal'
 import { useAuth } from '../../auth/AuthContext'
-import { MoneyPad } from '../../components/MoneyPad'
+import { MoneyPad } from '../../components/Keypad'
 import { fmt, fmtQAR } from '../../lib/money'
 import './customers.css'
 

@@ -1,6 +1,6 @@
 import { http, HttpResponse, delay } from 'msw'
 import Big from 'big.js'
-import { requester, storeBusinessId, stores } from './db'
+import { storeBusinessId, stores } from './db'
 import {
   cashMovements,
   currentShift,
@@ -15,11 +15,7 @@ import {
   userName,
 } from './posdb'
 import type { DbShift } from './posdb'
-import { apiError } from './posHandlers'
-
-function auth(request: Request) {
-  return requester(request)
-}
+import { apiError, auth } from './http'
 
 export function shiftReport(shift: DbShift) {
   let cashSales = new Big(0)
@@ -90,7 +86,7 @@ function parseRange(value: string | null): ReportRange {
   return value === '7d' || value === 'month' ? value : 'today'
 }
 
-export const posHandlers3 = [
+export const shiftHandlers = [
   // ---------- shifts & the cash drawer ----------
 
   http.post('/api/v1/shifts', async ({ request }) => {

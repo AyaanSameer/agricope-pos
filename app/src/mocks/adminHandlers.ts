@@ -11,6 +11,7 @@ import {
   users,
 } from './db'
 import type { DbBusiness, DbStore, DbUser } from './db'
+import { apiError } from './http'
 
 /**
  * Platform admin — Agricope staff, above every business. Sees them all,
@@ -18,9 +19,6 @@ import type { DbBusiness, DbStore, DbUser } from './db'
  * Regular business tokens never reach these endpoints.
  */
 
-function apiError(status: number, code: string, message: string) {
-  return HttpResponse.json({ error: { code, message } }, { status })
-}
 
 function requireAdmin(request: Request) {
   return requesterAdmin(request)
