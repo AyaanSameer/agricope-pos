@@ -1,20 +1,21 @@
 # Agricope POS — frontend
 
 Multi-tenant point of sale for shops and restaurants. React SPA per till; talks only to the
-Node.js REST API (separate repo). See `agricope-pos-system-design.md` in `mockups/` for the full
-system design, and `CONVENTIONS.md` for the API contract ground rules.
+REST API described in `CONVENTIONS.md` (mocked in-browser until the real backend lands).
 
 ## Documents
-- `AGRICOPE-DESIGN-SPEC.md` — **the complete specification**: all 18 screens and 19 overlays,
-  every control, the rules that constrain them, and the visual language. Attach this for design
-  work.
-- `SYSTEM-DESIGN.md` — the shorter narrative overview (superseded by the spec above for
-  screen-level detail).
-- `CONVENTIONS.md` — the API contract: money as strings, error codes, the totals formula.
+- `CONVENTIONS.md` — **the API contract**: money as strings, error codes, the totals formula.
+  The backend implements this; the frontend already speaks it.
+- `docs/AGRICOPE-DESIGN-SPEC.md` — the complete UI specification: all 18 screens and
+  19 overlays, every control, the rules that constrain them, and the visual language.
+- `docs/SYSTEM-DESIGN.md` — the shorter narrative overview.
+- `docs/SCHEMA-ALIGNMENT.md` — the frontend contract reviewed against the Postgres schema.
+- `docs/original-system-design.md` — the original system design document.
+- `DEPLOYMENT.md` — branches, environments, hosting and the release path.
 
 ## Repo layout
 - `app/` — the React application (Vite + TypeScript)
-- `mockups/` — static HTML design mockups (reference only)
+- `docs/` — design and architecture documents
 
 ## Run it
 ```bash
@@ -24,11 +25,17 @@ npm run dev
 ```
 The app runs against **MSW mocks** by default (no backend needed).
 
-**Signing in (Phase 12): one login per business — the PIN says who you are.**
+**Signing in: one login per business — the PIN says who you are.**
 Sign in with the business account, pick the branch the till serves, then type your PIN.
-Platform staff sign in on the same form: `admin@agricope.qa` / `demo123` → the **Agricope
-Console** (`/admin`): every business and branch on the POS, plus onboarding — add a
-business, its branches, and create its first owner login.
+Platform staff sign in on the same form and land on the **Agricope Console** (`/admin`):
+every business and branch on the POS, plus onboarding — add a business, its branches,
+and create its first owner login. Admins can also change a business's login email and
+password from its console card; owners change their own password from *Settings*.
+
+### Development seed data — mock mode only
+These accounts exist **only in the in-browser mock world** (`app/src/mocks/`); they are
+never part of a production build against the real API. Console: `admin@agricope.qa` /
+`demo123`.
 
 | Business login (password `demo123`) | Branches | PINs |
 |---|---|---|

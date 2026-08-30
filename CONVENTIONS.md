@@ -162,6 +162,22 @@ resolved unit price and the chosen option labels; `option_ids` go up, labels com
 - `order_type` still accepts `counter` for historical rows, but the register no longer
   offers it — new orders are `dine_in`, `takeaway` or `delivery`.
 
+## Going commercial (2026-08-30)
+
+- **Business credentials are managed at two levels.**
+  `PATCH /admin/businesses/:id { email?, password? }` — platform admin changes a
+  business's sign-in (email must stay unique across businesses and admins; password
+  min 8 chars). `POST /auth/change-password { current_password, new_password }` —
+  the OWNER changes the business password from Settings; the server re-checks the
+  current password and the owner role (204 on success). Both take effect at the
+  next sign-in; existing sessions stay valid.
+- **Kitchen tickets snapshot the product description.** Ticket items carry
+  `description: string | null`, copied from the product at fire time — the KDS and
+  the printed 80mm ticket show what is in the box even if the catalog is edited
+  later. Order lines themselves are unchanged.
+- **No demo affordances in the UI.** Seeded credentials live only in the mock world
+  and are documented in the README; the login screen shows none.
+
 ## Open questions for the next contract sync
 1. How does an order-level discount apportion across lines for per-line tax?
 2. Is service charge taxable?
