@@ -54,12 +54,6 @@ export function OrdersPage() {
 
   return (
     <div className={selected ? 'page orders-page with-drawer' : 'page orders-page'}>
-      <div className="page-head">
-        <div>
-          <h2>Orders{activeStore ? ` — ${activeStore.name}` : ''}</h2>
-          <p className="page-sub">Today's history · reprint, void or refund</p>
-        </div>
-      </div>
 
       <div className="orders-filters">
         {(['open', 'completed', 'void', 'refunded', null] as (OrderStatus | null)[]).map((s) => (
@@ -108,7 +102,7 @@ export function OrdersPage() {
         <div className="card orders-table">
           <div className="orders-row orders-head-row">
             <span>Order</span><span>Time · cashier</span><span>Type</span>
-            <span className="num">Total · QAR</span><span>Status</span>
+            <span>Total</span><span>Status</span>
           </div>
           {ordersQuery.isPending && <div className="orders-loading">Loading…</div>}
           {ordersQuery.data?.data.map((o) => (
@@ -124,7 +118,7 @@ export function OrdersPage() {
                 {o.cashier_name.split(' ')[0]}
               </span>
               <span className="muted">{o.order_type.replace('_', '-')}</span>
-              <span className="num strong">{fmt(o.total)}</span>
+              <span className="strong">{fmt(o.total)}</span>
               <span><span className={`st ${STATUS_STYLE[o.status]}`}>{o.status.toUpperCase()}</span></span>
             </button>
           ))}
@@ -157,7 +151,7 @@ export function OrdersPage() {
             <p className="muted small">
               {new Date(selected.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} · {selected.order_type.replace('_', '-')} · {selected.cashier_name}
               {selected.table_name
-                ? ` · ${selected.table_name}`
+                ? ` · table ${selected.table_name}`
                 : selected.order_type === 'dine_in'
                   ? ' · no table yet'
                   : ''}
@@ -181,9 +175,8 @@ export function OrdersPage() {
             {Number(selected.discount_total) > 0 && (
               <div className="orders-line muted"><span>Discount</span><span>−{fmt(selected.discount_total)}</span></div>
             )}
-            {Number(selected.service_charge_total) > 0 && (
-              <div className="orders-line muted"><span>Service 10%</span><span>{fmt(selected.service_charge_total)}</span></div>
-            )}
+            <div className="orders-line muted"><span>Incl. tax</span><span>{fmt(selected.tax_total)}</span></div>
+            <div className="orders-line muted"><span>Service charge</span><span>{fmt(selected.service_charge_total)}</span></div>
             <div className="orders-line total"><span>Total</span><span>{fmtQAR(selected.total)}</span></div>
             {selected.payments.length > 0 && <div className="orders-sep" />}
             {selected.payments.map((p) => (
@@ -208,33 +201,36 @@ export function OrdersPage() {
               <div className="orders-due paid">{fmt(selected.total)} paid in full</div>
             )}
             <div className="orders-actions">
+              {selected.status === 'open' &&
+                selected.order_type === 'dine_in' &&
+                !selected.table_id && (
+                  <button
+                    type="button"
+                    className="orders-act orders-act-add"
+                    onClick={() => setAddingItems(true)}
+                  >
+                    + Add items
+                  </button>
+                )}
               {selected.status === 'open' && (
-                <>
-                  {selected.order_type === 'dine_in' && !selected.table_id && (
-                    <button
-                      type="button"
-                      className="btn-secondary orders-act"
-                      onClick={() => setAddingItems(true)}
-                    >
-                      + Add items
-                    </button>
-                  )}
-                  <Link to={`/charge/${selected.id}`} className="btn-primary orders-act">Take payment</Link>
-                  <button type="button" className="btn-secondary orders-act danger" onClick={() => { setPinError(null); setPinAction('void') }}>
-                    Void…
-                  </button>
-                </>
+                <Link to={`/charge/${selected.id}`} className="btn-primary orders-act">
+                  Take payment
+                </Link>
               )}
-              {selected.status === 'completed' && (
-                <>
-                  <Link to={`/receipt/${selected.id}`} className="btn-primary orders-act">Receipt</Link>
-                  <button type="button" className="btn-secondary orders-act danger" onClick={() => { setPinError(null); setPinAction('refund') }}>
-                    Refund…
-                  </button>
-                </>
-              )}
-              {(selected.status === 'void' || selected.status === 'refunded') && (
-                <Link to={`/receipt/${selected.id}`} className="btn-secondary orders-act">View receipt</Link>
+              <Link to={`/receipt/${selected.id}`} className="btn-secondary orders-act">
+                View receipt
+              </Link>
+              {(selected.status === 'open' || selected.status === 'completed') && (
+                <button
+                  type="button"
+                  className="btn-secondary orders-act danger"
+                  onClick={() => {
+                    setPinError(null)
+                    setPinAction(selected.status === 'open' ? 'void' : 'refund')
+                  }}
+                >
+                  Void or refund · PIN
+                </button>
               )}
             </div>
           </aside>

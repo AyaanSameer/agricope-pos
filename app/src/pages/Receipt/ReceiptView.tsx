@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import QRCode from 'qrcode'
 import type { Order } from '../../api/orders'
+import { Logomark } from '../../components/Logomark'
 import { fmt, fmtQAR } from '../../lib/money'
 import './receipt.css'
 
@@ -12,25 +13,36 @@ export interface ReceiptData {
 }
 
 /** 80mm-thermal-shaped receipt — @media print rules make it printer-real. */
-export function ReceiptView({ data }: { data: ReceiptData }) {
+export function ReceiptView({ data, qrUrl }: { data: ReceiptData; qrUrl?: string }) {
   const { business, store, order, credit } = data
   return (
     <div className="receipt-paper" id="receipt">
-      <div className="receipt-center">
+      <div className="receipt-center receipt-head">
+        <Logomark height={34} tone="colour" />
         <div className="receipt-biz">{business.name}</div>
-        <div className="receipt-store">{store.name}</div>
-        <div className="receipt-addr">{store.address}</div>
+        <div className="receipt-addr">
+          {store.name} · {store.address}
+        </div>
       </div>
       <div className="receipt-sep" />
+      <div className="receipt-meta"><span>Order</span><span>{order.order_number}</span></div>
       <div className="receipt-meta">
-        <span>{order.order_number}</span>
-        <span>{new Date(order.created_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+        <span>Date</span>
+        <span>
+          {new Date(order.created_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+        </span>
       </div>
+      <div className="receipt-meta"><span>Cashier</span><span>{order.cashier_name.split(' ')[0]}</span></div>
       <div className="receipt-meta">
-        <span>Cashier: {order.cashier_name}</span>
-        <span className="cap">{order.order_type.replace('_', '-')}{order.table_name ? ` · ${order.table_name}` : ''}</span>
+        <span>Type</span>
+        <span className="cap">
+          {order.order_type.replace('_', '-')}
+          {order.table_name ? ` · ${order.table_name}` : ''}
+        </span>
       </div>
-      {order.customer_name && <div className="receipt-meta"><span>Customer: {order.customer_name}</span></div>}
+      {order.customer_name && (
+        <div className="receipt-meta"><span>Customer</span><span>{order.customer_name}</span></div>
+      )}
       <div className="receipt-sep" />
       {order.items.map((i) => (
         <div key={i.id} className="receipt-line">
@@ -78,6 +90,16 @@ export function ReceiptView({ data }: { data: ReceiptData }) {
       )}
       <div className="receipt-sep" />
       <div className="receipt-center receipt-footer">{business.footer}</div>
+      {qrUrl && (
+        <>
+          <div className="receipt-sep" />
+          <div className="receipt-center receipt-qr-block">
+            <ReceiptQR url={qrUrl} />
+            <div className="receipt-qr-note">Scan for your e-receipt</div>
+            <div className="receipt-qr-url">{qrUrl.replace(/^https?:\/\//, '')}</div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

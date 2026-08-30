@@ -1,13 +1,26 @@
-import { useParams } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import Big from 'big.js'
 import { api } from '../../api/client'
-import { ReceiptQR, ReceiptView } from './ReceiptView'
+import { fmt, fmtQAR } from '../../lib/money'
+import { ReceiptView } from './ReceiptView'
 import type { ReceiptData } from './ReceiptView'
 import './receipt.css'
 
 /** Staff-side receipt: print (80mm stylesheet) + share by link/QR/WhatsApp. */
 export function ReceiptPage() {
   const { id } = useParams<{ id: string }>()
+  const [copied, setCopied] = useState(false)
+  const copy = (url: string) => {
+    navigator.clipboard.writeText(url).then(
+      () => {
+        setCopied(true)
+        window.setTimeout(() => setCopied(false), 1600)
+      },
+      () => setCopied(false),
+    )
+  }
   const receiptQuery = useQuery({
     queryKey: ['receipt', id],
     queryFn: () => api<ReceiptData>(`/orders/${id}/receipt`),
@@ -18,28 +31,63 @@ export function ReceiptPage() {
   if (!data) return <div className="receipt-loading">Receipt not found.</div>
 
   const publicUrl = `${window.location.origin}/r/${data.order.receipt_token}`
+  const shortUrl = publicUrl.replace(/^https?:\/\//, '')
   const waUrl = `https://wa.me/?text=${encodeURIComponent(`Your receipt from ${data.business.name}: ${publicUrl}`)}`
+  const { order } = data
+
+  // What the panel says about the money, from the order rather than a guess.
+  const paid = order.payments.reduce((a, p) => a.plus(p.amount), new Big(0))
+  const due = new Big(order.total).minus(paid)
+  const methods = order.payments
+    .map((p) => `${p.method[0].toUpperCase()}${p.method.slice(1)} ${fmt(p.amount)}`)
+    .join(' · ')
+  const state =
+    order.status === 'void' || order.status === 'refunded'
+      ? {
+          tone: 'void' as const,
+          title: order.status === 'void' ? 'Voided' : 'Refunded',
+          note: 'This order is read-only. The receipt still prints and shares.',
+        }
+      : due.lte(0.004)
+        ? {
+            tone: 'paid' as const,
+            title: 'Paid in full',
+            note: `${methods} — the order closed the moment payments covered the total.`,
+          }
+        : {
+            tone: 'due' as const,
+            title: `${fmtQAR(due.toFixed(2))} still due`,
+            note: methods
+              ? `${methods} taken so far.`
+              : 'Nothing has been paid on this order yet.',
+          }
 
   return (
     <div className="receipt-page">
-      <ReceiptView data={data} />
+      <ReceiptView data={data} qrUrl={publicUrl} />
       <aside className="receipt-side">
-        <button type="button" className="btn-primary receipt-print" onClick={() => window.print()}>
-          Print receipt
+        <div className={`receipt-state tone-${state.tone}`}>
+          <strong>{state.title}</strong>
+          <span>{state.note}</span>
+        </div>
+
+        <a className="receipt-act primary" href={waUrl} target="_blank" rel="noreferrer">
+          Send on WhatsApp
+        </a>
+        <button type="button" className="receipt-act" onClick={() => window.print()}>
+          Print 80 mm receipt
         </button>
-        <div className="card receipt-share">
-          <h4>Share e-receipt</h4>
-          <ReceiptQR url={publicUrl} />
-          <p className="receipt-share-hint">Customer scans, or send it on WhatsApp — no login needed, the link is the secret.</p>
-          <a className="btn-secondary receipt-wa" href={waUrl} target="_blank" rel="noreferrer">
-            Share on WhatsApp
-          </a>
-          <button
-            type="button"
-            className="btn-secondary receipt-copy"
-            onClick={() => navigator.clipboard.writeText(publicUrl)}
-          >
-            Copy link
+        <a className="receipt-act" href={publicUrl} target="_blank" rel="noreferrer">
+          Open the customer&rsquo;s link
+        </a>
+        <Link className="receipt-act" to="/register">
+          New sale
+        </Link>
+
+        <div className="receipt-link">
+          <span className="receipt-link-url">{shortUrl}</span>
+          <button type="button" className="receipt-copy" onClick={() => copy(publicUrl)}>
+            {copied ? 'Copied' : 'Copy'}
           </button>
         </div>
       </aside>

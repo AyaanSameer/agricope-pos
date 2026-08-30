@@ -242,6 +242,22 @@ input:focus, select:focus, button:focus-visible {
 .toggle.on { background: var(--leaf); }
 .toggle.on .knob { left: 20px; }
 
+/* ---- Small shared text utilities --------------------------------------
+   These lived in orders.css and were borrowed by eight other files, which
+   only worked because the bundler happens to ship every stylesheet. They
+   belong here, with the rest of the shared language. */
+.muted { color: var(--ink-3); font-size: calc(12.5px * var(--fs)); }
+.small { font-size: calc(12px * var(--fs)); }
+.tiny { font-size: calc(11px * var(--fs)); }
+.cap { text-transform: capitalize; }
+.num { text-align: right; }
+.strong {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: calc(13px * var(--fs));
+  font-variant-numeric: tabular-nums;
+}
+
 /* Status pills. Gold = attention, green = settled, orange = money the wrong way. */
 .badge {
   display: inline-flex;

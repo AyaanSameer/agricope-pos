@@ -29,9 +29,12 @@
 .orders-row:last-child { border-bottom: none; }
 .orders-head-row {
   background: var(--surface-warm);
-  font-size: calc(12px * var(--fs));
-  font-weight: 500;
-  color: var(--ink-3);
+  font-family: var(--font-head);
+  font-size: calc(10.5px * var(--fs));
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--hint);
   min-height: 40px;
 }
 .orders-num {
@@ -39,17 +42,6 @@
   font-size: calc(12px * var(--fs));
   color: var(--ink);
 }
-.muted { color: var(--ink-3); font-size: calc(12.5px * var(--fs)); }
-.small { font-size: calc(12px * var(--fs)); }
-.strong {
-  font-family: var(--font-head);
-  font-weight: 600;
-  font-size: calc(13px * var(--fs));
-  font-variant-numeric: tabular-nums;
-}
-.num { text-align: right; }
-.orders-head-row .num { text-align: right; }
-.cap { text-transform: capitalize; }
 .orders-loading { padding: 20px; color: var(--ink-3); }
 
 .st {
@@ -185,7 +177,16 @@
   text-decoration: none;
   text-align: center;
 }
-.orders-act.danger { color: var(--cta); border-color: var(--cta-tint); }
+.orders-act.danger { color: var(--cta); }
+.orders-act.danger:hover { border-color: var(--cta); background: var(--cta-tint); }
+/* Adding to a walk-up tab is the gold affordance, not a primary action. */
+.orders-act-add {
+  border: 1px solid var(--gold);
+  background: var(--gold-tint);
+  color: var(--gold-ink);
+  font-family: var(--font-head);
+  font-weight: 600;
+}
 
 
 /* Dense: the drawer becomes a bottom sheet with a scrim behind it. */

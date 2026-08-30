@@ -1,9 +1,13 @@
 .receipt-page {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--pad);
   display: flex;
   gap: 24px;
   align-items: flex-start;
+  justify-content: center;
   width: 100%;
-  max-width: 720px;
 }
 .receipt-public {
   min-height: 100%;
@@ -27,9 +31,20 @@
   gap: 3px;
 }
 .receipt-center { text-align: center; }
-.receipt-biz { font-weight: 700; font-size: calc(14px * var(--fs)); }
-.receipt-store { font-weight: 500; }
+.receipt-head { display: flex; flex-direction: column; align-items: center; gap: 8px; padding-bottom: 4px; }
+.receipt-biz {
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: calc(16px * var(--fs));
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--forest);
+}
 .receipt-addr { font-size: calc(11px * var(--fs)); color: #444; }
+/* The QR is on the paper, because the paper is what gets handed over. */
+.receipt-qr-block { display: flex; flex-direction: column; align-items: center; gap: 6px; padding-top: 4px; }
+.receipt-qr-note { font-size: calc(10.5px * var(--fs)); color: #444; }
+.receipt-qr-url { font-size: calc(10px * var(--fs)); color: #666; }
 .receipt-sep { border-top: 1px dashed #999; margin: 6px 0; }
 .receipt-meta { display: flex; justify-content: space-between; font-size: calc(11px * var(--fs)); color: #333; }
 .receipt-line { display: flex; gap: 6px; }
@@ -40,12 +55,75 @@
 .receipt-status { font-weight: 700; margin-top: 4px; }
 .receipt-footer { font-size: calc(11px * var(--fs)); color: #444; }
 
-.receipt-side { display: flex; flex-direction: column; gap: 12px; flex: 1; }
-.receipt-print { min-height: 52px; }
-.receipt-share { padding: 18px; display: flex; flex-direction: column; gap: 10px; align-items: center; text-align: center; }
-.receipt-qr { border: 1px solid var(--border); border-radius: 8px; }
-.receipt-share-hint { font-size: calc(12px * var(--fs)); color: var(--ink-3); margin: 0; }
-.receipt-wa, .receipt-copy { width: 100%; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; border-radius: var(--radius); text-decoration: none; }
+.receipt-side { display: flex; flex-direction: column; gap: 11px; width: 100%; max-width: 340px; }
+.receipt-qr { display: block; }
+
+/* Where the money stands, said once, at the top of the panel. */
+.receipt-state {
+  border-radius: 14px;
+  padding: 16px 17px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.receipt-state strong {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: calc(15px * var(--fs));
+}
+.receipt-state span { font-size: calc(12.5px * var(--fs)); line-height: 1.5; }
+.receipt-state.tone-paid { background: var(--success-tint); color: var(--forest); }
+.receipt-state.tone-due { background: var(--gold-tint); color: var(--gold-ink); }
+.receipt-state.tone-void { background: var(--cta-tint); color: var(--cta); }
+
+.receipt-act {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(var(--ctl-h) + 6px);
+  min-height: calc(var(--ctl-h) + 6px);
+  border-radius: 11px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--forest);
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: calc(14px * var(--fs));
+  text-decoration: none;
+  width: 100%;
+}
+.receipt-act:hover { border-color: var(--leaf); }
+.receipt-act.primary { border-color: var(--forest); background: var(--forest); color: #fff; }
+.receipt-act.primary:hover { background: var(--forest-deep); border-color: var(--forest-deep); }
+
+.receipt-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 13px 14px;
+}
+.receipt-link-url {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: calc(11.5px * var(--fs));
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.receipt-copy {
+  flex: none;
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--forest);
+  font-weight: 500;
+  font-size: calc(12px * var(--fs));
+}
 
 /* 80mm thermal print: the paper is the page */
 @media print {
