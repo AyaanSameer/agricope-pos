@@ -144,6 +144,23 @@
 .orders-close:hover { border-color: var(--hint); }
 
 /* Money still owed reads as attention, not alarm. */
+.orders-line-qty {
+  font-family: var(--font-mono);
+  font-size: calc(11.5px * var(--fs));
+  color: var(--ink-3);
+  flex: none;
+}
+.orders-line-name { flex: 1; min-width: 0; }
+/* Void and refunded orders carry the design's read-only note. */
+.orders-readonly {
+  background: var(--beige);
+  border-radius: 11px;
+  padding: 12px 13px;
+  font-size: calc(12px * var(--fs));
+  color: var(--ink-2);
+  line-height: 1.45;
+}
+.orders-due.paid { background: var(--success-tint); color: var(--forest); }
 .orders-due {
   background: var(--gold-tint);
   color: var(--gold-ink);
@@ -153,7 +170,7 @@
   font-variant-numeric: tabular-nums;
 }
 .orders-sep { border-top: 1px solid var(--border); margin: 4px 0; }
-.orders-line { display: flex; justify-content: space-between; font-size: calc(13px * var(--fs)); gap: 10px; }
+.orders-line { display: flex; align-items: baseline; justify-content: space-between; font-size: calc(13px * var(--fs)); gap: 10px; }
 .orders-line.total { font-weight: 700; font-family: var(--font-head); font-size: calc(15px * var(--fs)); }
 .orders-note { font-size: calc(12px * var(--fs)); color: var(--ink-3); font-style: italic; }
 .orders-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }

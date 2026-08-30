@@ -555,6 +555,10 @@
 
 /* ---- Dense: the editor is a full-height panel, one column (§5). ---- */
 @media (max-width: 1023px) {
+  /* The table scrolls inside its own card rather than dragging the page. */
+  .cat-table { overflow-x: auto; }
+  .cat-row { min-width: 860px; }
+
   .cat-modal { padding: 0; }
   .editor {
     width: 100%;

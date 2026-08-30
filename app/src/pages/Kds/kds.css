@@ -60,7 +60,22 @@
   padding: 16px 20px;
   overflow-y: auto;
 }
-.kds-quiet { color: #9fb89c; padding: 20px; }
+.kds-quiet {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 11px;
+  padding: 56px 20px;
+  text-align: center;
+}
+.kds-quiet strong {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: calc(19px * var(--fs));
+  color: var(--leaf-pale);
+}
+.kds-quiet span { font-size: calc(13.5px * var(--fs)); color: #7ea287; }
 
 .kds-ticket {
   flex: 1 1 var(--tkw);
@@ -90,26 +105,65 @@
 .kds-status.new { color: var(--gold); }
 .kds-status.in_progress { color: #f2c94c; }
 .kds-items { padding: 6px 13px 12px; display: flex; flex-direction: column; gap: 7px; }
-.kds-item { display: flex; gap: 7px; color: #e8f0e6; font-size: calc(14px * var(--fs)); align-items: center; }
+.kds-item { display: flex; flex-direction: column; gap: 3px; color: #e8f0e6; font-size: calc(13px * var(--fs)); }
+.kds-item-main { display: flex; gap: 7px; align-items: baseline; }
+/* The modifier line is what the fryer actually reads — kitchen amber. */
+.kds-note { font-size: calc(11px * var(--fs)); color: #fbbf24; padding-left: 24px; }
 .kds-item.cancelled { text-decoration: line-through; color: #6f8f7c; }
 .kds-qty { color: var(--leaf); font-weight: 700; }
 .kds-cancel { font-size: calc(9px * var(--fs)); color: #f87171; font-weight: 700; }
-.kds-btn { min-height: 46px; border-radius: 0; font-weight: 600; }
+.kds-btn {
+  min-height: calc(44px * var(--fs));
+  border-radius: 0;
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: calc(13px * var(--fs));
+}
 .kds-btn.start { background: var(--cta); color: #fff; }
 .kds-btn.done { background: var(--leaf); color: #06301f; }
 
 .kds-recent {
-  flex: 0 0 200px;
-  background: #0a3a29;
-  border-radius: 12px;
-  padding: 14px;
+  flex: 0 0 190px;
+  min-width: 170px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 9px;
 }
-.kds-recent-head { font-size: calc(10px * var(--fs)); letter-spacing: 1px; color: #6f8f7c; font-weight: 700; }
-.kds-recent-row { display: flex; gap: 8px; color: #d8e6d5; font-size: calc(13px * var(--fs)); align-items: center; }
-.kds-check { color: var(--leaf); font-weight: 700; }
+.kds-recent-head {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: calc(10px * var(--fs));
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #7ea287;
+}
+.kds-recent-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: #0b3d2a;
+  border: 1px solid var(--forest-tint);
+  border-radius: 10px;
+  padding: 10px 11px;
+}
+.kds-recent-row > span:last-child {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: calc(11.5px * var(--fs));
+  color: var(--border);
+}
+.kds-check {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 99px;
+  background: var(--leaf);
+  color: var(--leaf-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
 .kds-foot {
   padding: 8px 22px;
   color: #6f8f7c;

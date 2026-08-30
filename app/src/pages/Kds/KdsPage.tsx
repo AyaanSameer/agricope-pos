@@ -79,7 +79,12 @@ export function KdsPage() {
 
       <div className="kds-board">
         {ticketsQuery.data?.data.length === 0 && (
-          <div className="kds-quiet">All quiet — tickets appear here the moment a waiter hits Send.</div>
+          <div className="kds-quiet">
+            <strong>
+              Nothing waiting at {stations.find((s) => s.id === activeStation)?.name ?? 'this station'}
+            </strong>
+            <span>Tickets appear here the moment a waiter sends a round.</span>
+          </div>
         )}
         {ticketsQuery.data?.data.map((t) => {
           const e = elapsed(t)
@@ -98,9 +103,12 @@ export function KdsPage() {
               <div className="kds-items">
                 {t.items.map((i) => (
                   <div key={i.id} className={i.cancelled ? 'kds-item cancelled' : 'kds-item'}>
-                    <span className="kds-qty">{i.quantity}×</span>
-                    <span>{i.product_name}</span>
-                    {i.cancelled && <span className="kds-cancel">PULLED</span>}
+                    <div className="kds-item-main">
+                      <span className="kds-qty">{i.quantity}×</span>
+                      <span>{i.product_name}</span>
+                      {i.cancelled && <span className="kds-cancel">PULLED</span>}
+                    </div>
+                    {i.note && <span className="kds-note">{i.note}</span>}
                   </div>
                 ))}
               </div>

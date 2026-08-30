@@ -158,8 +158,8 @@
 }
 .users-form {
   width: 100%;
-  max-width: 460px;
-  padding: 28px;
+  max-width: 420px;
+  padding: 22px;
   display: flex;
   flex-direction: column;
   gap: 14px;

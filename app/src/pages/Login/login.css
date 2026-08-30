@@ -60,16 +60,16 @@
 
 .login-card {
   width: 100%;
-  max-width: 416px;
+  max-width: var(--login-card-w);
   background: var(--surface);
   border-radius: var(--radius-lg);
-  padding: 32px;
+  padding: 28px 26px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  box-shadow: 0 8px 24px rgba(8, 61, 43, 0.08);
+  gap: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
 }
-.login-card h2 { font-size: calc(22px * var(--fs)); font-weight: 600; }
+.login-card h2 { font-size: calc(21px * var(--fs)); font-weight: 600; letter-spacing: -0.01em; }
 .login-card-sub {
   margin: 6px 0 0;
   color: var(--ink-3);
@@ -109,7 +109,7 @@
   padding: 0 13px;
 }
 
-.login-submit { height: 48px; }
+.login-submit { height: calc(var(--ctl-h) + 6px); min-height: calc(var(--ctl-h) + 6px); }
 
 .login-error {
   background: var(--cta-tint);
@@ -131,15 +131,15 @@
 .login-switch {
   height: var(--ctl-h);
   min-height: var(--ctl-h);
+  border: 1px solid var(--leaf-plate-2);
   background: var(--leaf-plate-4);
-  border: 1px solid var(--leaf-plate);
-  border-radius: var(--radius);
   color: var(--forest);
-  font-family: var(--font-head);
+  border-radius: var(--radius);
+  font-weight: 500;
   font-size: calc(13px * var(--fs));
-  font-weight: 600;
+  width: 100%;
 }
-.login-switch:hover { border-color: var(--leaf); }
+.login-switch:hover { background: var(--leaf-plate-3); }
 
 .login-demo {
   display: flex;

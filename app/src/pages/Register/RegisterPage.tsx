@@ -109,12 +109,15 @@ export function RegisterPage() {
     <div className="register-split">
       <div className="register">
         <div className="register-top">
-          <input
-            className="register-search"
+          <div className="register-search-wrap">
+            <span className="register-search-glyph" aria-hidden="true">⌕</span>
+            <input
+            className="register-search-input"
             placeholder="Scan barcode or search products…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+          </div>
           <div className="register-jump">
             {isRestaurant && (
               <Link to="/floor" className="register-jump-btn">

@@ -166,12 +166,13 @@ export function OrdersPage() {
             <div className="orders-sep" />
             {selected.items.map((i) => (
               <div key={i.id} className="orders-line">
-                <span>
-                {i.quantity} × {i.product_name}
-                {i.options.length > 0 && (
-                  <span className="muted small"> — {i.options.join(' · ')}</span>
-                )}
-              </span>
+                <span className="orders-line-qty">×{Number(i.quantity)}</span>
+                <span className="orders-line-name">
+                  {i.product_name}
+                  {i.options.length > 0 && (
+                    <span className="muted small"> — {i.options.join(' · ')}</span>
+                  )}
+                </span>
                 <span>{fmt(i.line_total)}</span>
               </div>
             ))}
@@ -192,10 +193,19 @@ export function OrdersPage() {
               </div>
             ))}
             {selected.note && <p className="orders-note">“{selected.note}”</p>}
+            {(selected.status === 'void' || selected.status === 'refunded') && (
+              <div className="orders-readonly">
+                This order was {selected.status === 'void' ? 'voided' : 'refunded'}. It is
+                read-only and still printable.
+              </div>
+            )}
             {paidSoFar.gt(0) && dueNow.gt(0) && (
               <div className="orders-due">
                 {fmt(paidSoFar.toFixed(2))} paid · {fmt(dueNow.toFixed(2))} due
               </div>
+            )}
+            {selected.status === 'completed' && (
+              <div className="orders-due paid">{fmt(selected.total)} paid in full</div>
             )}
             <div className="orders-actions">
               {selected.status === 'open' && (
