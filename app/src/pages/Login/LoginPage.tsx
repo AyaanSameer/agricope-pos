@@ -128,22 +128,9 @@ export function LoginPage() {
             </button>
           )}
 
-          <div className="login-demo">
-            <span className="login-demo-tag">Demo</span>
-            <code>{isAdmin ? 'admin@agricope.qa · demo123' : 'drumsticks@agricope.qa · demo123'}</code>
-          </div>
-
           <p className="login-note">
             Login is per business, not per person. The PIN identifies who is on the till.
           </p>
-
-          <button
-            type="button"
-            className="login-admin-link"
-            onClick={() => setEmail(isAdmin ? '' : 'admin@agricope.qa')}
-          >
-            {isAdmin ? '← Back to a business login' : 'Use platform administrator credentials →'}
-          </button>
         </form>
 
         {dense && <div className="login-stack-footer">{footer}</div>}
