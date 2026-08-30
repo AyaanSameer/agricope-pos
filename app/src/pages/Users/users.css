@@ -1,14 +1,15 @@
-.users-add { padding: 0 18px; height: 44px; min-height: 44px; }
+.users-top { display: flex; }
+.users-add { padding: 0 20px; height: var(--ctl-h); min-height: var(--ctl-h); }
 
 /* Owner-only rule, stated where it bites. */
 .users-owner-note {
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: var(--gold-tint);
-  color: #8a5a00;
-  border-radius: 10px;
-  padding: 12px 14px;
+  gap: 14px;
+  background: var(--surface-warm);
+  color: var(--ink-2);
+  border-radius: 12px;
+  padding: 14px 16px;
   font-size: calc(13px * var(--fs));
 }
 .users-owner-tag {
@@ -18,11 +19,12 @@
   height: 22px;
   padding: 0 10px;
   border-radius: 99px;
-  background: rgba(255, 255, 255, 0.65);
+  background: var(--success-tint);
+  color: var(--forest);
   font-family: var(--font-head);
   font-size: calc(10px * var(--fs));
   font-weight: 600;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
 }
 
@@ -124,7 +126,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.users-pin { color: var(--ink-2); letter-spacing: 1px; }
+.users-pin { color: var(--ink-2); letter-spacing: 3px; font-size: calc(14px * var(--fs)); }
 
 .users-actions { display: flex; gap: 8px; justify-content: flex-end; }
 .users-btn {
@@ -164,19 +166,43 @@
   flex-direction: column;
   gap: 14px;
 }
-.users-form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+.users-form-head { display: flex; align-items: flex-start; gap: 12px; }
+.users-form-title { margin-right: auto; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.users-form-title h3 { font-family: var(--font-head); font-weight: 600; font-size: calc(17px * var(--fs)); }
+.users-form-title p { margin: 0; font-size: calc(12.5px * var(--fs)); color: var(--ink-3); line-height: 1.5; }
+.users-form-close {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  flex: none;
+  padding: 0;
+  border-radius: 8px;
+  background: var(--surface-warm);
+  color: var(--ink-3);
+  font-size: calc(15px * var(--fs));
 }
+.users-form-close:hover { background: var(--beige); }
+.field-hint { font-style: normal; font-size: calc(11.5px * var(--fs)); color: var(--hint); }
+
+/* Whether the login works is a decision, so it sits in a panel of its own. */
 .users-check {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: var(--ctl-h);
-  font-size: calc(14px * var(--fs));
+  gap: 11px;
+  background: var(--surface-warm);
+  border-radius: 12px;
+  padding: 13px 14px;
+  font-size: calc(13px * var(--fs));
+  color: var(--ink-2);
+  cursor: pointer;
 }
-.users-check input { width: 20px; height: 20px; min-height: 0; }
+.users-check input {
+  width: 20px;
+  height: 20px;
+  min-height: 0;
+  flex: none;
+  accent-color: var(--forest);
+}
 .users-error {
   background: var(--cta-tint);
   color: var(--cta);

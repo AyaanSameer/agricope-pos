@@ -1,5 +1,6 @@
-/* A settings column reads better capped and centred than stretched to the till. */
-.settings-page > * { width: 100%; max-width: 720px; margin-inline: auto; }
+/* Full width, like every other back-office page. The groups set their fields
+   in a row, so the width is used without needing a second column. */
+.settings-page > * { width: 100%; }
 .settings-list { display: flex; flex-direction: column; gap: 14px; }
 .settings-loading { color: var(--ink-3); padding: 18px; }
 .settings-error {

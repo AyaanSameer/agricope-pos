@@ -75,11 +75,7 @@ export function UsersPage() {
 
   return (
     <div className="page page-wide">
-      <div className="page-head">
-        <div>
-          <h2>Users</h2>
-          <p className="page-sub">Till logins for this business · the PIN is who you are on the till</p>
-        </div>
+      <div className="users-top">
         <button type="button" className="btn-primary users-add" onClick={() => { setError(null); setDraft({ ...EMPTY }) }}>
           + Add user
         </button>
@@ -137,7 +133,23 @@ export function UsersPage() {
       {draft && (
         <div className="users-modal" role="dialog" aria-modal="true">
           <form className="users-form card" onSubmit={onSubmit}>
-            <h3>{draft.id ? 'Edit user' : 'New user'}</h3>
+            <div className="users-form-head">
+              <div className="users-form-title">
+                <h3>Till login</h3>
+                <p>
+                  The PIN is who this person is on the till.
+                  {draft.id ? ' Leave it blank to keep the current one.' : ''}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="users-form-close"
+                aria-label="Close"
+                onClick={() => setDraft(null)}
+              >
+                ✕
+              </button>
+            </div>
             <label className="field">
               <span>Name</span>
               <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} required />
@@ -146,59 +158,56 @@ export function UsersPage() {
               <span>Email</span>
               <input type="email" value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} required />
             </label>
-            <div className="users-form-row">
-              <label className="field">
-                <span>Role</span>
-                <select value={draft.role} onChange={(e) => setDraft({ ...draft, role: e.target.value as Role })}>
-                  <option value="cashier">Cashier</option>
-                  <option value="manager">Manager</option>
-                  <option value="owner">Owner</option>
-                </select>
-              </label>
-              <label className="field">
-                <span>Store</span>
-                <select
-                  value={draft.store_id ?? ''}
-                  onChange={(e) => setDraft({ ...draft, store_id: e.target.value || null })}
-                >
-                  <option value="">All stores</option>
-                  {stores.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <div className="users-form-row">
-              <label className="field">
-                <span>Till PIN (4 digits{draft.id ? ' — blank keeps current' : ''})</span>
-                <input
-                  inputMode="numeric"
-                  pattern="\d{4}"
-                  maxLength={4}
-                  placeholder="••••"
-                  value={draft.pin}
-                  onChange={(e) => setDraft({ ...draft, pin: e.target.value.replace(/\D/g, '') })}
-                />
-              </label>
-              <label className="field users-active">
-                <span>Status</span>
-                <label className="users-check">
-                  <input
-                    type="checkbox"
-                    checked={draft.is_active}
-                    onChange={(e) => setDraft({ ...draft, is_active: e.target.checked })}
-                  />
-                  Active — can sign in
-                </label>
-              </label>
-            </div>
+            <label className="field">
+              <span>Role</span>
+              <select value={draft.role} onChange={(e) => setDraft({ ...draft, role: e.target.value as Role })}>
+                <option value="cashier">Cashier</option>
+                <option value="manager">Manager</option>
+                <option value="waiter">Waiter</option>
+                <option value="owner">Owner</option>
+              </select>
+            </label>
+            <label className="field">
+              <span>Branch</span>
+              <select
+                value={draft.store_id ?? ''}
+                onChange={(e) => setDraft({ ...draft, store_id: e.target.value || null })}
+              >
+                <option value="">All branches</option>
+                {stores.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span>Till PIN</span>
+              <input
+                inputMode="numeric"
+                pattern="\d{4}"
+                maxLength={4}
+                placeholder="••••"
+                value={draft.pin}
+                onChange={(e) => setDraft({ ...draft, pin: e.target.value.replace(/\D/g, '') })}
+              />
+              <em className="field-hint">
+                4 digits{draft.id ? ' — blank keeps the current PIN' : ''}
+              </em>
+            </label>
+            <label className="users-check">
+              <input
+                type="checkbox"
+                checked={draft.is_active}
+                onChange={(e) => setDraft({ ...draft, is_active: e.target.checked })}
+              />
+              Active — can sign in
+            </label>
             {error && <div className="users-error">{error}</div>}
             <div className="users-form-actions">
               <button type="button" className="btn-secondary" onClick={() => setDraft(null)}>
                 Cancel
               </button>
               <button type="submit" className="btn-primary" disabled={save.isPending}>
-                {save.isPending ? 'Saving…' : 'Save user'}
+                {save.isPending ? 'Saving…' : 'Save login'}
               </button>
             </div>
           </form>
