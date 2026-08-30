@@ -7,6 +7,7 @@ import { ApiError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { Logomark } from '../../components/Logomark'
+import { shortBranch } from '../../lib/branch'
 import './admin.css'
 
 /**
@@ -111,39 +112,39 @@ export function AdminPage() {
       </header>
 
       <main className="admin-main">
-        <div className="page-head">
-          <div>
-            <h2>Businesses on the platform</h2>
-            <p className="page-sub">
-              Every tenant running the POS, their branches and their owner logins.
-            </p>
+        {/* No topbar up here, so the console states its own subject. */}
+        <div className="admin-head">
+          <div className="admin-head-say">
+            <h1>Businesses on the platform</h1>
+            <p>Every tenant running the POS, their branches and their owner logins</p>
           </div>
           <button type="button" className="btn-primary" onClick={() => open({ kind: 'business' })}>
             + Add business
           </button>
         </div>
 
-        {/* Platform health at a glance — the one number that blocks a tenant is orange. */}
+        {/* Platform health at a glance — the one number that blocks a tenant is
+            orange, card border and all. */}
         <div className="admin-stats">
           <div className="admin-stat">
-            <strong>{businesses.length}</strong>
             <span>Businesses</span>
+            <strong>{businesses.length}</strong>
           </div>
           <div className="admin-stat">
-            <strong>{businesses.reduce((a, b) => a + b.stores.length, 0)}</strong>
             <span>Branches live</span>
+            <strong>{businesses.reduce((a, b) => a + b.stores.length, 0)}</strong>
           </div>
           <div className="admin-stat">
-            <strong>{businesses.reduce((a, b) => a + b.user_count, 0)}</strong>
             <span>Till logins</span>
+            <strong>{businesses.reduce((a, b) => a + b.user_count, 0)}</strong>
           </div>
           <div className="admin-stat">
-            <strong>{businesses.reduce((a, b) => a + b.product_count, 0)}</strong>
             <span>Products catalogued</span>
+            <strong>{businesses.reduce((a, b) => a + b.product_count, 0)}</strong>
           </div>
-          <div className="admin-stat">
-            <strong className={awaitingOwner > 0 ? 'blocked' : undefined}>{awaitingOwner}</strong>
+          <div className={awaitingOwner > 0 ? 'admin-stat blocked' : 'admin-stat'}>
             <span>Awaiting an owner</span>
+            <strong>{awaitingOwner}</strong>
           </div>
         </div>
 
@@ -177,6 +178,7 @@ export function AdminPage() {
               <div className="admin-section">
                 <div className="admin-section-head">
                   <span className="admin-section-label">Branches</span>
+                  <span className="admin-rule" />
                   <button
                     type="button"
                     className="admin-action"
@@ -193,7 +195,8 @@ export function AdminPage() {
                     <span className={`admin-type ${s.type}`}>
                       {s.type === 'retail' ? 'Retail' : 'Restaurant'}
                     </span>
-                    <span className="admin-row-name">{s.name}</span>
+                    {/* The business name is on the card already — drop its prefix. */}
+                    <span className="admin-row-name">{shortBranch(s.name)}</span>
                     <span className="admin-row-sub">{s.address ?? '—'}</span>
                   </div>
                 ))}
@@ -202,6 +205,7 @@ export function AdminPage() {
               <div className="admin-section">
                 <div className="admin-section-head">
                   <span className="admin-section-label">Owner logins</span>
+                  <span className="admin-rule" />
                   <button
                     type="button"
                     className="admin-action"
@@ -210,22 +214,24 @@ export function AdminPage() {
                     + Create owner
                   </button>
                 </div>
-                {/* Say what is blocked, not just what is missing. */}
-                {b.owners.length === 0 && (
-                  <div className="admin-empty blocked">
-                    No owner yet — this business cannot sign in until you create one.
-                  </div>
-                )}
                 {b.owners.map((o) => (
                   <div key={o.id} className="admin-row">
                     <span className="admin-avatar">{monogram(o.name)}</span>
-                    <span className="admin-row-name">{o.name}</span>
-                    <span className="admin-row-sub">{o.email}</span>
+                    <div className="admin-row-id">
+                      <span className="admin-row-name">{o.name}</span>
+                      <span className="admin-row-sub">{o.email}</span>
+                    </div>
                     <span className={o.has_pin ? 'admin-pin set' : 'admin-pin'}>
                       {o.has_pin ? 'PIN set' : 'No PIN yet'}
                     </span>
                   </div>
                 ))}
+                {/* Say what is blocked, not just what is missing. */}
+                {b.owners.length === 0 && (
+                  <div className="admin-blocked">
+                    No owner yet — this business cannot sign in until you create one.
+                  </div>
+                )}
               </div>
             </div>
           ))}

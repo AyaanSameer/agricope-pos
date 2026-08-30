@@ -14,16 +14,16 @@
   gap: 12px;
   padding: 0 var(--pad);
   min-height: 62px;
-  background: #0f172a;
+  background: var(--ink);
   color: #fff;
 }
 .admin-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   font-family: var(--font-head);
   font-weight: 600;
-  font-size: calc(17px * var(--fs));
+  font-size: calc(15px * var(--fs));
 }
 .admin-tag {
   font-family: var(--font-head);
@@ -36,7 +36,7 @@
   border-radius: 6px;
   padding: 4px 8px;
 }
-.admin-bar-right { display: flex; align-items: center; gap: 14px; }
+.admin-bar-right { display: flex; align-items: center; gap: 12px; }
 .admin-who { font-size: calc(12.5px * var(--fs)); color: #c3cad6; }
 .admin-bar-right .btn-secondary {
   height: 38px;
@@ -51,16 +51,34 @@
 .admin-bar-right .btn-secondary:hover { background: #2a3346; }
 
 .admin-main {
-  padding: 26px 32px 40px;
-  max-width: 1420px;
-  width: 100%;
-  margin: 0 auto;
+  padding: var(--pad);
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 13px;
 }
-.admin-main .page-head h2 { font-size: calc(26px * var(--fs)); }
 .admin-loading { color: var(--ink-3); padding: 18px; }
+
+/* No topbar over the console, so this page carries its own title — the shared
+   .page-head hides its heading because the topbar normally says it. */
+.admin-head {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.admin-head-say {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-right: auto;
+}
+.admin-head h1 {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: calc(22px * var(--fs));
+  color: var(--ink);
+}
+.admin-head p { margin: 0; font-size: calc(12.5px * var(--fs)); color: var(--ink-3); }
 
 /* ---- Platform stat strip ------------------------------------------------ */
 .admin-stats {
@@ -71,11 +89,19 @@
 .admin-stat {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 16px 20px;
+  border-radius: 14px;
+  padding: 13px 15px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 7px;
+  height: 100%;
+}
+.admin-stat span {
+  font-size: calc(10.5px * var(--fs));
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--hint);
+  line-height: 1.4;
 }
 .admin-stat strong {
   font-family: var(--font-head);
@@ -83,11 +109,10 @@
   font-weight: 600;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
-  line-height: 1.1;
 }
-/* A tenant that cannot sign in is not a neutral number. */
-.admin-stat strong.blocked { color: var(--cta); }
-.admin-stat span { font-size: calc(12.5px * var(--fs)); color: var(--ink-3); }
+/* A tenant that cannot sign in is not a neutral number — the card says so too. */
+.admin-stat.blocked { border-color: var(--cta); }
+.admin-stat.blocked strong { color: var(--cta); }
 
 /* ---- Tenant cards ------------------------------------------------------- */
 .admin-grid {
@@ -100,141 +125,163 @@
 .admin-biz {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 22px;
+  border-radius: var(--radius-lg);
+  padding: 17px 18px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 15px;
 }
 
-.admin-biz-head { display: flex; align-items: center; gap: 14px; }
+.admin-biz-head { display: flex; align-items: center; gap: 12px; }
 .admin-mono {
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   flex: none;
-  border-radius: 10px;
+  border-radius: 12px;
   display: grid;
   place-items: center;
   font-family: var(--font-head);
-  font-size: calc(13px * var(--fs));
+  font-size: calc(15px * var(--fs));
   font-weight: 700;
-  letter-spacing: 0.5px;
 }
 .admin-mono.green { background: var(--success-tint); color: var(--forest); }
 .admin-mono.orange { background: var(--cta-tint); color: var(--cta); }
-.admin-mono.gold { background: var(--gold-tint); color: #8a5a00; }
+.admin-mono.gold { background: var(--gold-tint); color: var(--gold-ink); }
 
-.admin-biz-id { min-width: 0; }
-.admin-biz-name { font-family: var(--font-head); font-weight: 600; font-size: calc(20px * var(--fs)); }
-.admin-biz-login { font-size: calc(12.5px * var(--fs)); color: var(--ink-3); }
-
-.admin-counts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--border);
+.admin-biz-id { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.admin-biz-name {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: calc(15px * var(--fs));
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+.admin-biz-login {
+  font-size: calc(11.5px * var(--fs));
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-counts { display: flex; flex-wrap: wrap; gap: 8px; }
 .admin-count {
   display: inline-flex;
   align-items: center;
-  height: 24px;
-  padding: 0 10px;
+  padding: 5px 11px;
   border-radius: 99px;
   background: var(--surface-warm);
-  color: var(--ink-3);
-  font-family: var(--font-head);
-  font-size: calc(10px * var(--fs));
-  font-weight: 600;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
+  color: var(--ink-2);
+  font-size: calc(11.5px * var(--fs));
+  white-space: nowrap;
 }
 
 .admin-section { display: flex; flex-direction: column; gap: 8px; }
-.admin-section-head { display: flex; align-items: center; gap: 12px; }
+.admin-section-head { display: flex; align-items: center; gap: 10px; }
 .admin-section-label {
   font-family: var(--font-head);
-  font-size: calc(11px * var(--fs));
+  font-size: calc(10px * var(--fs));
   font-weight: 600;
-  letter-spacing: 1px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ink-3);
+  color: var(--hint);
 }
+/* The rule carries the eye from the label to the one action in the section. */
+.admin-rule { flex: 1; height: 1px; background: var(--beige); }
 .admin-action {
-  height: 30px;
-  min-height: 30px;
-  padding: 0 12px;
-  border-radius: 99px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--ink-2);
-  font-size: calc(12.5px * var(--fs));
+  height: auto;
+  min-height: 0;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--forest);
+  font-size: calc(12px * var(--fs));
   font-weight: 500;
 }
-.admin-action:active { background: var(--surface-warm); }
+.admin-action:hover { text-decoration: underline; }
 
 .admin-empty {
-  font-size: calc(12.5px * var(--fs));
+  font-size: calc(12px * var(--fs));
   color: var(--hint);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 12px 14px;
+  padding: 4px 2px;
 }
 /* Blocked, not merely empty. */
-.admin-empty.blocked {
+.admin-blocked {
   background: var(--cta-tint);
-  border-color: var(--cta-tint);
+  border: 1px solid var(--cta);
+  border-radius: 11px;
+  padding: 12px 13px;
+  font-size: calc(12px * var(--fs));
+  line-height: 1.5;
   color: var(--cta);
 }
 
 .admin-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 11px 14px;
-  border-radius: 8px;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
   background: var(--surface-warm);
   min-width: 0;
 }
-.admin-row-name { font-size: calc(14px * var(--fs)); font-weight: 500; white-space: nowrap; }
-.admin-row-sub {
+.admin-row-name {
   font-size: calc(12.5px * var(--fs));
-  color: var(--ink-3);
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+/* The address trails to the right edge; the row's subject stays left. */
+.admin-row-sub {
+  font-size: calc(11.5px * var(--fs));
+  color: var(--hint);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-align: right;
   flex: 1;
   min-width: 0;
+}
+/* An owner is a person: name over contact, not name beside it. */
+.admin-row-id { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.admin-row-id .admin-row-name { overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; }
+.admin-row-id .admin-row-sub {
+  font-size: calc(11px * var(--fs));
+  color: var(--ink-3);
+  text-align: left;
+  flex: none;
 }
 
 .admin-type {
   flex: none;
   display: inline-flex;
   align-items: center;
-  height: 22px;
-  padding: 0 10px;
-  border-radius: 99px;
+  padding: 3px 7px;
+  border-radius: 5px;
   font-family: var(--font-head);
-  font-size: calc(9.5px * var(--fs));
+  font-size: calc(9px * var(--fs));
   font-weight: 600;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
-.admin-type.retail { background: var(--success-tint); color: var(--forest); }
-.admin-type.restaurant { background: var(--gold-tint); color: #8a5a00; }
+.admin-type.restaurant { background: var(--success-tint); color: var(--forest); }
+.admin-type.retail { background: var(--beige); color: var(--ink-2); }
 
 .admin-avatar {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   flex: none;
-  border-radius: 50%;
+  border-radius: 99px;
   background: var(--success-tint);
   color: var(--forest);
   display: grid;
   place-items: center;
   font-family: var(--font-head);
-  font-size: calc(10px * var(--fs));
+  font-size: calc(10.5px * var(--fs));
   font-weight: 700;
 }
 
@@ -242,16 +289,16 @@
   flex: none;
   display: inline-flex;
   align-items: center;
-  height: 22px;
-  padding: 0 10px;
-  border-radius: 99px;
+  padding: 4px 7px;
+  border-radius: 5px;
   background: var(--gold-tint);
-  color: #8a5a00;
+  color: var(--gold-ink);
   font-family: var(--font-head);
   font-size: calc(9.5px * var(--fs));
   font-weight: 600;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 .admin-pin.set { background: var(--success-tint); color: var(--forest); }
 
@@ -272,5 +319,5 @@
 .admin-form { width: min(420px, 100%); display: flex; flex-direction: column; gap: 14px; padding: 22px; }
 .admin-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .admin-note { margin: 0; font-size: calc(12.5px * var(--fs)); color: var(--ink-3); line-height: 1.5; }
-.admin-error { color: var(--danger, #c0392b); font-size: calc(13px * var(--fs)); }
+.admin-error { color: var(--danger); font-size: calc(13px * var(--fs)); }
 .admin-form-actions { display: flex; justify-content: flex-end; gap: 10px; }

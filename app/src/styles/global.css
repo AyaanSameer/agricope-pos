@@ -75,6 +75,8 @@
   --login-h1: 38px;
   --login-lockup: 44px;
   --login-card-w: 424px;
+  --login-bg: #f1eddc;
+  --pin-card-w: 372px;
 }
 
 /* Touch till 1366 × 768 */
@@ -84,7 +86,7 @@
     --hub-max: 1060px; --tile-min: 206px; --ctl-h: 52px; --key-h: 74px;
     --cart-w: 322px; --cust-list-w: 320px; --tkw: 262px;
     --login-panel: 524px; --login-panel-pad: 48px; --login-h1: 36px;
-    --login-lockup: 42px; --login-card-w: 430px;
+    --login-lockup: 42px; --login-card-w: 430px; --login-bg: #f1eddc;
   }
 }
 
@@ -95,7 +97,7 @@
     --hub-max: 960px; --tile-min: 178px; --ctl-h: 48px; --key-h: 64px;
     --cart-w: 300px; --cust-list-w: 272px; --tkw: 228px;
     --login-panel: 404px; --login-panel-pad: 34px; --login-h1: 27px;
-    --login-lockup: 34px; --login-card-w: 400px;
+    --login-lockup: 34px; --login-card-w: 400px; --login-bg: #f1eddc;
   }
 }
 
@@ -105,7 +107,7 @@
     --fs: 1.04; --pad: 18px; --top-h: 62px; --top-fs: 16px;
     --hub-max: 100%; --tile-min: 212px; --ctl-h: 52px; --key-h: 72px;
     --cart-w: 100%; --cust-list-w: 100%; --tkw: 228px;
-    --login-lockup: 66px; --login-card-w: 350px;
+    --login-lockup: 66px; --login-card-w: 350px; --login-bg: #083d2b;
   }
 }
 
@@ -115,7 +117,7 @@
     --fs: 1; --pad: 14px; --top-h: 62px; --top-fs: 16px;
     --hub-max: 100%; --tile-min: 150px; --ctl-h: 50px; --key-h: 62px;
     --cart-w: 100%; --cust-list-w: 100%; --tkw: 228px;
-    --login-lockup: 66px; --login-card-w: 350px;
+    --login-lockup: 66px; --login-card-w: 350px; --login-bg: #083d2b;
   }
 }
 
@@ -352,7 +354,7 @@ button { transition: background 0.12s, border-color 0.13s, color 0.12s; }
 .cpick,
 .climit,
 .disc-modal,
-.pinswitch,
+.pin-scrim,
 .tab-additems,
 .kticket-overlay,
 .cust-modal,
@@ -382,7 +384,6 @@ button { transition: background 0.12s, border-color 0.13s, color 0.12s; }
 .climit > *,
 .disc-modal > *,
 .optpick > *,
-.pinswitch > *,
 .tab-additems > *,
 .cust-modal > *,
 .cat-modal > *,
@@ -394,8 +395,8 @@ button { transition: background 0.12s, border-color 0.13s, color 0.12s; }
 }
 
 /* The PIN pad lifts on a softer curve — it is the one you wait for. */
-.pinswitch > * { animation: agUp 0.24s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.pin-scrim > * { animation: agUp 0.24s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 /* Beats the overlay's own entry animation — a shake must always win. */
 .ag-shake,
-.pinswitch > .ag-shake { animation: agShake 0.4s ease both; }
+.pin-scrim > .ag-shake { animation: agShake 0.4s ease both; }

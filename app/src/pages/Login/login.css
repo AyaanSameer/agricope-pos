@@ -3,62 +3,129 @@
   min-height: 100%;
 }
 
+/* The brand panel is the deep forest on every device that shows it — an admin
+   login changes the eyebrow, not the ground. */
 .login-brand {
-  flex: 0 0 560px;
-  background: var(--forest);
+  width: var(--login-panel);
+  flex-shrink: 0;
+  background: var(--forest-deep);
   color: #fff;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 56px;
+  align-items: flex-start;
+  gap: 26px;
+  padding: var(--login-panel-pad);
+  overflow: hidden;
+  position: relative;
 }
-/* An admin account governs every tenant — the panel goes darker to say so. */
-.login-admin .login-brand { background: var(--forest-deep); }
+
+/* Two circles bled off the panel — the only decoration in the system. */
+.login-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.login-orb-1 {
+  left: -70px;
+  top: -50px;
+  width: 200px;
+  height: 200px;
+  background: rgba(223, 239, 219, 0.08);
+}
+.login-orb-2 {
+  right: -90px;
+  bottom: -110px;
+  width: 300px;
+  height: 300px;
+  background: rgba(102, 187, 106, 0.2);
+}
 
 .login-brand-lockup {
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.login-brand-name {
-  font-family: var(--font-head);
-  font-weight: 700;
-  font-size: calc(15px * var(--fs));
-  letter-spacing: 1.8px;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
 }
 .login-brand-sub {
-  font-size: calc(10px * var(--fs));
+  font-family: var(--font-body);
   font-weight: 500;
-  letter-spacing: 1.4px;
+  font-size: 10px;
+  letter-spacing: 0.14em;
   color: var(--leaf-pale);
+  white-space: nowrap;
 }
 
+.login-brand-say {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex-shrink: 0;
+}
 .login-headline {
-  font-size: calc(38px * var(--fs));
-  line-height: 46px;
+  font-family: var(--font-head);
   font-weight: 700;
+  font-size: var(--login-h1);
+  line-height: 1.18;
+  letter-spacing: -0.015em;
+  color: #fff;
+  text-wrap: pretty;
 }
 .login-blurb {
-  margin-top: 16px;
+  margin: 0;
+  width: 100%;
   max-width: 400px;
+  font-size: calc(13px * var(--fs));
+  line-height: 1.6;
   color: var(--leaf-pale);
-  line-height: 22px;
+  text-wrap: pretty;
 }
 .login-footer {
-  font-size: calc(12px * var(--fs));
-  color: var(--leaf-pale);
+  position: relative;
+  font-size: 11.5px;
+  color: var(--icon-idle);
+  flex-shrink: 0;
 }
 
 .login-side {
   flex: 1;
   min-width: 0;
+  overflow-y: auto;
+  background: var(--login-bg);
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 32px;
+  gap: 22px;
+  padding: 30px 20px;
+}
+
+/* Dense: no room for a panel beside the card, so the lockup stacks above it
+   and the whole screen takes the forest ground instead. */
+.login-stack {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.login-stack .login-orb-1 { left: -120px; top: -70px; }
+.login-stack .login-brand-sub { letter-spacing: 0.2em; }
+.login-stack-footer {
+  position: relative;
+  font-size: 11px;
+  color: var(--leaf-pale);
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .login-card {
+  position: relative;
   width: 100%;
   max-width: var(--login-card-w);
   background: var(--surface);
@@ -68,48 +135,60 @@
   flex-direction: column;
   gap: 16px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
+  flex-shrink: 0;
 }
-.login-card h2 { font-size: calc(21px * var(--fs)); font-weight: 600; letter-spacing: -0.01em; }
+.login-card-head { display: flex; flex-direction: column; gap: 7px; }
+.login-card h2 {
+  font-size: calc(21px * var(--fs));
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
 .login-card-sub {
-  margin: 6px 0 0;
+  margin: 0;
   color: var(--ink-3);
   font-size: calc(13px * var(--fs));
-  line-height: 19px;
 }
 
-/* Gold says "attention" — this login is not an ordinary one. */
+/* The console's own slate, not the gold "attention" chip — this login belongs
+   to the platform, above every tenant's green. */
 .login-badge {
   align-self: flex-start;
-  background: var(--gold-tint);
-  color: #8a5a00;
-  border-radius: 99px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  padding: 0 10px;
+  background: var(--ink);
+  color: var(--leaf-pale);
+  border-radius: 6px;
+  padding: 5px 9px;
   font-family: var(--font-head);
-  font-size: calc(11px * var(--fs));
+  font-size: 9.5px;
   font-weight: 600;
-  letter-spacing: 0.44px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 6px;
 }
 .field span {
   font-size: calc(12px * var(--fs));
   font-weight: 500;
-  color: var(--ink-2);
+  color: var(--ink-1);
 }
-.field-recognised input {
-  border: 2px solid var(--leaf);
-  padding: 0 13px;
+.field input,
+.field select {
+  height: calc(var(--ctl-h) + 2px);
+  min-height: calc(var(--ctl-h) + 2px);
+  border-radius: var(--radius);
+  padding: 0 14px;
+  font-size: calc(14px * var(--fs));
 }
 
-.login-submit { height: calc(var(--ctl-h) + 6px); min-height: calc(var(--ctl-h) + 6px); }
+.login-submit {
+  height: calc(var(--ctl-h) + 6px);
+  min-height: calc(var(--ctl-h) + 6px);
+  border-radius: var(--radius);
+  font-size: calc(15px * var(--fs));
+}
 
 .login-error {
   background: var(--cta-tint);
@@ -117,14 +196,6 @@
   border-radius: var(--radius);
   padding: 12px 14px;
   font-weight: 500;
-}
-
-.login-staff-warning {
-  background: var(--gold-tint);
-  color: #8a5a00;
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: calc(11.5px * var(--fs));
 }
 
 /* The one alternative route: this till already knows its business. */
@@ -144,54 +215,57 @@
 .login-demo {
   display: flex;
   align-items: flex-start;
+  flex-wrap: wrap;
   gap: 10px;
   background: var(--surface-warm);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 9px 10px;
-  min-width: 0;
+  padding: 12px 13px;
 }
 .login-demo-tag {
   flex: none;
   display: inline-flex;
   align-items: center;
-  padding: 3px 6px;
-  border-radius: 6px;
+  padding: 4px 7px;
+  border-radius: 5px;
   background: var(--gold-tint);
   color: var(--gold-ink);
-  font-size: calc(8.5px * var(--fs));
-  font-weight: 500;
+  font-family: var(--font-head);
+  font-size: 9px;
+  font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 .login-demo code {
   font-family: var(--font-mono);
-  font-size: calc(10.5px * var(--fs));
+  font-size: 11px;
   line-height: 1.5;
   color: var(--ink-2);
-  min-width: 0;
+  flex: 1;
+  min-width: 140px;
   word-break: break-word;
 }
 
 .login-note {
   margin: 0;
-  font-size: calc(10.5px * var(--fs));
-  line-height: 1.45;
+  font-size: 11.5px;
+  line-height: 1.55;
   color: var(--hint);
 }
 
 .login-admin-link {
   align-self: flex-start;
+  height: 40px;
   min-height: 0;
   padding: 0;
   background: none;
   border: none;
   color: var(--forest);
-  font-family: var(--font-head);
-  font-size: calc(11.5px * var(--fs));
-  font-weight: 600;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
 }
 .login-admin-link:hover { text-decoration: underline; }
-
-@media (max-width: 900px) {
-  .login-brand { display: none; }
-}

@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { useAuth } from '../../auth/AuthContext'
 import { ApiError } from '../../api/client'
-import { Logomark } from '../../components/Logomark'
+import { Lockup, StackedLockup } from '../../components/Logomark'
+import { useDevice } from '../../lib/useDevice'
 import './login.css'
 
 /**
@@ -20,6 +21,7 @@ function looksLikePlatformAdmin(email: string) {
 export function LoginPage() {
   const { signIn, businessSession } = useAuth()
   const navigate = useNavigate()
+  const { dense } = useDevice()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const isAdmin = looksLikePlatformAdmin(email)
@@ -44,60 +46,54 @@ export function LoginPage() {
     login.mutate()
   }
 
+  const brandSub = isAdmin ? 'PLATFORM CONSOLE' : 'POINT OF SALE'
+  const footer = '© 2026 Agricope · Doha, Qatar'
+
   return (
     <div className={isAdmin ? 'login login-admin' : 'login'}>
-      <aside className="login-brand">
-        <div className="login-brand-lockup">
-          <Logomark size={44} />
-          <div>
-            <div className="login-brand-name">AGRICOPE</div>
-            <div className="login-brand-sub">{isAdmin ? 'PLATFORM CONSOLE' : 'POINT OF SALE'}</div>
+      {/* Roomy: the brand panel. Dense: the lockup stacks over the card instead. */}
+      {!dense && (
+        <aside className="login-brand">
+          <span className="login-orb login-orb-1" aria-hidden="true" />
+          <span className="login-orb login-orb-2" aria-hidden="true" />
+          <div className="login-brand-lockup">
+            <Lockup height="var(--login-lockup)" />
+            <span className="login-brand-sub">{brandSub}</span>
           </div>
-        </div>
-        <div>
-          {isAdmin ? (
-            <>
-              <h1 className="login-headline">
-                Every business.
-                <br />
-                One console.
-              </h1>
-              <p className="login-blurb">
-                Add businesses, open their branches, and hand each owner the login that runs their
-                tills.
-              </p>
-            </>
-          ) : (
-            <>
-              <h1 className="login-headline">
-                Sell fast.
-                <br />
-                Track every riyal.
-              </h1>
-              <p className="login-blurb">
-                One system for your shops and restaurants — sales, credit ledgers, shifts, kitchen
-                and reports.
-              </p>
-            </>
-          )}
-        </div>
-        <div className="login-footer">© 2026 Agricope · Doha, Qatar</div>
-      </aside>
+          <div className="login-brand-say">
+            <h1 className="login-headline">
+              Sell fast.
+              <br />
+              Track every riyal.
+            </h1>
+            <p className="login-blurb">
+              One system for your shops and restaurants — sales, credit ledgers, shifts, kitchen and
+              reports.
+            </p>
+          </div>
+          <div className="login-footer">{footer}</div>
+        </aside>
+      )}
 
       <main className="login-side">
-        <form className="login-card" onSubmit={onSubmit}>
-          {isAdmin && <div className="login-badge">Platform administrator</div>}
+        {dense && (
+          <div className="login-stack">
+            <span className="login-orb login-orb-1" aria-hidden="true" />
+            <StackedLockup height="var(--login-lockup)" />
+            <span className="login-brand-sub">{brandSub}</span>
+          </div>
+        )}
 
-          <div>
+        <form className="login-card" onSubmit={onSubmit}>
+          <div className="login-card-head">
+            {isAdmin && <span className="login-badge">Platform administrator</span>}
             <h2>{isAdmin ? 'Agricope Console' : 'Welcome back'}</h2>
             <p className="login-card-sub">
-              {isAdmin
-                ? 'This account manages every business on the platform — not a single till.'
-                : 'Sign in with your business account — the till asks for a PIN next'}
+              {isAdmin ? 'Platform administration — not a till' : 'Sign in to your business'}
             </p>
           </div>
 
-          <label className={isAdmin ? 'field field-recognised' : 'field'}>
+          <label className="field">
             <span>Email</span>
             <input
               type="email"
@@ -122,43 +118,35 @@ export function LoginPage() {
           {errorMessage && <div className="login-error">{errorMessage}</div>}
 
           <button className="btn-primary login-submit" type="submit" disabled={login.isPending}>
-            {login.isPending ? 'Signing in…' : isAdmin ? 'Open the console' : 'Sign in'}
+            {login.isPending ? 'Signing in…' : 'Sign in'}
           </button>
 
           {/* The till is already signed in as a business — skip straight to the PIN. */}
-          {!isAdmin && businessSession && (
-            <button
-              type="button"
-              className="login-switch"
-              onClick={() => navigate('/pick-store')}
-            >
+          {businessSession && (
+            <button type="button" className="login-switch" onClick={() => navigate('/pick-store')}>
               Switch cashier with PIN
             </button>
           )}
 
-          {isAdmin ? (
-            <div className="login-staff-warning">
-              Staff access · actions here affect every tenant
-            </div>
-          ) : (
-            <>
-              <div className="login-demo">
-                <span className="login-demo-tag">Demo</span>
-                <code>demo@agricope.qa · drumsticks@agricope.qa · demo123</code>
-              </div>
-              <p className="login-note">
-                Login is per business, not per person. The PIN identifies who is on the till.
-              </p>
-              <button
-                type="button"
-                className="login-admin-link"
-                onClick={() => setEmail('admin@agricope.qa')}
-              >
-                Use platform administrator credentials →
-              </button>
-            </>
-          )}
+          <div className="login-demo">
+            <span className="login-demo-tag">Demo</span>
+            <code>{isAdmin ? 'admin@agricope.qa · demo123' : 'drumsticks@agricope.qa · demo123'}</code>
+          </div>
+
+          <p className="login-note">
+            Login is per business, not per person. The PIN identifies who is on the till.
+          </p>
+
+          <button
+            type="button"
+            className="login-admin-link"
+            onClick={() => setEmail(isAdmin ? '' : 'admin@agricope.qa')}
+          >
+            {isAdmin ? '← Back to a business login' : 'Use platform administrator credentials →'}
+          </button>
         </form>
+
+        {dense && <div className="login-stack-footer">{footer}</div>}
       </main>
     </div>
   )

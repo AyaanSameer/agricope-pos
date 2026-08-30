@@ -19,7 +19,7 @@ export function Logomark({
   /** @deprecated use `height` — kept so older call sites keep working */
   size,
 }: {
-  height?: number
+  height?: number | string
   tone?: Tone
   size?: number
 }) {
@@ -36,14 +36,14 @@ export function Logomark({
 }
 
 /** Mark beside the two-line AGRI / COPE wordmark. */
-export function Lockup({ height = 44, tone = 'white' }: { height?: number; tone?: Tone }) {
+export function Lockup({ height = 44, tone = 'white' }: { height?: number | string; tone?: Tone }) {
   return (
     <img src={art('lockup', tone)} alt="Agricope" className="logo-art" style={{ height }} />
   )
 }
 
 /** Mark stacked over AGRICOPE — the dense login treatment. */
-export function StackedLockup({ height = 66, tone = 'white' }: { height?: number; tone?: Tone }) {
+export function StackedLockup({ height = 66, tone = 'white' }: { height?: number | string; tone?: Tone }) {
   return (
     <img src={art('stacked', tone)} alt="Agricope" className="logo-art" style={{ height }} />
   )
