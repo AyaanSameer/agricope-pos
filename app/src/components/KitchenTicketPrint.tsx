@@ -27,9 +27,9 @@ export function KitchenTicketPrint({
   const stationsQuery = useQuery({ queryKey: ['stations'], queryFn: listStations })
 
   const groups = useMemo(() => {
-    const stationOf = new Map(
-      (productsQuery.data?.data ?? []).map((p) => [p.id, p.kitchen_station_id]),
-    )
+    const catalog = productsQuery.data?.data ?? []
+    const stationOf = new Map(catalog.map((p) => [p.id, p.kitchen_station_id]))
+    const descriptionOf = new Map(catalog.map((p) => [p.id, p.description]))
     const names = new Map((stationsQuery.data?.data ?? []).map((s) => [s.id, s.name]))
     const byStation = new Map<string, OrderItem[]>()
     for (const item of items) {
@@ -38,7 +38,7 @@ export function KitchenTicketPrint({
       const key = names.get(stationId) ?? 'Kitchen'
       byStation.set(key, [...(byStation.get(key) ?? []), item])
     }
-    return [...byStation.entries()]
+    return { byStation: [...byStation.entries()], descriptionOf }
   }, [items, productsQuery.data, stationsQuery.data])
 
   const now = new Date()
@@ -54,10 +54,10 @@ export function KitchenTicketPrint({
               {now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </div>
           </div>
-          {groups.length === 0 && (
+          {groups.byStation.length === 0 && (
             <div className="kticket-empty">Nothing routed to a station.</div>
           )}
-          {groups.map(([station, list]) => (
+          {groups.byStation.map(([station, list]) => (
             <div key={station} className="kticket-station">
               <div className="kticket-station-name">— {station} —</div>
               {list.map((i) => (
@@ -67,6 +67,9 @@ export function KitchenTicketPrint({
                     {i.product_name}
                     {i.options.length > 0 && (
                       <span className="kticket-opts">{i.options.join(' · ')}</span>
+                    )}
+                    {groups.descriptionOf.get(i.product_id) && (
+                      <span className="kticket-desc">{groups.descriptionOf.get(i.product_id)}</span>
                     )}
                   </span>
                 </div>

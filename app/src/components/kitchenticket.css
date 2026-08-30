@@ -38,6 +38,7 @@
 .kticket-item { flex: 1; }
 .kticket-opts { display: block; font-size: calc(12px * var(--fs)); padding-left: 2px; }
 .kticket-opts::before { content: '» '; }
+.kticket-desc { display: block; font-size: calc(11px * var(--fs)); padding-left: 2px; }
 
 .kticket-empty { text-align: center; color: #555; padding: 12px 0; }
 .kticket-foot { text-align: center; margin-top: 12px; letter-spacing: 0.4em; }

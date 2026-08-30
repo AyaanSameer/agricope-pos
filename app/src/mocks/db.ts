@@ -306,7 +306,7 @@ export const products: DbProduct[] = [
   demoProduct({ id: 'p-lime', name: 'Fresh Lime', category_id: 'c-bev', barcode: null, price: '7.00', kitchen_station_id: 'st-bar', is_active: true }),
   demoProduct({ id: 'p-shawarma', name: 'Chicken Shawarma', category_id: 'c-grill', barcode: null, price: '12.00', kitchen_station_id: 'st-kitchen', is_active: true }),
   demoProduct({ id: 'p-kofta', name: 'Lamb Kofta 1kg', category_id: 'c-grill', barcode: '6280001118859', price: '38.00', kitchen_station_id: 'st-grill', is_active: true }),
-  demoProduct({ id: 'p-mixed', name: 'Mixed Grill', category_id: 'c-grill', barcode: null, price: '58.00', kitchen_station_id: 'st-grill', is_active: true }),
+  { ...demoProduct({ id: 'p-mixed', name: 'Mixed Grill', category_id: 'c-grill', barcode: null, price: '58.00', kitchen_station_id: 'st-grill', is_active: true }), description: 'Lamb kofta, chicken tikka, beef skewers, grilled tomato & saj bread' },
   demoProduct({ id: 'p-halloumi-old', name: 'Halloumi 250g (old pack)', category_id: 'c-dairy', barcode: '6280001110958', price: '12.00', kitchen_station_id: null, is_active: false }),
   // Drumsticks — the client's real menu, from their pricing files.
   ...drumsticksItems.map((d): DbProduct => ({

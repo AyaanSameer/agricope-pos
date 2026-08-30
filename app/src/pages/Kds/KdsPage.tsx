@@ -12,7 +12,14 @@ interface Ticket {
   station_id: string
   status: 'new' | 'in_progress' | 'done' | 'cancelled'
   created_at: string
-  items: { id: string; product_name: string; quantity: string; note: string | null; cancelled: boolean }[]
+  items: {
+    id: string
+    product_name: string
+    description: string | null
+    quantity: string
+    note: string | null
+    cancelled: boolean
+  }[]
 }
 
 /** The kitchen display — runs full-screen on a cheap tablet, polls every 5s. */
@@ -111,6 +118,7 @@ export function KdsPage() {
                       <span>{i.product_name}</span>
                       {i.cancelled && <span className="kds-cancel">PULLED</span>}
                     </div>
+                    {i.description && <span className="kds-desc">{i.description}</span>}
                     {i.note && <span className="kds-note">{i.note}</span>}
                   </div>
                 ))}

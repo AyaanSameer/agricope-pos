@@ -208,6 +208,7 @@ export const posHandlers2 = [
           id: uid('ti'),
           order_item_id: i.id,
           product_name: i.product_name,
+          description: products.find((p) => p.id === i.product_id)?.description ?? null,
           quantity: i.quantity,
           note: i.options.length ? i.options.join(' · ') : null,
           cancelled: false,

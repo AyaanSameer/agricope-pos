@@ -284,7 +284,7 @@ export function seedWorld(): void {
     created_at: iso(44),
     done_at: null,
     items: [
-      { id: uid('ti'), order_item_id: tab.items[0].id, product_name: 'Mixed Grill', quantity: '1', note: null, cancelled: false },
+      { id: uid('ti'), order_item_id: tab.items[0].id, product_name: 'Mixed Grill', description: 'Lamb kofta, chicken tikka, beef skewers, grilled tomato & saj bread', quantity: '1', note: null, cancelled: false },
     ],
   })
   tickets.push({
@@ -297,7 +297,7 @@ export function seedWorld(): void {
     created_at: iso(44),
     done_at: iso(38),
     items: [
-      { id: uid('ti'), order_item_id: tab.items[1].id, product_name: 'Karak Tea', quantity: '4', note: null, cancelled: false },
+      { id: uid('ti'), order_item_id: tab.items[1].id, product_name: 'Karak Tea', description: null, quantity: '4', note: null, cancelled: false },
     ],
   })
   // unsent second round

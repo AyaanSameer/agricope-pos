@@ -147,6 +147,8 @@ export interface DbTicketItem {
   id: string
   order_item_id: string
   product_name: string
+  /** what's in it — snapshotted so the kitchen sees what was sold, not what was edited since */
+  description: string | null
   quantity: string
   note: string | null
   cancelled: boolean
