@@ -10,6 +10,7 @@ export interface StoreSettingsInput {
   kitchen_mode?: 'kds' | 'printer'
   name?: string
   address?: string
+  phone?: string
   /** dine-in service charge, percent — "10" */
   service_charge_rate?: string
 }

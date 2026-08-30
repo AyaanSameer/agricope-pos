@@ -86,6 +86,7 @@ export const adminHandlers = [
       name?: string
       type?: 'retail' | 'restaurant'
       address?: string
+      phone?: string
     }
     if (!body.name?.trim() || !body.type || !['retail', 'restaurant'].includes(body.type)) {
       return apiError(400, 'VALIDATION_ERROR', 'A branch needs a name and a type (retail or restaurant).')
@@ -96,6 +97,7 @@ export const adminHandlers = [
       name: body.name.trim(),
       type: body.type,
       address: body.address?.trim() || null,
+      phone: body.phone?.trim() || null,
       is_active: true,
       kitchen_mode: 'kds',
     }

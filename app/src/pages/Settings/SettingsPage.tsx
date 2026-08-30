@@ -78,11 +78,14 @@ export function SettingsPage() {
 
             {/* ---- Branch identity -------------------------------------- */}
             <IdentityGroup
-              key={`id-${store.id}-${store.name}-${store.address}`}
+              key={`id-${store.id}-${store.name}-${store.address}-${store.phone}`}
               name={store.name}
               address={store.address ?? ''}
+              phone={store.phone ?? ''}
               busy={saveStore.isPending}
-              onSave={(name, address) => saveStore.mutate({ id: store.id, input: { name, address } })}
+              onSave={(name, address, phone) =>
+                saveStore.mutate({ id: store.id, input: { name, address, phone } })
+              }
             />
 
             {/* ---- Kitchen output --------------------------------------- */}
@@ -197,21 +200,24 @@ function useDirty<T>(initial: T) {
 function IdentityGroup({
   name,
   address,
+  phone,
   busy,
   onSave,
 }: {
   name: string
   address: string
+  phone: string
   busy: boolean
-  onSave: (name: string, address: string) => void
+  onSave: (name: string, address: string, phone: string) => void
 }) {
   const [draftName, setDraftName] = useState(name)
   const [draftAddr, setDraftAddr] = useState(address)
-  const dirty = draftName !== name || draftAddr !== address
+  const [draftPhone, setDraftPhone] = useState(phone)
+  const dirty = draftName !== name || draftAddr !== address || draftPhone !== phone
 
   function submit(e: FormEvent) {
     e.preventDefault()
-    if (dirty && draftName.trim()) onSave(draftName, draftAddr)
+    if (dirty && draftName.trim()) onSave(draftName, draftAddr, draftPhone)
   }
 
   return (
@@ -219,7 +225,8 @@ function IdentityGroup({
       <div className="settings-block-head">
         <div className="settings-block-title">Branch identity</div>
         <p className="settings-block-sub">
-          The name on the topbar, the hub and every receipt this branch prints.
+          The name on the topbar and the hub. The address and number head every
+          receipt this branch prints.
         </p>
       </div>
       <div className="settings-fields">
@@ -230,6 +237,16 @@ function IdentityGroup({
         <label className="settings-field">
           <span>Address</span>
           <input value={draftAddr} onChange={(e) => setDraftAddr(e.target.value)} />
+        </label>
+        <label className="settings-field settings-field-narrow">
+          <span>Phone</span>
+          <input
+            type="tel"
+            inputMode="tel"
+            placeholder="+974 4012 8890"
+            value={draftPhone}
+            onChange={(e) => setDraftPhone(e.target.value)}
+          />
         </label>
       </div>
       {dirty && (

@@ -163,6 +163,7 @@ export const handlers = [
       kitchen_mode?: 'kds' | 'printer'
       name?: string
       address?: string
+      phone?: string
       service_charge_rate?: string
     }
     if (body.kitchen_mode !== undefined) {
@@ -176,6 +177,7 @@ export const handlers = [
       store.name = body.name.trim()
     }
     if (body.address !== undefined) store.address = body.address.trim() || null
+    if (body.phone !== undefined) store.phone = body.phone.trim() || null
     if (body.service_charge_rate !== undefined) {
       const n = Number(body.service_charge_rate)
       if (!Number.isFinite(n) || n < 0 || n > 25) {

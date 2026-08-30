@@ -398,7 +398,7 @@ export function receiptPayload(order: DbOrder) {
   const creditPayment = order.payments.find((p) => p.method === 'credit')
   return {
     business: { name: settings.business_name, footer: settings.receipt_footer },
-    store: { name: store?.name ?? '', address: store?.address ?? '' },
+    store: { name: store?.name ?? '', address: store?.address ?? '', phone: store?.phone ?? null },
     order: toPublicOrder(order),
     credit:
       creditPayment && order.customer_id

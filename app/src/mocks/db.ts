@@ -60,15 +60,17 @@ export interface DbStore {
   name: string
   type: 'retail' | 'restaurant'
   address: string | null
+  /** the number printed on the receipt, so a customer can call the branch */
+  phone: string | null
   is_active: boolean
   /** Where kitchen work surfaces: the KDS board, or a printed kitchen ticket. */
   kitchen_mode: 'kds' | 'printer'
 }
 
 export const stores: DbStore[] = [
-  { id: 's-alrayyan', business_id: 'b-demo', name: 'Al Rayyan Store', type: 'retail', address: 'Souq area, Al Rayyan, Doha', is_active: true, kitchen_mode: 'kds' },
-  { id: 's-karak', business_id: 'b-demo', name: 'Karak Corner', type: 'restaurant', address: 'Al Sadd, Doha', is_active: true, kitchen_mode: 'kds' },
-  { id: 's-drumsticks', business_id: 'b-drumsticks', name: 'Drumsticks — Barwa Village', type: 'restaurant', address: 'Barwa Village, Al Wakrah Road, Doha', is_active: true, kitchen_mode: 'printer' },
+  { id: 's-alrayyan', business_id: 'b-demo', name: 'Al Rayyan Store', type: 'retail', address: 'Souq area, Al Rayyan, Doha', phone: '+974 4432 1180', is_active: true, kitchen_mode: 'kds' },
+  { id: 's-karak', business_id: 'b-demo', name: 'Karak Corner', type: 'restaurant', address: 'Al Sadd, Doha', phone: '+974 4487 6620', is_active: true, kitchen_mode: 'kds' },
+  { id: 's-drumsticks', business_id: 'b-drumsticks', name: 'Drumsticks — Barwa Village', type: 'restaurant', address: 'Barwa Village, Al Wakrah Road, Doha', phone: '+974 4012 8890', is_active: true, kitchen_mode: 'printer' },
 ]
 
 /** Dine-in service charge, % per store — surfaced on the public store shape. */
@@ -184,6 +186,7 @@ export function toPublicStore(s: DbStore): Store {
     name: s.name,
     type: s.type,
     address: s.address,
+    phone: s.phone,
     is_active: s.is_active,
     kitchen_mode: s.kitchen_mode,
     service_charge_rate: serviceChargeRates[s.id] ?? '0',

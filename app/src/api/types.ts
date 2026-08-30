@@ -39,6 +39,8 @@ export interface Store {
   name: string
   type: 'retail' | 'restaurant'
   address: string | null
+  /** printed on the receipt so a customer can call the branch */
+  phone: string | null
   is_active: boolean
   /** Branch setting: kitchen work goes to the KDS board or a printed ticket. */
   kitchen_mode: 'kds' | 'printer'

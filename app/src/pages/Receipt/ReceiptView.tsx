@@ -7,7 +7,7 @@ import './receipt.css'
 
 export interface ReceiptData {
   business: { name: string; footer: string }
-  store: { name: string; address: string }
+  store: { name: string; address: string; phone?: string | null }
   order: Order
   credit: { customer_name: string; balance: string } | null
 }
@@ -21,7 +21,8 @@ export function ReceiptView({ data, qrUrl }: { data: ReceiptData; qrUrl?: string
         <Logomark height={34} tone="colour" />
         <div className="receipt-biz">{business.name}</div>
         <div className="receipt-addr">
-          {store.name} · {store.address}
+          {store.address}
+          {store.phone ? ` · ${store.phone}` : ''}
         </div>
       </div>
       <div className="receipt-sep" />

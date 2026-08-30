@@ -16,6 +16,18 @@ import { MoneyPad } from '../../components/MoneyPad'
 import { fmt, fmtQAR } from '../../lib/money'
 import './customers.css'
 
+/** "today 13:12" · "yesterday" · "27 Aug" — a ledger reads better in days. */
+function when(iso: string): string {
+  const at = new Date(iso)
+  const days = Math.floor(
+    (new Date().setHours(0, 0, 0, 0) - new Date(at).setHours(0, 0, 0, 0)) / 86_400_000,
+  )
+  const time = at.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+  if (days === 0) return `today ${time}`
+  if (days === 1) return 'yesterday'
+  return at.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+}
+
 export function CustomersPage() {
   const { activeStore } = useAuth()
   const queryClient = useQueryClient()
@@ -42,23 +54,16 @@ export function CustomersPage() {
 
   return (
     <div className="page cust-page">
-      <div className="page-head">
-        <div>
-          <h2>Customers</h2>
-          <p className="page-sub">Credit ledgers — the statement explains every balance</p>
-        </div>
-        <button type="button" className="btn-primary cust-add" onClick={() => setAdding(true)}>
-          + New customer
-        </button>
-      </div>
-
       <div className="cust-body">
         <div className="cust-list">
-          <input
-            placeholder="Search name or phone…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+          <div className="cust-search">
+            <span aria-hidden="true">⌕</span>
+            <input
+              placeholder="Search name or phone…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
           {customersQuery.data?.data.map((c) => (
             <button
               key={c.id}
@@ -89,80 +94,114 @@ export function CustomersPage() {
           )}
         </div>
 
-        {selected ? (
-          <div className="cust-profile">
-            <div className="cust-profile-head">
-              <span className="cust-avatar">
-                {selected.name
-                  .split(' ')
-                  .map((w) => w[0])
-                  .slice(0, 2)
-                  .join('')
-                  .toUpperCase()}
-              </span>
-              <div>
-                <h3>{selected.name}</h3>
-                <p className="muted small">
-                  {selected.phone ?? 'no phone'} {selected.email ? `· ${selected.email}` : ''}
-                </p>
-              </div>
-            </div>
-
-            <div className="cust-stats">
-              <div className="stat">
-                <span>Credit limit</span>
-                <strong>{limit ? fmt(limit.toFixed(2)) : 'No credit'}</strong>
-              </div>
-              <div className={balance && balance.gt(0) ? 'stat owing' : 'stat'}>
-                <span>Outstanding</span>
-                <strong>{fmt(selected.balance)}</strong>
-              </div>
-              <div className={available ? 'stat available' : 'stat'}>
-                <span>Available</span>
-                <strong>{available ? fmt(available.toFixed(2)) : '—'}</strong>
-              </div>
-            </div>
-
-            <div className="cust-actions">
-              <button
-                type="button"
-                className="btn-primary cust-receive"
-                disabled={!balance || balance.lte(0)}
-                onClick={() => setRepaying(true)}
-              >
-                Receive payment
-              </button>
-              <button type="button" className="cust-limit" onClick={() => setGrantingCredit(true)}>
-                {limit ? 'Change limit · PIN' : 'Give credit · PIN'}
-              </button>
-            </div>
-
-            <div className="card cust-statement">
-              <div className="cust-st-head">
-                <span>Statement</span>
-                <em>Append-only · nothing is edited in place</em>
-              </div>
-              {statementQuery.data?.entries.map((e) => (
-                <div key={e.id} className="cust-st-row">
-                  <span className="muted small">
-                    {new Date(e.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
-                  </span>
-                  <span className={`st-type ${e.entry_type}`}>{e.entry_type.toUpperCase()}</span>
-                  <span className="cust-st-note">{e.note ?? (e.method ? `${e.method} received` : '—')}</span>
-                  <span className={`num ${Number(e.amount) > 0 ? 'owes' : 'ok'}`}>
-                    {Number(e.amount) > 0 ? '+' : ''}{fmt(e.amount)}
-                  </span>
-                  <span className="num strong">{fmt(e.balance)}</span>
+        <div className="cust-profile">
+          <div className="cust-profile-head">
+            {selected ? (
+              <>
+                <span className="cust-avatar">
+                  {selected.name
+                    .split(' ')
+                    .map((w) => w[0])
+                    .slice(0, 2)
+                    .join('')
+                    .toUpperCase()}
+                </span>
+                <div className="cust-profile-id">
+                  <h3>{selected.name}</h3>
+                  <p>
+                    {selected.phone ?? 'no phone'}
+                    {selected.email ? ` · ${selected.email}` : ''}
+                  </p>
                 </div>
-              ))}
-              {statementQuery.data?.entries.length === 0 && (
-                <div className="cust-st-empty">No credit history yet.</div>
-              )}
-            </div>
+              </>
+            ) : (
+              <div className="cust-profile-id">
+                <h3>Customers</h3>
+                <p>Credit ledgers — the statement explains every balance</p>
+              </div>
+            )}
+            <button type="button" className="btn-primary cust-add" onClick={() => setAdding(true)}>
+              + New customer
+            </button>
           </div>
-        ) : (
-          <div className="card cust-empty">Select a customer to see their statement.</div>
-        )}
+
+          {selected ? (
+            <>
+              <div className="cust-stats">
+                <div className="stat">
+                  <span>Credit limit</span>
+                  <strong>{limit ? fmt(limit.toFixed(2)) : '—'}</strong>
+                </div>
+                <div className={balance && balance.gt(0) ? 'stat owing' : 'stat'}>
+                  <span>Outstanding</span>
+                  <strong>{fmt(selected.balance)}</strong>
+                </div>
+                <div className={available ? 'stat available' : 'stat'}>
+                  <span>Available</span>
+                  <strong>{available ? fmt(available.toFixed(2)) : '—'}</strong>
+                </div>
+              </div>
+
+              {!limit && (
+                <div className="cust-nocredit">
+                  <p>
+                    {selected.name} is a CRM record with no credit facility. Most customers never
+                    need one.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn-primary cust-grant"
+                    onClick={() => setGrantingCredit(true)}
+                  >
+                    Grant credit · PIN
+                  </button>
+                </div>
+              )}
+
+              <div className="cust-actions">
+                <button
+                  type="button"
+                  className="btn-primary cust-receive"
+                  disabled={!balance || balance.lte(0)}
+                  onClick={() => setRepaying(true)}
+                >
+                  Receive payment
+                </button>
+                {/* Always the same label — the no-credit panel above is where
+                    granting is offered, and two names for one modal is worse. */}
+                <button type="button" className="cust-limit" onClick={() => setGrantingCredit(true)}>
+                  Change limit · PIN
+                </button>
+              </div>
+
+              <div className="card cust-statement">
+                <div className="cust-st-head">
+                  <span>Statement</span>
+                  <em>Append-only · nothing is edited in place</em>
+                </div>
+                {statementQuery.data?.entries.map((e) => (
+                  <div key={e.id} className="cust-st-row">
+                    <span className={`st-type ${e.entry_type}`}>
+                      {e.entry_type === 'repayment' ? 'PAYMENT' : e.entry_type.toUpperCase()}
+                    </span>
+                    <span className="cust-st-note">
+                      {e.note ?? (e.method ? `${e.method[0].toUpperCase()}${e.method.slice(1)} received` : '—')}
+                      {' · '}
+                      {when(e.created_at)}
+                    </span>
+                    <span className="cust-st-amt">
+                      {Number(e.amount) > 0 ? '+' : ''}
+                      {fmt(e.amount)}
+                    </span>
+                    <span className="cust-st-bal">{fmt(e.balance)}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="cust-empty">Select a customer to see their statement.</div>
+          )}
+        </div>
       </div>
 
       {grantingCredit && selected && (

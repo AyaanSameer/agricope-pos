@@ -1,9 +1,17 @@
-.cust-add { padding: 0 18px; height: 44px; min-height: 44px; }
+/* The one action that is not about the selected customer sits opposite them. */
+.cust-add {
+  margin-left: auto;
+  flex: none;
+  padding: 0 18px;
+  height: var(--ctl-h);
+  min-height: var(--ctl-h);
+  border-radius: var(--radius);
+  font-size: calc(13.5px * var(--fs));
+}
 
 /* Two panes, both flush: the list against the left edge with its own rule,
    the profile filling the rest. Dense drills down instead. */
 .cust-page { padding: 0; gap: 0; }
-.cust-page > .page-head { padding: var(--pad) var(--pad) 0; }
 .cust-body {
   flex: 1;
   min-height: 0;
@@ -21,6 +29,16 @@
   flex-direction: column;
   gap: 8px;
 }
+.cust-search { position: relative; display: flex; align-items: center; flex: none; }
+.cust-search span {
+  position: absolute;
+  left: 14px;
+  color: var(--hint);
+  font-size: calc(13px * var(--fs));
+  pointer-events: none;
+}
+.cust-search input { width: 100%; padding-left: 34px; border-radius: 12px; }
+
 .cust-row {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -34,8 +52,8 @@
 .cust-row:hover { border-color: var(--border-strong); }
 /* Selected is a leaf border on a warm ground — never a fill. */
 .cust-row.selected { border-color: var(--leaf); background: var(--surface-warm); }
-.cust-name { font-weight: 500; font-size: calc(13.5px * var(--fs)); }
-.cust-phone { font-size: calc(11px * var(--fs)); color: var(--ink-3); }
+.cust-name { font-family: var(--font-head); font-weight: 600; font-size: calc(14.5px * var(--fs)); }
+.cust-phone { font-size: calc(12px * var(--fs)); color: var(--ink-3); }
 .cust-row-foot { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
 .cust-credit {
   display: flex;
@@ -77,11 +95,13 @@
   flex-direction: column;
   gap: 14px;
 }
-.cust-profile-head { display: flex; align-items: center; gap: 12px; }
-.cust-profile-head h3 { font-family: var(--font-head); font-size: calc(19px * var(--fs)); font-weight: 600; }
+.cust-profile-head { display: flex; align-items: center; gap: 13px; flex: none; }
+.cust-profile-id { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.cust-profile-id p { margin: 0; font-size: calc(12.5px * var(--fs)); color: var(--ink-3); }
+.cust-profile-head h3 { font-family: var(--font-head); font-size: calc(22px * var(--fs)); font-weight: 600; }
 .cust-avatar {
-  width: 34px;
-  height: 34px;
+  width: 48px;
+  height: 48px;
   flex: none;
   border-radius: 99px;
   background: var(--leaf-plate);
@@ -89,8 +109,27 @@
   display: grid;
   place-items: center;
   font-family: var(--font-head);
-  font-size: calc(12px * var(--fs));
+  font-size: calc(14px * var(--fs));
   font-weight: 700;
+}
+
+/* No facility yet: the panel explains, and offers the one thing that changes it. */
+.cust-nocredit {
+  background: var(--surface-warm);
+  border-radius: 14px;
+  padding: 16px 17px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 13px;
+}
+.cust-nocredit p { margin: 0; font-size: calc(13px * var(--fs)); color: var(--ink-2); line-height: 1.5; }
+.cust-grant {
+  height: var(--ctl-h);
+  min-height: var(--ctl-h);
+  padding: 0 18px;
+  border-radius: var(--radius);
+  font-size: calc(13.5px * var(--fs));
 }
 
 .cust-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
@@ -117,11 +156,11 @@
   font-variant-numeric: tabular-nums;
 }
 /* Money owed and money still available say so in colour. */
-.stat.owing { background: var(--cta-tint); border-color: #f0cdbf; }
-.stat.owing span,
+.stat.owing { background: var(--cta-tint); border-color: var(--cta); }
+.stat.owing span { color: var(--gold-ink); }
 .stat.owing strong { color: var(--cta); }
-.stat.available { background: var(--success-tint); border-color: var(--leaf-plate-2); }
-.stat.available span,
+.stat.available { background: var(--success-tint); border-color: var(--leaf); }
+.stat.available span { color: var(--forest); }
 .stat.available strong { color: var(--forest); }
 
 .cust-actions { display: flex; gap: 10px; }
@@ -160,16 +199,38 @@
 .cust-st-head em { font-style: normal; letter-spacing: 0; text-transform: none; font-size: calc(10.5px * var(--fs)); color: var(--hint); }
 .cust-st-row {
   display: grid;
-  grid-template-columns: 60px 100px 1fr 90px 90px;
-  gap: 10px;
+  grid-template-columns: 88px 1fr auto 96px;
+  gap: 12px;
   align-items: center;
-  padding: 11px 16px;
+  padding: 13px 16px;
   border-bottom: 1px solid var(--beige);
   font-size: calc(13px * var(--fs));
 }
 .cust-st-row:last-of-type { border-bottom: none; }
-.st-type { font-size: calc(10px * var(--fs)); font-weight: 600; border-radius: 99px; padding: 3px 8px; text-align: center; }
-.st-type.charge { background: var(--gold-tint); color: #9a7200; }
+/* The amount is the number being read; the balance trails it in mono. */
+.cust-st-amt {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: calc(13.5px * var(--fs));
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.cust-st-bal {
+  font-family: var(--font-mono);
+  font-size: calc(12px * var(--fs));
+  color: var(--hint);
+  text-align: right;
+}
+.st-type {
+  font-family: var(--font-head);
+  font-size: calc(10px * var(--fs));
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  border-radius: 7px;
+  padding: 4px 8px;
+  text-align: center;
+}
+.st-type.charge { background: var(--gold-tint); color: var(--gold-ink); }
 .st-type.repayment { background: var(--success-tint); color: var(--forest); }
 .st-type.adjustment { background: #e7e2d2; color: var(--ink-3); }
 .cust-st-note { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -199,7 +260,7 @@
 
 .cust-empty {
   flex: 1;
-  min-width: 0;
+  min-height: 0;
   display: grid;
   place-items: center;
   padding: 40px;
