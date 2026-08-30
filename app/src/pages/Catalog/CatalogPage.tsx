@@ -376,6 +376,7 @@ export function CatalogPage() {
             <div key={p.id} className={p.is_active ? 'cat-row' : 'cat-row inactive'}>
               <span className="cat-product">
                 <span className="cat-name">{p.name}</span>
+                {p.is_combo && <span className="cat-combo">Combo</span>}
               </span>
               <span className="cat-placement">
                 {p.category_name ?? '—'}

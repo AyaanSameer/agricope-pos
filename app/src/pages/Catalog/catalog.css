@@ -85,12 +85,6 @@
 /* The product cell carries the Arabic name and its options on a second line. */
 .cat-product {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-.cat-product-top {
-  display: flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
