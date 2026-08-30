@@ -191,3 +191,8 @@
 }
 .users-form-actions button { padding: 0 22px; }
 
+/* Dense: the table scrolls inside its own card. */
+@media (max-width: 1023px) {
+  .users-table { overflow-x: auto; }
+  .users-row { min-width: 760px; }
+}

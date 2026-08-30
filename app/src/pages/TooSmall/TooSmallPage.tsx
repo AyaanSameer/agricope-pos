@@ -11,7 +11,7 @@ export function TooSmallPage({ screen }: { screen: string }) {
     <div className="toosmall">
       <div className="toosmall-card">
         <div className="toosmall-glyph" aria-hidden="true">
-          ⤢
+          ▭
         </div>
         <h2>{screen} needs a bigger screen</h2>
         <p>

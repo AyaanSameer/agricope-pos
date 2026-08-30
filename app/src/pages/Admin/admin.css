@@ -5,13 +5,16 @@
   flex-direction: column;
 }
 
+/* The console header is the one legitimate use of the dark slate — it marks
+   the platform's own ground, above every tenant's green (§4). */
 .admin-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 14px 24px;
-  background: var(--forest-deep);
+  gap: 12px;
+  padding: 0 var(--pad);
+  min-height: 62px;
+  background: #0f172a;
   color: #fff;
 }
 .admin-brand {
@@ -24,18 +27,28 @@
 }
 .admin-tag {
   font-family: var(--font-head);
-  font-size: calc(10.5px * var(--fs));
-  font-weight: 700;
+  font-size: calc(9.5px * var(--fs));
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  background: var(--leaf);
-  color: var(--leaf-ink);
-  border-radius: 99px;
-  padding: 4px 10px;
+  letter-spacing: 0.07em;
+  background: #2a3346;
+  color: var(--leaf-pale);
+  border-radius: 6px;
+  padding: 4px 8px;
 }
 .admin-bar-right { display: flex; align-items: center; gap: 14px; }
-.admin-who { font-size: calc(13px * var(--fs)); color: var(--leaf-pale); }
-.admin-bar-right .btn-secondary { height: 36px; min-height: 36px; padding: 0 14px; }
+.admin-who { font-size: calc(12.5px * var(--fs)); color: #c3cad6; }
+.admin-bar-right .btn-secondary {
+  height: 38px;
+  min-height: 38px;
+  padding: 0 14px;
+  background: transparent;
+  border: 1px solid #2a3346;
+  color: #fff;
+  border-radius: 9px;
+  font-size: calc(12.5px * var(--fs));
+}
+.admin-bar-right .btn-secondary:hover { background: #2a3346; }
 
 .admin-main {
   padding: 26px 32px 40px;
@@ -52,8 +65,8 @@
 /* ---- Platform stat strip ------------------------------------------------ */
 .admin-stats {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(138px, 1fr));
+  gap: 10px;
 }
 .admin-stat {
   background: var(--surface);
@@ -66,9 +79,10 @@
 }
 .admin-stat strong {
   font-family: var(--font-head);
-  font-size: calc(30px * var(--fs));
-  font-weight: 700;
-  color: var(--forest);
+  font-size: calc(21px * var(--fs));
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
   line-height: 1.1;
 }
 /* A tenant that cannot sign in is not a neutral number. */
@@ -78,10 +92,9 @@
 /* ---- Tenant cards ------------------------------------------------------- */
 .admin-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(560px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr));
   align-items: stretch;
-  gap: 20px;
-  align-items: start;
+  gap: 12px;
 }
 
 .admin-biz {
