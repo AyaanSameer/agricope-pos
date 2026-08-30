@@ -11,7 +11,7 @@
 
 .optpick-card {
   background: var(--surface);
-  border-radius: 18px;
+  /* Radius and shadow come from the shared overlay rule in global.css. */
   padding: 22px;
   width: 100%;
   max-width: 380px;

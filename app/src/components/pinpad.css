@@ -1,12 +1,13 @@
-/* Touch targets per the design foundations: keypads 72–76px. */
+/* Keys stand at --key-h (§5), so the pad tracks the device rather than the
+   72/76 the prototype happens to draw; width comes from the card they fill. */
 .pinpad {
   display: grid;
-  grid-template-columns: repeat(3, var(--key));
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--key-gap);
-  justify-content: center;
+  width: 100%;
 }
-.pinpad-md { --key: 72px; --key-gap: 12px; --key-radius: 14px; --key-size: 24px; }
-.pinpad-lg { --key: 76px; --key-gap: 14px; --key-radius: 16px; --key-size: 26px; }
+.pinpad-md { --key-gap: 12px; --key-radius: 14px; --key-size: 24px; }
+.pinpad-lg { --key-gap: 14px; --key-radius: 16px; --key-size: 26px; }
 
 /* Charge: the keypad fills its column and the keys stand at --key-h. */
 .pinpad-fill {
@@ -26,9 +27,9 @@
 .pinpad-fill .pinpad-key-back { font-size: calc(17px * var(--fs)); }
 
 .pinpad-key {
-  width: var(--key);
-  height: var(--key);
-  min-height: var(--key);
+  width: auto;
+  height: var(--key-h);
+  min-height: var(--key-h);
   padding: 0;
   border-radius: var(--key-radius);
   font-family: var(--font-head);

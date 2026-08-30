@@ -362,6 +362,7 @@ button { transition: background 0.12s, border-color 0.13s, color 0.12s; }
 .cpick > *,
 .climit > *,
 .disc-modal > *,
+.optpick > *,
 .pinswitch > *,
 .tab-additems > *,
 .cust-modal > *,
