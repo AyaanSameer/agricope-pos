@@ -21,6 +21,11 @@ export function PickStorePage() {
   // unless the person came here deliberately to move the till to another branch.
   const [searchParams] = useSearchParams()
   const changingBranch = searchParams.get('change') === '1'
+  // A till screen reached without a branch sends the person here with the
+  // screen it wanted; picking and identifying continues to it.
+  const nextParam = searchParams.get('next')
+  const next = nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/'
+  const needsBranch = next !== '/'
   const [stage, setStage] = useState<'store' | 'pin'>(
     activeStore && !changingBranch ? 'pin' : 'store',
   )
@@ -32,7 +37,7 @@ export function PickStorePage() {
 
   const unlock = useMutation({
     mutationFn: (fullPin: string) => identify(fullPin, backOffice ? null : (activeStore?.id ?? null)),
-    onSuccess: () => navigate('/', { replace: true }),
+    onSuccess: () => navigate(next, { replace: true }),
     onError: (err) => {
       setPin('')
       setError(err instanceof ApiError ? err.message : 'That PIN does not match anyone here.')
@@ -119,7 +124,11 @@ export function PickStorePage() {
       <div className="pickstore-head">
         <Logomark size={44} />
         <h1>{businessSession.business.name}</h1>
-        <p>Pick the branch this till serves — your PIN identifies you next.</p>
+        <p>
+          {needsBranch
+            ? 'That screen belongs to a branch — pick the one this till serves.'
+            : 'Pick the branch this till serves — your PIN identifies you next.'}
+        </p>
       </div>
 
       <div className="pickstore-grid">
@@ -137,14 +146,16 @@ export function PickStorePage() {
             <span className="pickstore-addr">{store.address}</span>
           </button>
         ))}
-        <button
-          type="button"
-          className="pickstore-tile all"
-          onClick={() => chooseStore(null, 'All stores')}
-        >
-          <span className="pickstore-name">Back office</span>
-          <span className="pickstore-addr">All branches — catalog, users, reports</span>
-        </button>
+        {!needsBranch && (
+          <button
+            type="button"
+            className="pickstore-tile all"
+            onClick={() => chooseStore(null, 'All stores')}
+          >
+            <span className="pickstore-name">Back office</span>
+            <span className="pickstore-addr">All branches — catalog, users, reports</span>
+          </button>
+        )}
       </div>
 
       <button type="button" className="pickstore-signout" onClick={signOut}>

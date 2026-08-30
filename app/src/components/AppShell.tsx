@@ -1,6 +1,5 @@
 import { Outlet, useLocation, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { listStores } from '../api/org'
 import { getOrder } from '../api/orders'
 import { useAuth } from '../auth/AuthContext'
 import { Topbar } from './Topbar'
@@ -22,7 +21,6 @@ export function AppShell() {
   const { session, activeStore } = useAuth()
   const { pathname } = useLocation()
   const params = useParams()
-  const storesQuery = useQuery({ queryKey: ['stores'], queryFn: listStores, enabled: !!session })
   // The open tab names its table in the topbar, so the page never repeats it.
   // Same query key as TabPage — this reads the cache rather than re-fetching.
   const tabId = pathname.startsWith('/tab/') ? params.id : undefined
@@ -33,7 +31,6 @@ export function AppShell() {
   })
   if (!session) return null
 
-  const store = storesQuery.data?.data.find((s) => s.id === activeStore?.id)
   const till = activeStore?.name ?? 'Back office · all branches'
   const { user } = session
 

@@ -1,4 +1,4 @@
-import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
+import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { useAuth } from './auth/AuthContext'
 import { AppShell } from './components/AppShell'
@@ -50,6 +50,25 @@ function RequireAdmin() {
 }
 
 
+/**
+ * A till screen belongs to one branch. Reached without one — from the back
+ * office, say — it sends the person to the branch picker and comes back here
+ * once they have picked and identified themselves.
+ */
+function RequireBranch({ children }: { children: ReactNode }) {
+  const { activeStore } = useAuth()
+  const { pathname, search } = useLocation()
+  if (!activeStore) {
+    return (
+      <Navigate
+        to={`/pick-store?change=1&next=${encodeURIComponent(pathname + search)}`}
+        replace
+      />
+    )
+  }
+  return children
+}
+
 /** Kitchen and Catalog need a canvas — a phone gets told so instead. */
 function RequireCanvas({ screen, children }: { screen: string; children: ReactNode }) {
   const { phone } = useDevice()
@@ -78,20 +97,22 @@ export default function App() {
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
           <Route path="/" element={<HubPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/charge/:id" element={<ChargePage />} />
+          <Route path="/register" element={<RequireBranch><RegisterPage /></RequireBranch>} />
+          <Route path="/charge/:id" element={<RequireBranch><ChargePage /></RequireBranch>} />
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/receipt/:id" element={<ReceiptPage />} />
           <Route path="/customers" element={<CustomersPage />} />
-          <Route path="/shifts" element={<ShiftsPage />} />
-          <Route path="/floor" element={<FloorPage />} />
-          <Route path="/tab/:id" element={<TabPage />} />
+          <Route path="/shifts" element={<RequireBranch><ShiftsPage /></RequireBranch>} />
+          <Route path="/floor" element={<RequireBranch><FloorPage /></RequireBranch>} />
+          <Route path="/tab/:id" element={<RequireBranch><TabPage /></RequireBranch>} />
           <Route
             path="/kds"
             element={
-              <RequireCanvas screen="Kitchen">
-                <KdsPage />
-              </RequireCanvas>
+              <RequireBranch>
+                <RequireCanvas screen="Kitchen">
+                  <KdsPage />
+                </RequireCanvas>
+              </RequireBranch>
             }
           />
           <Route
