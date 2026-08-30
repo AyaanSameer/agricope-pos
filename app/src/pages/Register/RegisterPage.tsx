@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { api } from '../../api/client'
 import { listCategories, listProducts } from '../../api/catalog'
 import type { Product } from '../../api/catalog'
 import { createOrder } from '../../api/orders'
@@ -9,6 +10,7 @@ import { useAuth } from '../../auth/AuthContext'
 import { useCart } from '../../cart/CartContext'
 import { Logomark } from '../../components/Logomark'
 import { useDevice } from '../../lib/useDevice'
+import { ChipRail } from '../../components/ChipRail'
 import { CustomerPicker } from '../../components/CustomerPicker'
 import { OptionPicker } from '../../components/OptionPicker'
 import { fmt, fmtQAR } from '../../lib/money'
@@ -41,6 +43,21 @@ export function RegisterPage() {
   useEffect(() => {
     cart.setServiceChargeRate(serviceChargeRate)
   }, [serviceChargeRate, cart.setServiceChargeRate]) // eslint-disable-line react-hooks/exhaustive-deps
+  const openOrdersQuery = useQuery({
+    queryKey: ['orders', 'open', activeStore?.id],
+    queryFn: () =>
+      api<{ total: number }>(`/orders?status=open${activeStore ? `&store_id=${activeStore.id}` : ''}`),
+    enabled: !!activeStore,
+  })
+  const floorQuery = useQuery({
+    queryKey: ['floor', activeStore?.id],
+    queryFn: () =>
+      api<{ data: { order: unknown | null }[] }>(`/tables/floor?store_id=${activeStore!.id}`),
+    enabled: !!activeStore && isRestaurant,
+  })
+  const occupied = floorQuery.data?.data.filter((t) => t.order).length ?? 0
+  const openOrders = openOrdersQuery.data?.total ?? 0
+
   const productsQuery = useQuery({
     queryKey: ['products', { search, categoryId, showInactive: false }],
     queryFn: () => listProducts({ search: search || undefined, category_id: categoryId ?? undefined }),
@@ -118,16 +135,6 @@ export function RegisterPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
           </div>
-          <div className="register-jump">
-            {isRestaurant && (
-              <Link to="/floor" className="register-jump-btn">
-                Tables
-              </Link>
-            )}
-            <Link to="/orders" className="register-jump-btn">
-              Orders
-            </Link>
-          </div>
           <div className="register-seg">
             {(['dine_in', 'takeaway', 'delivery'] as const)
               .filter((t) => t !== 'dine_in' || isRestaurant)
@@ -142,9 +149,21 @@ export function RegisterPage() {
                 </button>
               ))}
           </div>
+          <div className="register-jump">
+            {isRestaurant && (
+              <Link to="/floor" className="register-jump-btn">
+                Tables
+                {occupied > 0 && <span className="register-jump-count">{occupied}</span>}
+              </Link>
+            )}
+            <Link to="/orders" className="register-jump-btn">
+              Orders
+              {openOrders > 0 && <span className="register-jump-count">{openOrders}</span>}
+            </Link>
+          </div>
         </div>
 
-        <div className="register-tabs">
+        <ChipRail label="categories">
           <button
             type="button"
             className={categoryId === null ? 'chip active' : 'chip'}
@@ -162,7 +181,7 @@ export function RegisterPage() {
               {c.name}
             </button>
           ))}
-        </div>
+        </ChipRail>
 
         <div className="register-grid">
           {productsQuery.isPending && <div className="register-note">Loading products…</div>}
@@ -203,7 +222,9 @@ export function RegisterPage() {
       <aside className={dense ? (cartOpen ? 'cart cart-sheet open' : 'cart cart-sheet') : 'cart'}>
         <div className="cart-head">
           <h3>Current sale</h3>
-          <span className="cart-store">{activeStore.name}</span>
+          <span className="cart-store">
+            {cart.orderType === 'dine_in' ? 'Dine-in' : cart.orderType === 'takeaway' ? 'Takeaway' : 'Online'}
+          </span>
         </div>
 
         <button type="button" className="cart-customer" onClick={() => setPickingCustomer(true)}>

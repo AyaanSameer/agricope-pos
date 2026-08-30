@@ -39,7 +39,6 @@
 .register-search-wrap {
   flex: 1 1 240px;
   min-width: 190px;
-  max-width: 340px;
   position: relative;
   display: flex;
   align-items: center;
@@ -53,7 +52,6 @@
 }
 .register-search-input { width: 100%; padding-left: 36px; }
 
-.register-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
 
 .register-grid {
   display: grid;
@@ -145,8 +143,9 @@
   font-size: calc(13px * var(--fs));
   white-space: nowrap;
 }
-/* Selected is Fresh Leaf — the forest fill belongs to filters. */
-.seg-btn.active { background: var(--leaf); color: var(--leaf-ink); }
+/* Selected is the forest fill, as the design draws it — the same state the
+   category chips below use, so the two rows read as one control language. */
+.seg-btn.active { background: var(--forest); color: #fff; }
 
 .cart {
   flex: 0 0 var(--cart-w);
@@ -162,19 +161,20 @@
 }
 .cart-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .cart-head h3 { font-size: calc(16px * var(--fs)); font-weight: 600; white-space: nowrap; }
-/* The design puts a tag in this slot; here it names the branch the till serves. */
+/* The tag beside "Current sale" names the order type this sale is being rung
+   under — it changes per sale, which is what earns the slot. */
 .cart-store {
   font-family: var(--font-head);
-  font-size: calc(11px * var(--fs));
+  font-size: calc(10px * var(--fs));
   font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--forest);
   background: var(--success-tint);
   border-radius: 99px;
   padding: 5px 9px;
-  min-width: 0;
+  flex: none;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .cart-customer {
@@ -335,19 +335,30 @@
 .register-jump-btn {
   display: inline-flex;
   align-items: center;
+  gap: 7px;
+  height: var(--ctl-h);
   min-height: var(--ctl-h);
-  padding: 0 16px;
+  padding: 0 14px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface);
-  color: var(--ink-2);
+  color: var(--forest);
   font-weight: 500;
-  font-size: calc(14px * var(--fs));
+  font-size: calc(13px * var(--fs));
   text-decoration: none;
   white-space: nowrap;
 }
+.register-jump-btn:hover { border-color: var(--leaf); }
 .register-jump-btn:active { background: var(--success-tint); }
-
+.register-jump-count {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 10px;
+  background: var(--gold);
+  color: var(--gold-ink);
+  border-radius: 99px;
+  padding: 3px 6px;
+}
 
 /* ---- Dense: bill bar docks, cart rises as a sheet ----------------------- */
 @media (max-width: 1023px) {

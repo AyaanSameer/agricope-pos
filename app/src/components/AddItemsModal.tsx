@@ -6,6 +6,7 @@ import { OptionPicker } from './OptionPicker'
 import { fmt } from '../lib/money'
 import { resolveUnitPrice } from '../lib/pricing'
 import type { Channel } from '../lib/pricing'
+import { ChipRail } from './ChipRail'
 import './additems.css'
 
 /**
@@ -66,14 +67,14 @@ export function AddItemsModal({
           <input placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
           <button type="button" className="btn-secondary" onClick={onClose}>✕</button>
         </div>
-        <div className="register-tabs">
+        <ChipRail label="categories">
           <button type="button" className={categoryId === null ? 'chip active' : 'chip'} onClick={() => setCategoryId(null)}>All</button>
           {categoriesQuery.data?.data.map((c) => (
             <button key={c.id} type="button" className={categoryId === c.id ? 'chip active' : 'chip'} onClick={() => setCategoryId(c.id)}>
               {c.name}
             </button>
           ))}
-        </div>
+        </ChipRail>
         <div className="tab-additems-grid">
           {productsQuery.data?.data.map((p) => {
             const qty = [...picked.values()]

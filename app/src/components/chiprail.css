@@ -1,0 +1,30 @@
+/* One scrolling row of chips, driven by its own arrows. The native bar is
+   hidden because the buttons are the affordance now; wheel, trackpad, touch
+   and keyboard still scroll the track. */
+.chiprail { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.chiprail-arrow {
+  width: calc(var(--ctl-h) - 6px);
+  height: calc(var(--ctl-h) - 6px);
+  min-height: 0;
+  flex: none;
+  padding: 0;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--forest);
+  font-size: calc(17px * var(--fs));
+  line-height: 1;
+  display: grid;
+  place-items: center;
+}
+.chiprail-arrow:hover:not(:disabled) { border-color: var(--leaf); }
+.chiprail-arrow:active:not(:disabled) { background: var(--success-tint); }
+.chiprail-arrow:disabled { opacity: 0.55; cursor: default; }
+.chiprail-track {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.chiprail-track::-webkit-scrollbar { display: none; }
+.chiprail-inner { display: inline-flex; gap: 8px; padding: 1px 1px 2px; }
