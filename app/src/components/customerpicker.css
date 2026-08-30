@@ -11,23 +11,122 @@
 .cpick-card {
   width: 100%;
   max-width: 420px;
-  padding: 22px;
+  max-height: 88%;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  max-height: 80vh;
+  gap: 13px;
 }
-.cpick-list { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-.cpick-row {
-  background: var(--surface-warm);
+
+.cpick-head { display: flex; align-items: center; gap: 10px; }
+.cpick-head h3 {
+  margin-right: auto;
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: calc(17px * var(--fs));
+  color: var(--ink);
+}
+/* Adding a customer belongs to the moment you find they are not on the list. */
+.cpick-new {
+  height: auto;
+  min-height: 0;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--forest);
+  font-size: calc(12.5px * var(--fs));
+  font-weight: 500;
+}
+.cpick-new:hover { text-decoration: underline; }
+.cpick-back {
+  order: -1;
+  width: 30px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0;
   border: 1px solid var(--border);
-  text-align: left;
-  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: calc(15px * var(--fs));
+}
+.cpick-back:hover { border-color: var(--border-strong); }
+
+.cpick-search { position: relative; display: flex; align-items: center; flex: none; }
+.cpick-search span {
+  position: absolute;
+  left: 14px;
+  color: var(--hint);
+  font-size: calc(13px * var(--fs));
+  pointer-events: none;
+}
+.cpick-search input {
+  width: 100%;
+  height: calc(var(--ctl-h) + 2px);
+  min-height: calc(var(--ctl-h) + 2px);
+  padding-left: 34px;
+  background: var(--surface-warm);
+  font-size: calc(13px * var(--fs));
+}
+
+.cpick-list {
+  overflow-y: auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 7px;
 }
-.cpick-name { font-weight: 500; }
-.cpick-meta { font-size: calc(12px * var(--fs)); color: var(--ink-3); }
-.cpick-empty { color: var(--ink-3); padding: 10px; }
-.cpick-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.cpick-row {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  text-align: left;
+  padding: 12px 14px;
+  height: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.cpick-row:hover { border-color: var(--leaf); }
+.cpick-name { font-size: calc(13.5px * var(--fs)); font-weight: 500; color: var(--ink); }
+.cpick-meta { font-size: calc(11.5px * var(--fs)); color: var(--ink-3); }
+
+/* Nobody matched — which is the moment the answer is to create one. */
+.cpick-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 2px;
+}
+.cpick-empty p { margin: 0; color: var(--ink-3); font-size: calc(12.5px * var(--fs)); }
+.cpick-empty-new {
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--forest);
+  font-weight: 500;
+  font-size: calc(12.5px * var(--fs));
+}
+.cpick-empty-new:hover { text-decoration: underline; }
+
+.cpick-none {
+  flex-shrink: 0;
+  height: 50px;
+  min-height: 50px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-weight: 500;
+  font-size: calc(14px * var(--fs));
+}
+.cpick-none:hover { border-color: var(--border-strong); }
+
+.cpick-note { margin: 0; font-size: calc(11.5px * var(--fs)); color: var(--ink-3); line-height: 1.5; }
+.cpick-error { color: var(--cta); font-size: calc(12.5px * var(--fs)); }
+.cpick-form-actions { display: flex; justify-content: flex-end; gap: 10px; }
