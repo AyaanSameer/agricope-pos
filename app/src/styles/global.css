@@ -217,14 +217,15 @@ input:focus, select:focus, button:focus-visible {
 }
 .chip.dashed { border-style: dashed; color: var(--ink-3); }
 
-/* Fresh Leaf reads as "on" everywhere. */
+/* Switches read as on in the deep green, off on the emphasis border. The
+   knob carries a shadow so it sits above the track rather than in it. */
 .toggle {
   width: 42px;
   min-width: 42px;
   height: 24px;
   min-height: 24px;
   border-radius: 99px;
-  background: var(--border);
+  background: var(--border-strong);
   position: relative;
   padding: 0;
   transition: background 0.15s;
@@ -237,10 +238,12 @@ input:focus, select:focus, button:focus-visible {
   height: 20px;
   border-radius: 50%;
   background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
   transition: left 0.15s;
 }
-.toggle.on { background: var(--leaf); }
+.toggle.on { background: var(--forest); }
 .toggle.on .knob { left: 20px; }
+.toggle:disabled { opacity: 0.55; cursor: default; }
 
 /* ---- Small shared text utilities --------------------------------------
    These lived in orders.css and were borrowed by eight other files, which

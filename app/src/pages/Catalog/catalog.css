@@ -1,5 +1,6 @@
 /* ---- Toolbar ----------------------------------------------------------- */
-.cat-add { padding: 0 18px; height: 44px; min-height: 44px; }
+.cat-top { display: flex; }
+.cat-add { padding: 0 20px; height: var(--ctl-h); min-height: var(--ctl-h); }
 
 .cat-toolbar {
   display: flex;
@@ -7,17 +8,20 @@
   gap: 10px;
   flex-wrap: wrap;
 }
+.cat-search-wrap { flex: 1; min-width: 200px; position: relative; display: flex; align-items: center; }
+.cat-search-glyph {
+  position: absolute;
+  left: 14px;
+  color: var(--hint);
+  font-size: calc(14px * var(--fs));
+  pointer-events: none;
+}
 .cat-search {
-  width: 280px;
+  width: 100%;
   height: var(--ctl-h);
   min-height: var(--ctl-h);
-  flex: none;
-}
-.cat-chips {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
+  padding-left: 36px;
+  border-radius: 12px;
 }
 .cat-newcat { display: flex; gap: 6px; align-items: center; }
 .cat-newcat input {
@@ -27,13 +31,19 @@
 }
 
 .cat-inactive {
-  margin-left: auto;
+  flex: none;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  padding: 0 16px;
+  height: var(--ctl-h);
+  min-height: var(--ctl-h);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 12px;
   color: var(--ink-2);
   font-size: calc(12.5px * var(--fs));
-  min-height: calc(var(--ctl-h) - 6px);
+  cursor: pointer;
 }
 .cat-inactive input {
   width: 18px;
@@ -53,7 +63,7 @@
 
 .cat-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 210px 120px 150px 110px 100px;
+  grid-template-columns: minmax(0, 1fr) 190px 200px 92px 92px 66px 76px;
   align-items: center;
   gap: 12px;
   padding: 12px 18px;
@@ -61,7 +71,6 @@
 }
 .cat-row:first-child { border-top: none; }
 .cat-row.inactive { opacity: 0.55; }
-.cat-row .num { text-align: right; justify-self: end; }
 
 .cat-head-row {
   background: var(--surface-warm);
@@ -157,19 +166,21 @@
 .cat-offer.live { background: var(--gold-tint); color: #8a5a00; }
 .cat-dash { color: var(--hint); }
 
-/* Store / online read as one pair, not two columns. */
-.cat-prices {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+/* Each till gets a column, showing what it actually charges. */
 .cat-price-store {
   font-family: var(--font-head);
   font-weight: 600;
+  font-size: calc(14px * var(--fs));
   color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
-.cat-price-sep { color: var(--hint); font-size: calc(12px * var(--fs)); }
-.cat-price-online { color: var(--ink-3); font-size: calc(13px * var(--fs)); }
+.cat-price-online {
+  font-family: var(--font-head);
+  font-weight: 500;
+  font-size: calc(13.5px * var(--fs));
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
 
 .cat-edit {
   width: 64px;
@@ -551,7 +562,7 @@
   text-decoration: underline;
 }
 
-.cat-offers { display: flex; flex-direction: column; gap: 3px; align-items: flex-start; }
+.cat-offers { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 
 /* ---- Dense: the editor is a full-height panel, one column (§5). ---- */
 @media (max-width: 1023px) {

@@ -14,6 +14,7 @@ import type { OptionGroup, Product, ProductInput } from '../../api/catalog'
 import { ApiError } from '../../api/client'
 import { fmt } from '../../lib/money'
 import { offerActive, resolveUnitPrice } from '../../lib/pricing'
+import { ChipRail } from '../../components/ChipRail'
 import './catalog.css'
 
 /** A choice is a chip: a name and, optionally, what it adds to the price. */
@@ -165,23 +166,6 @@ function draftToInput(d: Draft): ProductInput {
   }
 }
 
-/** "12 days left" for the header badge — null when the offer is open-ended. */
-function daysLeft(endsAt: string): number | null {
-  if (!endsAt) return null
-  const ms = new Date(`${endsAt}T23:59:59`).getTime() - Date.now()
-  return ms <= 0 ? 0 : Math.ceil(ms / 86_400_000)
-}
-
-/** The second line of the product cell: Arabic name, then what the cashier is asked. */
-function productSubtitle(p: Product): string {
-  const bits: string[] = []
-  if (p.name_ar) bits.push(p.name_ar)
-  for (const g of p.option_groups) {
-    const names = g.choices.map((c) => c.name)
-    bits.push(names.length <= 3 ? `${g.name}: ${names.join(' / ')}` : `${g.name}: ${names.length} options`)
-  }
-  return bits.join('   ·   ')
-}
 
 export function CatalogPage() {
   const queryClient = useQueryClient()
@@ -297,17 +281,10 @@ export function CatalogPage() {
     : null
   const preview = draft && draft.price ? resolveUnitPrice(draftPriced!, 'store') : null
   const previewOnline = draft && draft.price ? resolveUnitPrice(draftPriced!, 'online') : null
-  const draftDays = draft?.offer_enabled ? daysLeft(draft.offer_ends) : null
 
   return (
     <div className="page page-wide">
-      <div className="page-head">
-        <div>
-          <h2>Catalog</h2>
-          <p className="page-sub">
-            {products.length} products · prices include tax · changes never touch old receipts
-          </p>
-        </div>
+      <div className="cat-top">
         <button
           type="button"
           className="btn-primary cat-add"
@@ -321,13 +298,26 @@ export function CatalogPage() {
       </div>
 
       <div className="cat-toolbar">
-        <input
-          className="cat-search"
-          placeholder="Search products…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <div className="cat-chips">
+        <div className="cat-search-wrap">
+          <span className="cat-search-glyph" aria-hidden="true">⌕</span>
+          <input
+            className="cat-search"
+            placeholder="Search products…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <label className="cat-inactive">
+          <input
+            type="checkbox"
+            checked={showInactive}
+            onChange={(e) => setShowInactive(e.target.checked)}
+          />
+          Show inactive
+        </label>
+      </div>
+
+      <ChipRail label="categories">
           <button
             type="button"
             className={categoryId === null ? 'chip active' : 'chip'}
@@ -367,16 +357,7 @@ export function CatalogPage() {
               + New category
             </button>
           )}
-        </div>
-        <label className="cat-inactive">
-          <input
-            type="checkbox"
-            checked={showInactive}
-            onChange={(e) => setShowInactive(e.target.checked)}
-          />
-          Show inactive
-        </label>
-      </div>
+      </ChipRail>
 
       {/* Six columns. Barcode and station live in the editor, where they are set. */}
       <div className="cat-table">
@@ -384,25 +365,17 @@ export function CatalogPage() {
           <span>Product</span>
           <span>Placement</span>
           <span>Offer</span>
-          <span className="num">Store / online</span>
+          <span>Store</span>
+          <span>Online</span>
           <span>Active</span>
           <span />
         </div>
         {productsQuery.isPending && <div className="cat-loading">Loading…</div>}
         {products.map((p) => {
-          const subtitle = productSubtitle(p)
           return (
             <div key={p.id} className={p.is_active ? 'cat-row' : 'cat-row inactive'}>
               <span className="cat-product">
-                <span className="cat-product-top">
-                  <span className="cat-name">{p.name}</span>
-                  {p.is_combo && <span className="cat-combo">Combo</span>}
-                </span>
-                {subtitle && (
-                  <span className="cat-product-sub" dir="auto">
-                    {subtitle}
-                  </span>
-                )}
+                <span className="cat-name">{p.name}</span>
               </span>
               <span className="cat-placement">
                 {p.category_name ?? '—'}
@@ -429,13 +402,8 @@ export function CatalogPage() {
                   </span>
                 )}
               </span>
-              <span className="num cat-prices">
-                <span className="cat-price-store">{fmt(p.price)}</span>
-                <span className="cat-price-sep">/</span>
-                <span className="cat-price-online">
-                  {p.price_online ? fmt(p.price_online) : fmt(p.price)}
-                </span>
-              </span>
+              <span className="cat-price-store">{fmt(resolveUnitPrice(p, 'store').price)}</span>
+              <span className="cat-price-online">{fmt(resolveUnitPrice(p, 'online').price)}</span>
               <span>
                 <button
                   type="button"
@@ -469,10 +437,7 @@ export function CatalogPage() {
                   <h3>{draft.name || (draft.id ? 'Edit product' : 'New product')}</h3>
                   {draft.is_combo && <span className="badge badge-combo">Combo</span>}
                   {draft.offer_enabled && (
-                    <span className="badge badge-offer">
-                      Offer live
-                      {draftDays !== null && ` · ${draftDays} ${draftDays === 1 ? 'day' : 'days'} left`}
-                    </span>
+                    <span className="badge badge-offer">Offer live</span>
                   )}
                 </div>
                 <p className="editor-sub">
