@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import Big from 'big.js'
 import type { Product } from '../api/catalog'
@@ -48,6 +48,8 @@ interface CartValue {
   remove: (key: string) => void
   clear: () => void
   setOrderType: (t: CartOrderType) => void
+  /** the tab this branch opens on — a restaurant sells dine-in first */
+  setDefaultOrderType: (t: CartOrderType) => void
   setCustomer: (id: string | null, name: string | null) => void
   /** dine-in service charge %, from the active store — keeps the preview honest */
   setServiceChargeRate: (rate: string) => void
@@ -78,6 +80,9 @@ function lineFor(p: Product, selections: CartSelection[]): CartLine {
 export function CartProvider({ children }: { children: ReactNode }) {
   const [lines, setLines] = useState<CartLine[]>([])
   const [orderType, setOrderType] = useState<CartOrderType>('takeaway')
+  // A restaurant register opens on Dine-in; a shop has no such tab, so it
+  // stays on Takeaway. The register tells the cart which branch it is on.
+  const defaultOrderType = useRef<CartOrderType>('takeaway')
   const [customerId, setCustomerId] = useState<string | null>(null)
   const [customerName, setCustomerName] = useState<string | null>(null)
   const [serviceChargeRate, setServiceChargeRate] = useState('0')
@@ -126,8 +131,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setLines([])
     setCustomerId(null)
     setCustomerName(null)
-    setOrderType('takeaway')
+    setOrderType(defaultOrderType.current)
   }, [])
+
+  /**
+   * Only moves the live tab while nothing is rung up: once a sale has started
+   * the order type is the cashier's, not the branch's, and a late-arriving
+   * branch query must not pull it out from under them.
+   */
+  const setDefaultOrderType = useCallback(
+    (t: CartOrderType) => {
+      if (defaultOrderType.current === t) return
+      defaultOrderType.current = t
+      if (lines.length === 0) setOrderType(t)
+    },
+    [lines.length],
+  )
 
   const setCustomer = useCallback((id: string | null, name: string | null) => {
     setCustomerId(id)
@@ -164,6 +183,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         remove,
         clear,
         setOrderType,
+        setDefaultOrderType,
         setCustomer,
         setServiceChargeRate,
         unitPrice,

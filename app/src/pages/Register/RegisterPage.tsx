@@ -43,6 +43,13 @@ export function RegisterPage() {
   useEffect(() => {
     cart.setServiceChargeRate(serviceChargeRate)
   }, [serviceChargeRate, cart.setServiceChargeRate]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // A restaurant sells dine-in first, so that is the tab the register opens
+  // on; a shop has no dine-in tab and stays on Takeaway.
+  useEffect(() => {
+    if (!storesQuery.data) return
+    cart.setDefaultOrderType(isRestaurant ? 'dine_in' : 'takeaway')
+  }, [storesQuery.data, isRestaurant, cart.setDefaultOrderType]) // eslint-disable-line react-hooks/exhaustive-deps
   const openOrdersQuery = useQuery({
     queryKey: ['orders', 'open', activeStore?.id],
     queryFn: () =>
