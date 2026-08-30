@@ -6,6 +6,7 @@ import type { StaffInput, StaffMember } from '../../api/staff'
 import { listStores } from '../../api/org'
 import { ApiError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
+import { shortBranch } from '../../lib/branch'
 import './staff.css'
 
 /**
@@ -142,7 +143,7 @@ export function StaffPage() {
               <div className="staff-id">
                 <div className="staff-name">{s.name}</div>
                 <div className="staff-role">
-                  {s.role_title} · {s.store_name ?? 'All branches'}
+                  {s.role_title} · {shortBranch(s.store_name) || 'All branches'}
                 </div>
               </div>
               <span

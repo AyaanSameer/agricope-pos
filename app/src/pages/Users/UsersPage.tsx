@@ -6,6 +6,7 @@ import type { UserInput } from '../../api/org'
 import type { Role, UserRecord } from '../../api/types'
 import { ApiError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
+import { shortBranch } from '../../lib/branch'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import './users.css'
 
@@ -109,7 +110,7 @@ export function UsersPage() {
             <span>
               <span className={`users-role ${u.role}`}>{u.role}</span>
             </span>
-            <span className="users-branch">{u.store_name ?? 'All branches'}</span>
+            <span className="users-branch">{shortBranch(u.store_name) || 'All branches'}</span>
             <span className="users-pin">{u.has_pin ? '••••' : '—'}</span>
             <span className="users-actions">
               <button type="button" className="users-btn" onClick={() => edit(u)}>
