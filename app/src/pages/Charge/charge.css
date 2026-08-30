@@ -99,7 +99,7 @@
 }
 .charge-dashed-plain { background: transparent; }
 .charge-dashed:hover:not(:disabled) { border-color: var(--leaf); }
-.charge-dashed:disabled { opacity: 0.55; border-color: var(--border); color: var(--hint); cursor: default; }
+.charge-dashed:disabled { opacity: 0.55; cursor: default; }
 
 .charge-taken {
   background: var(--success-tint);
@@ -245,7 +245,7 @@
   border-radius: 99px;
   background: var(--success-tint);
   color: var(--forest);
-  font-size: 27px;
+  font-size: calc(27px * var(--fs));
   display: grid;
   place-items: center;
 }

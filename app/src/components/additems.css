@@ -18,7 +18,7 @@
   background: var(--forest);
   color: #fff;
   border-radius: 99px;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   font-weight: 700;
   padding: 2px 8px;
 }

@@ -1,5 +1,5 @@
 .rp-loading { color: var(--ink-3); padding: 24px; }
-.rp-empty { color: var(--ink-3); font-size: 13px; margin: 0; }
+.rp-empty { color: var(--ink-3); font-size: calc(13px * var(--fs)); margin: 0; }
 
 /* Reporting period — a segmented control, not three loose buttons. */
 .rp-range {
@@ -18,7 +18,7 @@
   border-radius: 8px;
   background: transparent;
   color: var(--ink-2);
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   font-weight: 500;
 }
 .rp-range-opt.active {
@@ -66,7 +66,7 @@
   gap: 7px;
   flex-wrap: wrap;
 }
-.rp-kpi-move em { font-style: normal; font-size: 10.5px; color: var(--hint); }
+.rp-kpi-move em { font-style: normal; font-size: calc(10.5px * var(--fs)); color: var(--hint); }
 
 /* Direction, not judgement: up is green, down is orange, on every KPI. */
 .rp-pill {
@@ -75,7 +75,7 @@
   padding: 2px 7px;
   border-radius: 6px;
   font-family: var(--font-head);
-  font-size: 10.5px;
+  font-size: calc(10.5px * var(--fs));
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -122,7 +122,7 @@
   background: var(--gold-tint);
   color: var(--gold-ink);
   font-family: var(--font-head);
-  font-size: 9.5px;
+  font-size: calc(9.5px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -130,7 +130,7 @@
 }
 .rp-out {
   text-align: right;
-  font-size: 10.5px;
+  font-size: calc(10.5px * var(--fs));
   color: var(--ink-3);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -163,18 +163,18 @@
 }
 /* Deep Forest marks the busiest hour. */
 .rp-bar.peak { background: var(--forest); }
-.rp-bar-label { font-size: 9px; color: var(--hint); }
+.rp-bar-label { font-size: calc(9px * var(--fs)); color: var(--hint); }
 .rp-bars .rp-empty { margin: auto; }
 
 /* ---- Payment mix -------------------------------------------------------- */
 .rp-mix { display: flex; flex-direction: column; gap: 12px; }
 .rp-mix-row { display: flex; flex-direction: column; gap: 6px; }
 .rp-mix-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-.rp-mix-name { font-size: 12.5px; color: var(--ink-2); }
+.rp-mix-name { font-size: calc(12.5px * var(--fs)); color: var(--ink-2); }
 .rp-mix-amount {
   font-family: var(--font-head);
   font-weight: 600;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   font-variant-numeric: tabular-nums;
 }
 .rp-track {
@@ -196,20 +196,20 @@
   border-top: 1px solid var(--border);
 }
 .rp-item:first-child { border-top: none; padding-top: 0; }
-.rp-rank { width: 12px; flex: none; font-size: 10.5px; color: var(--hint); }
+.rp-rank { width: 12px; flex: none; font-size: calc(10.5px * var(--fs)); color: var(--hint); }
 .rp-item-name {
   flex: 1;
   min-width: 0;
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--fs));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.rp-item-qty { font-size: 10.5px; color: var(--hint); font-variant-numeric: tabular-nums; }
+.rp-item-qty { font-size: calc(10.5px * var(--fs)); color: var(--hint); font-variant-numeric: tabular-nums; }
 .rp-item-revenue {
   font-family: var(--font-head);
   font-weight: 600;
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--fs));
   font-variant-numeric: tabular-nums;
 }
 
@@ -222,12 +222,12 @@
   gap: 10px;
   padding: 10px 12px;
   border-radius: 8px;
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--fs));
 }
 .rp-bucket strong {
   font-family: var(--font-head);
   font-weight: 600;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   font-variant-numeric: tabular-nums;
 }
 /* Only the genuinely overdue buckets take colour. */
@@ -236,7 +236,7 @@
 .rp-bucket.over { background: var(--cta-tint); color: var(--cta); }
 
 .rp-subhead {
-  font-size: 9.5px;
+  font-size: calc(9.5px * var(--fs));
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -254,16 +254,16 @@
 .rp-owing-name {
   flex: 1;
   min-width: 0;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.rp-owing-days { font-size: 10px; color: var(--hint); white-space: nowrap; }
+.rp-owing-days { font-size: calc(10px * var(--fs)); color: var(--hint); white-space: nowrap; }
 .rp-owing-amount {
   font-family: var(--font-head);
   font-weight: 600;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   font-variant-numeric: tabular-nums;
 }
 .rp-owing-amount.late { color: var(--cta); }
@@ -278,18 +278,18 @@
   border-radius: 8px;
   padding: 10px 12px;
 }
-.rp-split-label { flex: 1; min-width: 0; font-size: 12px; color: var(--ink-2); }
+.rp-split-label { flex: 1; min-width: 0; font-size: calc(12px * var(--fs)); color: var(--ink-2); }
 .rp-split-amount {
   font-family: var(--font-head);
   font-weight: 600;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   font-variant-numeric: tabular-nums;
 }
-.rp-split-pct { font-size: 10.5px; color: var(--hint); width: 30px; text-align: right; }
+.rp-split-pct { font-size: calc(10.5px * var(--fs)); color: var(--hint); width: 30px; text-align: right; }
 
 .rp-note {
   margin: 0;
-  font-size: 11.5px;
+  font-size: calc(11.5px * var(--fs));
   color: var(--hint);
   line-height: 1.45;
 }

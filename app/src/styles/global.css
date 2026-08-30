@@ -52,8 +52,6 @@
 
   --font-mono: 'Roboto Mono', ui-monospace, SFMono-Regular, monospace;
 
-  /* Touch-first: no interactive control below this height */
-  --touch: 48px;
   --radius: 10px;
   --radius-lg: 16px;
   --radius-modal: 20px;
@@ -145,7 +143,7 @@ body {
   font-family: var(--font-body);
   background: var(--beige);
   color: var(--ink);
-  font-size: 14px;
+  font-size: calc(14px * var(--fs));
   -webkit-font-smoothing: antialiased;
 }
 
@@ -153,8 +151,9 @@ h1, h2, h3, h4 { font-family: var(--font-head); margin: 0; }
 
 button {
   font-family: var(--font-body);
-  font-size: 14px;
-  min-height: var(--touch);
+  font-size: calc(14px * var(--fs));
+  /* The device's control height, not a fixed 48 — 44/52/48/52/50 per §2. */
+  min-height: var(--ctl-h);
   border: none;
   border-radius: var(--radius);
   cursor: pointer;
@@ -163,8 +162,8 @@ button {
 
 input, select {
   font-family: var(--font-body);
-  font-size: 15px;
-  min-height: var(--touch);
+  font-size: calc(15px * var(--fs));
+  min-height: var(--ctl-h);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 0 14px;
@@ -199,15 +198,16 @@ input:focus, select:focus, button:focus-visible {
 
 /* Filter / selection pills — 34px per the design's touch scale. */
 .chip {
-  min-height: 34px;
-  height: 34px;
+  /* Chips sit 6px inside the control height: 38 / 46 / 42 / 46 / 44. */
+  min-height: calc(var(--ctl-h) - 6px);
+  height: calc(var(--ctl-h) - 6px);
   padding: 0 14px;
   border-radius: 99px;
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--ink-2);
   font-weight: 500;
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--fs));
   white-space: nowrap;
 }
 .chip.active {
@@ -250,7 +250,7 @@ input:focus, select:focus, button:focus-visible {
   padding: 0 10px;
   border-radius: 99px;
   font-family: var(--font-head);
-  font-size: 10px;
+  font-size: calc(10px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.3px;
   text-transform: uppercase;
@@ -308,6 +308,11 @@ input:focus, select:focus, button:focus-visible {
 .rp-range-opt { transition: transform 0.13s, border-color 0.13s, background 0.12s, color 0.12s; }
 
 button { transition: background 0.12s, border-color 0.13s, color 0.12s; }
+
+/* Print is physical: an 80mm receipt is 80mm whatever device sent it. */
+@media print {
+  :root { --fs: 1; }
+}
 
 /* Motion is decoration here; the layout never depends on it. */
 @media (prefers-reduced-motion: reduce) {

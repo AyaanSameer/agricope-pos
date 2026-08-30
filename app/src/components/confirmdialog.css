@@ -17,8 +17,8 @@
   gap: 10px;
   padding: 22px;
 }
-.confirm-card h3 { font-family: var(--font-head); font-size: 17px; }
-.confirm-card p { margin: 0; font-size: 13.5px; color: var(--ink-2); line-height: 1.5; }
+.confirm-card h3 { font-family: var(--font-head); font-size: calc(17px * var(--fs)); }
+.confirm-card p { margin: 0; font-size: calc(13.5px * var(--fs)); color: var(--ink-2); line-height: 1.5; }
 
 .confirm-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
 /* Out-specifies .btn-primary — a destructive action is never forest green. */

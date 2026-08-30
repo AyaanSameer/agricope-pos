@@ -1,6 +1,6 @@
 .floor-empty { padding: 32px; color: var(--ink-3); }
 .floor-zones { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.floor-legend { margin-left: auto; display: flex; gap: 14px; font-size: 12px; color: var(--ink-3); }
+.floor-legend { margin-left: auto; display: flex; gap: 14px; font-size: calc(12px * var(--fs)); color: var(--ink-3); }
 .floor-legend span { display: flex; align-items: center; gap: 6px; }
 .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 .dot.free { background: var(--border); }
@@ -67,11 +67,11 @@
 .floor-guests { display: flex; align-items: center; justify-content: center; gap: 18px; }
 .floor-guests button {
   width: 52px; min-height: 52px;
-  font-size: 22px;
+  font-size: calc(22px * var(--fs));
   background: var(--surface-warm);
   border: 1px solid var(--border);
 }
-.floor-guests span { font-family: var(--font-head); font-size: 26px; font-weight: 700; min-width: 40px; }
+.floor-guests span { font-family: var(--font-head); font-size: calc(26px * var(--fs)); font-weight: 700; min-width: 40px; }
 
 /* ---- Phase 13: owner's table management ---- */
 .floor-manage {
@@ -84,7 +84,7 @@
   overflow-y: auto;
 }
 .floor-manage-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.floor-manage-head h3 { display: flex; align-items: center; gap: 10px; font-size: 20px; }
+.floor-manage-head h3 { display: flex; align-items: center; gap: 10px; font-size: calc(20px * var(--fs)); }
 /* Only the owner may delete a table. */
 .floor-manage-owner {
   display: inline-flex;
@@ -95,23 +95,23 @@
   background: var(--gold-tint);
   color: #8a5a00;
   font-family: var(--font-head);
-  font-size: 10px;
+  font-size: calc(10px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.4px;
   text-transform: uppercase;
 }
 .floor-manage-close {
-  width: 30px;
-  height: 30px;
-  min-height: 30px;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
   padding: 0;
   border-radius: 8px;
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--ink-2);
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
 }
-.floor-manage-sub { margin: 0; font-size: 12.5px; color: var(--ink-3); }
+.floor-manage-sub { margin: 0; font-size: calc(12.5px * var(--fs)); color: var(--ink-3); }
 
 .floor-manage-list { display: flex; flex-direction: column; gap: 8px; }
 .floor-manage-row,
@@ -124,7 +124,7 @@
 .floor-manage-add { grid-template-columns: 1fr 1.2fr 70px 164px; }
 .floor-manage-head-row {
   font-family: var(--font-head);
-  font-size: 10.5px;
+  font-size: calc(10.5px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.63px;
   text-transform: uppercase;
@@ -140,7 +140,7 @@
   border: 1px solid var(--border);
   background: var(--surface);
   font: inherit;
-  font-size: 13.5px;
+  font-size: calc(13.5px * var(--fs));
 }
 .floor-manage-seats { text-align: center; }
 
@@ -154,7 +154,7 @@
   background: var(--surface-warm);
   color: var(--ink-3);
   font-family: var(--font-head);
-  font-size: 9.5px;
+  font-size: calc(9.5px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.4px;
   text-transform: uppercase;
@@ -163,15 +163,15 @@
 .floor-manage-state.busy { background: var(--success-tint); color: var(--forest); }
 
 .floor-manage-del {
-  height: 32px;
-  min-height: 32px;
+  height: calc(var(--ctl-h) - 8px);
+  min-height: calc(var(--ctl-h) - 8px);
   padding: 0 12px;
   border-radius: 8px;
   background: var(--surface);
   border: 1px solid #f0cdbf;
   color: var(--cta);
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--fs));
   font-weight: 500;
 }
-.floor-manage-del:disabled { opacity: 0.4; border-color: var(--border); color: var(--hint); }
+.floor-manage-del:disabled { opacity: 0.55; cursor: default; }
 .floor-manage-add button { height: 44px; min-height: 44px; }

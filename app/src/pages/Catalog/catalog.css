@@ -9,8 +9,8 @@
 }
 .cat-search {
   width: 280px;
-  height: 42px;
-  min-height: 42px;
+  height: var(--ctl-h);
+  min-height: var(--ctl-h);
   flex: none;
 }
 .cat-chips {
@@ -20,7 +20,11 @@
   align-items: center;
 }
 .cat-newcat { display: flex; gap: 6px; align-items: center; }
-.cat-newcat input { min-height: 34px; height: 34px; width: 150px; }
+.cat-newcat input {
+  min-height: calc(var(--ctl-h) - 6px);
+  height: calc(var(--ctl-h) - 6px);
+  width: 150px;
+}
 
 .cat-inactive {
   margin-left: auto;
@@ -28,8 +32,8 @@
   align-items: center;
   gap: 8px;
   color: var(--ink-2);
-  font-size: 12.5px;
-  min-height: 34px;
+  font-size: calc(12.5px * var(--fs));
+  min-height: calc(var(--ctl-h) - 6px);
 }
 .cat-inactive input {
   width: 18px;
@@ -62,7 +66,7 @@
 .cat-head-row {
   background: var(--surface-warm);
   font-family: var(--font-head);
-  font-size: 10.5px;
+  font-size: calc(10.5px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.63px;
   text-transform: uppercase;
@@ -99,7 +103,7 @@
   background: var(--success-tint);
   color: var(--forest);
   font-family: var(--font-head);
-  font-size: 9.5px;
+  font-size: calc(9.5px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.285px;
   text-transform: uppercase;
@@ -118,7 +122,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   color: var(--ink-2);
   min-width: 0;
 }
@@ -132,7 +136,7 @@
   background: var(--surface-warm);
   color: var(--ink-3);
   font-family: var(--font-head);
-  font-size: 9.5px;
+  font-size: calc(9.5px * var(--fs));
   font-weight: 600;
 }
 
@@ -145,7 +149,7 @@
   background: var(--surface-warm);
   color: var(--hint);
   font-family: var(--font-head);
-  font-size: 10.5px;
+  font-size: calc(10.5px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.21px;
 }
@@ -164,18 +168,18 @@
   font-weight: 600;
   color: var(--ink);
 }
-.cat-price-sep { color: var(--hint); font-size: 12px; }
-.cat-price-online { color: var(--ink-3); font-size: 13px; }
+.cat-price-sep { color: var(--hint); font-size: calc(12px * var(--fs)); }
+.cat-price-online { color: var(--ink-3); font-size: calc(13px * var(--fs)); }
 
 .cat-edit {
   width: 64px;
-  height: 32px;
-  min-height: 32px;
+  height: calc(var(--ctl-h) - 8px);
+  min-height: calc(var(--ctl-h) - 8px);
   border-radius: 8px;
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--fs));
   font-weight: 500;
 }
 .cat-edit:active { background: var(--surface-warm); }
@@ -227,8 +231,8 @@
   gap: 10px;
   flex-wrap: wrap;
 }
-.editor-title h3 { font-size: 24px; font-weight: 600; }
-.editor-sub { margin: 6px 0 0; font-size: 12.5px; color: var(--ink-3); }
+.editor-title h3 { font-size: calc(24px * var(--fs)); font-weight: 600; }
+.editor-sub { margin: 6px 0 0; font-size: calc(12.5px * var(--fs)); color: var(--ink-3); }
 .editor-close {
   width: 36px;
   height: 36px;
@@ -238,7 +242,7 @@
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--ink-2);
-  font-size: 14px;
+  font-size: calc(14px * var(--fs));
   padding: 0;
 }
 .editor-close:active { background: var(--surface-warm); }
@@ -267,7 +271,7 @@
 .editor select,
 .editor textarea {
   min-height: 44px;
-  font-size: 14px;
+  font-size: calc(14px * var(--fs));
 }
 .editor textarea {
   font-family: var(--font-body);
@@ -290,7 +294,7 @@
 .editor-col > .editor-block:first-child { margin-top: 0; }
 .block-label {
   font-family: var(--font-head);
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   font-weight: 600;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -299,13 +303,13 @@
 .block-note {
   margin-left: 8px;
   font-family: var(--font-body);
-  font-size: 10.5px;
+  font-size: calc(10.5px * var(--fs));
   font-weight: 400;
   letter-spacing: 0;
   text-transform: none;
   color: var(--hint);
 }
-.block-hint { margin: 4px 0 0; font-size: 12px; color: var(--ink-3); }
+.block-hint { margin: 4px 0 0; font-size: calc(12px * var(--fs)); color: var(--ink-3); }
 
 .editor-row {
   display: grid;
@@ -333,8 +337,8 @@
   justify-content: space-between;
   gap: 12px;
 }
-.switch-name { font-size: 13.5px; font-weight: 500; }
-.switch-hint { font-size: 11.5px; color: var(--ink-3); }
+.switch-name { font-size: calc(13.5px * var(--fs)); font-weight: 500; }
+.switch-hint { font-size: calc(11.5px * var(--fs)); color: var(--ink-3); }
 
 /* ---- Offer panel ------------------------------------------------------- */
 .offer-panel {
@@ -357,8 +361,8 @@
   justify-content: space-between;
   gap: 12px;
 }
-.offer-name { font-size: 13.5px; font-weight: 500; }
-.offer-hint { font-size: 11.5px; color: var(--ink-3); }
+.offer-name { font-size: calc(13.5px * var(--fs)); font-weight: 500; }
+.offer-hint { font-size: calc(11.5px * var(--fs)); color: var(--ink-3); }
 .offer-panel.on .offer-hint { color: #8a5a00; }
 
 /* Exactly what the till will show. */
@@ -372,7 +376,7 @@
 }
 .offer-preview-label {
   font-family: var(--font-head);
-  font-size: 10px;
+  font-size: calc(10px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.8px;
   text-transform: uppercase;
@@ -380,12 +384,12 @@
 }
 .offer-preview-now {
   font-family: var(--font-head);
-  font-size: 20px;
+  font-size: calc(20px * var(--fs));
   font-weight: 700;
   color: var(--forest);
 }
 .offer-preview-was {
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   color: var(--hint);
   text-decoration: line-through;
 }
@@ -413,7 +417,7 @@
   padding: 0;
   border: none;
   background: transparent;
-  font-size: 14px;
+  font-size: calc(14px * var(--fs));
   font-weight: 500;
 }
 .group-name:focus { outline: none; border-bottom: 1px solid var(--leaf); border-radius: 0; }
@@ -426,7 +430,7 @@
   background: var(--surface-warm);
   color: var(--ink-3);
   font-family: var(--font-head);
-  font-size: 10px;
+  font-size: calc(10px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.3px;
   text-transform: uppercase;
@@ -442,7 +446,7 @@
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--ink-3);
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
 }
 
 .group-choices {
@@ -468,7 +472,7 @@
   border: none;
   background: transparent;
   width: auto;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
 }
 .choice-chip input:focus { outline: none; }
 .choice-chip:focus-within { border-color: var(--leaf); }
@@ -476,7 +480,7 @@
 .choice-delta {
   color: var(--forest);
   font-weight: 500;
-  font-size: 12px !important;
+  font-size: calc(12px * var(--fs)) !important;
   min-width: 16px;
 }
 /* A free choice shows nothing — the "+" is only an affordance. */
@@ -488,7 +492,7 @@
   padding: 0;
   background: transparent;
   color: var(--hint);
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   border-radius: 6px;
 }
 .choice-remove:hover { color: var(--cta); }
@@ -501,7 +505,7 @@
   background: transparent;
   border: 1px dashed var(--border);
   color: var(--hint);
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--fs));
 }
 .group-add {
   height: 48px;
@@ -509,7 +513,7 @@
   border: 1px dashed var(--border);
   border-radius: 10px;
   color: var(--ink-2);
-  font-size: 13.5px;
+  font-size: calc(13.5px * var(--fs));
   font-weight: 500;
 }
 .group-add:active { background: var(--surface-warm); }
@@ -525,7 +529,7 @@
 }
 .editor-note {
   margin: 0;
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--fs));
   color: var(--ink-3);
   min-width: 0;
   white-space: nowrap;
@@ -540,7 +544,7 @@
   align-self: flex-start;
   background: transparent;
   color: var(--forest);
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   font-weight: 500;
   min-height: 36px;
   padding: 0;

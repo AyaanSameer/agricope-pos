@@ -16,24 +16,32 @@
   height: 42px;
   min-height: 42px;
   flex: none;
-  padding: 0;
+  /* The glyph sits high in its em box; 3px brings it optically centre. */
+  padding: 0 0 3px;
   border-radius: 10px;
   background: var(--forest-tint);
   color: #fff;
   font-size: 20px;
   line-height: 1;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .topbar-back:hover { background: var(--forest-hover); }
 
-.topbar-titles { flex: 1; min-width: 0; }
+.topbar-titles {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
 .topbar-h1 {
   margin: 0;
   font-family: var(--font-head);
   font-weight: 600;
-  font-size: var(--top-fs);
-  line-height: 1.25;
+  /* --top-fs is the device's title size; --fs scales it with everything else. */
+  font-size: calc(var(--top-fs) * var(--fs));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -53,7 +61,7 @@
   height: 42px;
   min-height: 42px;
   flex: none;
-  padding: 0 14px 0 6px;
+  padding: 0 9px 0 6px;
   border-radius: 10px;
   background: var(--forest-tint);
   color: #fff;
@@ -69,7 +77,7 @@
   display: grid;
   place-items: center;
   font-family: var(--font-head);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 10.5px;
+  font-weight: 700;
 }
-.topbar-pin-label { font-size: 12px; font-weight: 500; }
+.topbar-pin-label { font-size: 11px; color: var(--leaf-pale); }

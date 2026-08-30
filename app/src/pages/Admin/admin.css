@@ -20,11 +20,11 @@
   gap: 10px;
   font-family: var(--font-head);
   font-weight: 600;
-  font-size: 17px;
+  font-size: calc(17px * var(--fs));
 }
 .admin-tag {
   font-family: var(--font-head);
-  font-size: 10.5px;
+  font-size: calc(10.5px * var(--fs));
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -34,7 +34,7 @@
   padding: 4px 10px;
 }
 .admin-bar-right { display: flex; align-items: center; gap: 14px; }
-.admin-who { font-size: 13px; color: var(--leaf-pale); }
+.admin-who { font-size: calc(13px * var(--fs)); color: var(--leaf-pale); }
 .admin-bar-right .btn-secondary { height: 36px; min-height: 36px; padding: 0 14px; }
 
 .admin-main {
@@ -46,7 +46,7 @@
   flex-direction: column;
   gap: 20px;
 }
-.admin-main .page-head h2 { font-size: 26px; }
+.admin-main .page-head h2 { font-size: calc(26px * var(--fs)); }
 .admin-loading { color: var(--ink-3); padding: 18px; }
 
 /* ---- Platform stat strip ------------------------------------------------ */
@@ -66,19 +66,20 @@
 }
 .admin-stat strong {
   font-family: var(--font-head);
-  font-size: 30px;
+  font-size: calc(30px * var(--fs));
   font-weight: 700;
   color: var(--forest);
   line-height: 1.1;
 }
 /* A tenant that cannot sign in is not a neutral number. */
 .admin-stat strong.blocked { color: var(--cta); }
-.admin-stat span { font-size: 12.5px; color: var(--ink-3); }
+.admin-stat span { font-size: calc(12.5px * var(--fs)); color: var(--ink-3); }
 
 /* ---- Tenant cards ------------------------------------------------------- */
 .admin-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(560px, 1fr));
+  align-items: stretch;
   gap: 20px;
   align-items: start;
 }
@@ -102,7 +103,7 @@
   display: grid;
   place-items: center;
   font-family: var(--font-head);
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   font-weight: 700;
   letter-spacing: 0.5px;
 }
@@ -111,8 +112,8 @@
 .admin-mono.gold { background: var(--gold-tint); color: #8a5a00; }
 
 .admin-biz-id { min-width: 0; }
-.admin-biz-name { font-family: var(--font-head); font-weight: 600; font-size: 20px; }
-.admin-biz-login { font-size: 12.5px; color: var(--ink-3); }
+.admin-biz-name { font-family: var(--font-head); font-weight: 600; font-size: calc(20px * var(--fs)); }
+.admin-biz-login { font-size: calc(12.5px * var(--fs)); color: var(--ink-3); }
 
 .admin-counts {
   display: flex;
@@ -130,7 +131,7 @@
   background: var(--surface-warm);
   color: var(--ink-3);
   font-family: var(--font-head);
-  font-size: 10px;
+  font-size: calc(10px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.4px;
   text-transform: uppercase;
@@ -140,7 +141,7 @@
 .admin-section-head { display: flex; align-items: center; gap: 12px; }
 .admin-section-label {
   font-family: var(--font-head);
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   font-weight: 600;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -154,13 +155,13 @@
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--fs));
   font-weight: 500;
 }
 .admin-action:active { background: var(--surface-warm); }
 
 .admin-empty {
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--fs));
   color: var(--hint);
   background: var(--surface);
   border: 1px solid var(--border);
@@ -183,9 +184,9 @@
   background: var(--surface-warm);
   min-width: 0;
 }
-.admin-row-name { font-size: 14px; font-weight: 500; white-space: nowrap; }
+.admin-row-name { font-size: calc(14px * var(--fs)); font-weight: 500; white-space: nowrap; }
 .admin-row-sub {
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--fs));
   color: var(--ink-3);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -202,7 +203,7 @@
   padding: 0 10px;
   border-radius: 99px;
   font-family: var(--font-head);
-  font-size: 9.5px;
+  font-size: calc(9.5px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.4px;
   text-transform: uppercase;
@@ -220,7 +221,7 @@
   display: grid;
   place-items: center;
   font-family: var(--font-head);
-  font-size: 10px;
+  font-size: calc(10px * var(--fs));
   font-weight: 700;
 }
 
@@ -234,7 +235,7 @@
   background: var(--gold-tint);
   color: #8a5a00;
   font-family: var(--font-head);
-  font-size: 9.5px;
+  font-size: calc(9.5px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.4px;
   text-transform: uppercase;
@@ -257,6 +258,6 @@
 }
 .admin-form { width: min(440px, 100%); display: flex; flex-direction: column; gap: 14px; padding: 22px; }
 .admin-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.admin-note { margin: 0; font-size: 12.5px; color: var(--ink-3); line-height: 1.5; }
-.admin-error { color: var(--danger, #c0392b); font-size: 13px; }
+.admin-note { margin: 0; font-size: calc(12.5px * var(--fs)); color: var(--ink-3); line-height: 1.5; }
+.admin-error { color: var(--danger, #c0392b); font-size: calc(13px * var(--fs)); }
 .admin-form-actions { display: flex; justify-content: flex-end; gap: 10px; }

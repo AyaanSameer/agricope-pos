@@ -30,7 +30,7 @@
   align-items: center;
   padding: 0 10px;
   font-family: var(--font-head);
-  font-size: 10px;
+  font-size: calc(10px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -59,17 +59,17 @@
   display: grid;
   place-items: center;
   font-family: var(--font-head);
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   font-weight: 700;
 }
 .pinswitch-out-info { flex: 1; min-width: 0; }
-.pinswitch-out-name { font-size: 13.5px; font-weight: 500; }
+.pinswitch-out-name { font-size: calc(13.5px * var(--fs)); font-weight: 500; }
 .pinswitch-out-role {
-  font-size: 11.5px;
+  font-size: calc(11.5px * var(--fs));
   color: var(--ink-3);
 }
 .pinswitch-out-role span { text-transform: capitalize; }
-.pinswitch-arrow { color: var(--hint); font-size: 16px; }
+.pinswitch-arrow { color: var(--hint); font-size: calc(16px * var(--fs)); }
 
 /* Who takes over */
 .pinswitch-incoming {
@@ -87,17 +87,17 @@
   display: grid;
   place-items: center;
   font-family: var(--font-head);
-  font-size: 18px;
+  font-size: calc(18px * var(--fs));
   font-weight: 700;
 }
-.pinswitch-incoming h2 { font-size: 19px; font-weight: 600; }
-.pinswitch-sub { color: var(--ink-3); margin: 0; font-size: 12px; }
+.pinswitch-incoming h2 { font-size: calc(19px * var(--fs)); font-weight: 600; }
+.pinswitch-sub { color: var(--ink-3); margin: 0; font-size: calc(12px * var(--fs)); }
 
 /* A real error state — Sunset Orange, and the entry is cleared. */
 .pinswitch-error {
   color: var(--cta);
   margin: 0;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   max-width: 240px;
 }
 
@@ -109,7 +109,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--ink-2);
-  font-size: 14px;
+  font-size: calc(14px * var(--fs));
   font-weight: 500;
 }
 .pinswitch-cancel:active { background: var(--surface-warm); }

@@ -23,7 +23,7 @@
   align-items: center;
   padding: 9px 0;
   border-bottom: 1px solid var(--beige);
-  font-size: 14px;
+  font-size: calc(14px * var(--fs));
 }
 .xrow:last-child { border-bottom: none; }
 .xsign {
@@ -37,7 +37,7 @@
 .xsign.plus { background: var(--success-tint); color: var(--forest); }
 .xsign.minus { background: var(--cta-tint); color: var(--cta); }
 .xsign.eq { background: var(--forest); color: #fff; }
-.xrow.xtotal { font-weight: 700; font-family: var(--font-head); font-size: 15px; background: var(--success-tint); border-radius: 8px; padding: 12px 8px; margin-top: 6px; }
+.xrow.xtotal { font-weight: 700; font-family: var(--font-head); font-size: calc(15px * var(--fs)); background: var(--success-tint); border-radius: 8px; padding: 12px 8px; margin-top: 6px; }
 .xrow.xtotal.counted { background: var(--gold-tint); }
 
 .movement { display: flex; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--beige); }
@@ -45,7 +45,7 @@
 .movement-info { flex: 1; display: flex; flex-direction: column; }
 
 .shifts-history { overflow: hidden; }
-.shifts-history-head { background: var(--surface-warm); padding: 10px 16px; font-size: 12px; font-weight: 500; color: var(--ink-3); }
+.shifts-history-head { background: var(--surface-warm); padding: 10px 16px; font-size: calc(12px * var(--fs)); font-weight: 500; color: var(--ink-3); }
 .shifts-hrow {
   display: grid;
   grid-template-columns: 90px 1fr 1.4fr auto;
@@ -53,7 +53,7 @@
   align-items: center;
   padding: 11px 16px;
   border-bottom: 1px solid var(--beige);
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
 }
 .shifts-hrow:last-child { border-bottom: none; }
 .st-gold { background: var(--gold-tint); color: #9a7200; }

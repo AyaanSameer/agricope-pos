@@ -34,8 +34,8 @@
 .cust-row:hover { border-color: var(--border-strong); }
 /* Selected is a leaf border on a warm ground — never a fill. */
 .cust-row.selected { border-color: var(--leaf); background: var(--surface-warm); }
-.cust-name { font-weight: 500; font-size: 13.5px; }
-.cust-phone { font-size: 11px; color: var(--ink-3); }
+.cust-name { font-weight: 500; font-size: calc(13.5px * var(--fs)); }
+.cust-phone { font-size: calc(11px * var(--fs)); color: var(--ink-3); }
 .cust-row-foot { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
 .cust-credit {
   display: flex;
@@ -45,10 +45,10 @@
   border-radius: 7px;
   padding: 5px 9px;
 }
-.cust-credit em { font-style: normal; font-size: 9px; color: var(--forest); }
+.cust-credit em { font-style: normal; font-size: calc(9px * var(--fs)); color: var(--forest); }
 .cust-credit b {
   font-family: var(--font-head);
-  font-size: 10.5px;
+  font-size: calc(10.5px * var(--fs));
   font-weight: 600;
   color: var(--forest);
   font-variant-numeric: tabular-nums;
@@ -59,14 +59,14 @@
   margin-left: auto;
   font-family: var(--font-head);
   font-weight: 600;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   color: var(--hint);
   font-variant-numeric: tabular-nums;
 }
 .cust-bal.owes { color: var(--cta); }
 .owes { color: var(--cta); }
 .ok { color: var(--forest); }
-.tiny { font-size: 11px; }
+.tiny { font-size: calc(11px * var(--fs)); }
 
 .cust-profile {
   flex: 1;
@@ -79,7 +79,7 @@
   gap: 14px;
 }
 .cust-profile-head { display: flex; align-items: center; gap: 12px; }
-.cust-profile-head h3 { font-family: var(--font-head); font-size: 19px; font-weight: 600; }
+.cust-profile-head h3 { font-family: var(--font-head); font-size: calc(19px * var(--fs)); font-weight: 600; }
 .cust-avatar {
   width: 34px;
   height: 34px;
@@ -90,7 +90,7 @@
   display: grid;
   place-items: center;
   font-family: var(--font-head);
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   font-weight: 700;
 }
 
@@ -105,7 +105,7 @@
   border-radius: 12px;
 }
 .stat span {
-  font-size: 10px;
+  font-size: calc(10px * var(--fs));
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -113,7 +113,7 @@
 }
 .stat strong {
   font-family: var(--font-head);
-  font-size: 21px;
+  font-size: calc(21px * var(--fs));
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -152,13 +152,13 @@
   gap: 12px;
   background: var(--surface-warm);
   padding: 10px 16px;
-  font-size: 10px;
+  font-size: calc(10px * var(--fs));
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-3);
 }
-.cust-st-head em { font-style: normal; letter-spacing: 0; text-transform: none; font-size: 10.5px; color: var(--hint); }
+.cust-st-head em { font-style: normal; letter-spacing: 0; text-transform: none; font-size: calc(10.5px * var(--fs)); color: var(--hint); }
 .cust-st-row {
   display: grid;
   grid-template-columns: 60px 100px 1fr 90px 90px;
@@ -166,16 +166,16 @@
   align-items: center;
   padding: 11px 16px;
   border-bottom: 1px solid var(--beige);
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
 }
 .cust-st-row:last-of-type { border-bottom: none; }
-.st-type { font-size: 10px; font-weight: 600; border-radius: 99px; padding: 3px 8px; text-align: center; }
+.st-type { font-size: calc(10px * var(--fs)); font-weight: 600; border-radius: 99px; padding: 3px 8px; text-align: center; }
 .st-type.charge { background: var(--gold-tint); color: #9a7200; }
 .st-type.repayment { background: var(--success-tint); color: var(--forest); }
 .st-type.adjustment { background: #e7e2d2; color: var(--ink-3); }
 .cust-st-note { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cust-st-empty { padding: 18px; color: var(--ink-3); }
-.cust-st-foot { padding: 10px 16px; font-size: 11px; color: var(--hint); background: var(--surface-warm); }
+.cust-st-foot { padding: 10px 16px; font-size: calc(11px * var(--fs)); color: var(--hint); background: var(--surface-warm); }
 /* An empty list says so and offers the way out of it. */
 .cust-list-empty {
   display: flex;
@@ -250,8 +250,8 @@
   border-radius: 10px;
   padding: 12px 16px;
 }
-.cust-repay-amount span { color: var(--ink-3); font-size: 13px; }
-.cust-repay-amount strong { font-family: var(--font-head); font-size: 22px; }
+.cust-repay-amount span { color: var(--ink-3); font-size: calc(13px * var(--fs)); }
+.cust-repay-amount strong { font-family: var(--font-head); font-size: calc(22px * var(--fs)); }
 .cust-repay-chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .cust-repay-methods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .cust-error { background: var(--cta-tint); color: var(--cta); border-radius: var(--radius); padding: 10px 12px; font-weight: 500; }
@@ -263,7 +263,7 @@
   background: transparent;
   color: var(--forest);
   font-weight: 500;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   min-height: 32px;
   padding: 0;
   text-decoration: underline;

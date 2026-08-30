@@ -20,8 +20,8 @@
   border-bottom: 1px solid var(--border);
 }
 .settings-store-main { flex: 1; min-width: 0; }
-.settings-store-name { font-family: var(--font-head); font-weight: 600; font-size: 20px; }
-.settings-store-sub { margin-top: 3px; font-size: 13px; color: var(--ink-3); }
+.settings-store-name { font-family: var(--font-head); font-weight: 600; font-size: calc(20px * var(--fs)); }
+.settings-store-sub { margin-top: 3px; font-size: calc(13px * var(--fs)); color: var(--ink-3); }
 .settings-type {
   flex: none;
   display: inline-flex;
@@ -30,7 +30,7 @@
   padding: 0 10px;
   border-radius: 99px;
   font-family: var(--font-head);
-  font-size: 10px;
+  font-size: calc(10px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.4px;
   text-transform: uppercase;
@@ -41,7 +41,7 @@
 .settings-block { display: flex; flex-direction: column; gap: 14px; }
 .settings-block-title {
   font-family: var(--font-head);
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   font-weight: 600;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -49,7 +49,7 @@
 }
 .settings-block-sub {
   margin: 4px 0 0;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   color: var(--ink-3);
   line-height: 1.45;
 }
@@ -75,7 +75,7 @@
   border: 2px solid var(--forest);
   padding: 14.5px 15.5px;
 }
-.settings-opt:disabled { opacity: 0.7; }
+.settings-opt:disabled { opacity: 0.55; }
 
 .settings-opt-top { display: flex; align-items: center; gap: 10px; }
 .settings-radio {
@@ -90,9 +90,9 @@
   border: 5px solid var(--forest);
   background: var(--surface);
 }
-.settings-opt-label { font-size: 14.5px; font-weight: 500; }
+.settings-opt-label { font-size: calc(14.5px * var(--fs)); font-weight: 500; }
 .settings-opt.active .settings-opt-label { color: var(--forest); }
-.settings-opt-hint { font-size: 12px; color: var(--ink-3); line-height: 1.4; }
+.settings-opt-hint { font-size: calc(12px * var(--fs)); color: var(--ink-3); line-height: 1.4; }
 
 /* What this choice actually does to the UI. */
 .settings-effect {
@@ -112,10 +112,10 @@
   border-radius: 6px;
   background: var(--surface);
   font-family: var(--font-head);
-  font-size: 10px;
+  font-size: calc(10px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   color: var(--ink-2);
 }
-.settings-effect-text { font-size: 13px; color: var(--ink-2); line-height: 1.4; }
+.settings-effect-text { font-size: calc(13px * var(--fs)); color: var(--ink-2); line-height: 1.4; }

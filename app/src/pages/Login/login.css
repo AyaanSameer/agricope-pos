@@ -23,18 +23,18 @@
 .login-brand-name {
   font-family: var(--font-head);
   font-weight: 700;
-  font-size: 15px;
+  font-size: calc(15px * var(--fs));
   letter-spacing: 1.8px;
 }
 .login-brand-sub {
-  font-size: 10px;
+  font-size: calc(10px * var(--fs));
   font-weight: 500;
   letter-spacing: 1.4px;
   color: var(--leaf-pale);
 }
 
 .login-headline {
-  font-size: 38px;
+  font-size: calc(38px * var(--fs));
   line-height: 46px;
   font-weight: 700;
 }
@@ -45,7 +45,7 @@
   line-height: 22px;
 }
 .login-footer {
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   color: var(--leaf-pale);
 }
 
@@ -69,11 +69,11 @@
   gap: 20px;
   box-shadow: 0 8px 24px rgba(8, 61, 43, 0.08);
 }
-.login-card h2 { font-size: 22px; font-weight: 600; }
+.login-card h2 { font-size: calc(22px * var(--fs)); font-weight: 600; }
 .login-card-sub {
   margin: 6px 0 0;
   color: var(--ink-3);
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   line-height: 19px;
 }
 
@@ -88,7 +88,7 @@
   align-items: center;
   padding: 0 10px;
   font-family: var(--font-head);
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.44px;
   text-transform: uppercase;
@@ -100,7 +100,7 @@
   gap: 7px;
 }
 .field span {
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   font-weight: 500;
   color: var(--ink-2);
 }
@@ -124,7 +124,7 @@
   color: #8a5a00;
   border-radius: 8px;
   padding: 10px 12px;
-  font-size: 11.5px;
+  font-size: calc(11.5px * var(--fs));
 }
 
 /* The one alternative route: this till already knows its business. */
@@ -136,7 +136,7 @@
   border-radius: var(--radius);
   color: var(--forest);
   font-family: var(--font-head);
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   font-weight: 600;
 }
 .login-switch:hover { border-color: var(--leaf); }
@@ -158,14 +158,14 @@
   border-radius: 6px;
   background: var(--gold-tint);
   color: var(--gold-ink);
-  font-size: 8.5px;
+  font-size: calc(8.5px * var(--fs));
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 .login-demo code {
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: calc(10.5px * var(--fs));
   line-height: 1.5;
   color: var(--ink-2);
   min-width: 0;
@@ -174,7 +174,7 @@
 
 .login-note {
   margin: 0;
-  font-size: 10.5px;
+  font-size: calc(10.5px * var(--fs));
   line-height: 1.45;
   color: var(--hint);
 }
@@ -187,7 +187,7 @@
   border: none;
   color: var(--forest);
   font-family: var(--font-head);
-  font-size: 11.5px;
+  font-size: calc(11.5px * var(--fs));
   font-weight: 600;
 }
 .login-admin-link:hover { text-decoration: underline; }

@@ -9,7 +9,7 @@
   color: #8a5a00;
   border-radius: 10px;
   padding: 12px 14px;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
 }
 .users-owner-tag {
   flex: none;
@@ -20,7 +20,7 @@
   border-radius: 99px;
   background: rgba(255, 255, 255, 0.65);
   font-family: var(--font-head);
-  font-size: 10px;
+  font-size: calc(10px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.4px;
   text-transform: uppercase;
@@ -46,7 +46,7 @@
 .users-head-row {
   background: var(--surface-warm);
   font-family: var(--font-head);
-  font-size: 10.5px;
+  font-size: calc(10.5px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.63px;
   text-transform: uppercase;
@@ -66,7 +66,7 @@
   display: grid;
   place-items: center;
   font-family: var(--font-head);
-  font-size: 10px;
+  font-size: calc(10px * var(--fs));
   font-weight: 700;
 }
 .users-name {
@@ -85,7 +85,7 @@
   background: var(--beige);
   color: var(--ink-3);
   font-family: var(--font-head);
-  font-size: 9px;
+  font-size: calc(9px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.3px;
   text-transform: uppercase;
@@ -93,7 +93,7 @@
 
 .users-email {
   color: var(--ink-3);
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -108,7 +108,7 @@
   background: var(--success-tint);
   color: var(--forest);
   font-family: var(--font-head);
-  font-size: 9.5px;
+  font-size: calc(9.5px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.4px;
   text-transform: uppercase;
@@ -117,7 +117,7 @@
 .users-role.owner { background: var(--gold-tint); color: #8a5a00; }
 
 .users-branch {
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   color: var(--ink-2);
   min-width: 0;
   white-space: nowrap;
@@ -128,14 +128,14 @@
 
 .users-actions { display: flex; gap: 8px; justify-content: flex-end; }
 .users-btn {
-  height: 32px;
-  min-height: 32px;
+  height: calc(var(--ctl-h) - 8px);
+  min-height: calc(var(--ctl-h) - 8px);
   padding: 0 14px;
   border-radius: 8px;
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--fs));
   font-weight: 500;
 }
 .users-btn:active { background: var(--surface-warm); }
@@ -173,8 +173,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: var(--touch);
-  font-size: 14px;
+  min-height: var(--ctl-h);
+  font-size: calc(14px * var(--fs));
 }
 .users-check input { width: 20px; height: 20px; min-height: 0; }
 .users-error {

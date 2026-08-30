@@ -19,7 +19,7 @@
   max-height: 92vh;
   overflow-y: auto;
 }
-.climit-sub { color: var(--ink-3); font-size: 13px; margin: 0; line-height: 1.5; }
+.climit-sub { color: var(--ink-3); font-size: calc(13px * var(--fs)); margin: 0; line-height: 1.5; }
 .climit-amount {
   display: flex;
   justify-content: space-between;
@@ -29,14 +29,14 @@
   border-radius: 10px;
   padding: 12px 16px;
 }
-.climit-amount span { color: var(--ink-3); font-size: 13px; }
-.climit-amount strong { font-family: var(--font-head); font-size: 22px; }
+.climit-amount span { color: var(--ink-3); font-size: calc(13px * var(--fs)); }
+.climit-amount strong { font-family: var(--font-head); font-size: calc(22px * var(--fs)); }
 .climit-chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .climit-warn {
   background: var(--gold-tint);
   color: #7a5a00;
   border-radius: var(--radius);
   padding: 10px 12px;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   font-weight: 500;
 }

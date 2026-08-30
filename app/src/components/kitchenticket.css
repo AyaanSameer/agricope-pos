@@ -19,7 +19,7 @@
   background: #fffdf6;
   color: #111;
   font-family: 'Courier New', ui-monospace, monospace;
-  font-size: 14px;
+  font-size: calc(14px * var(--fs));
   line-height: 1.45;
   padding: 18px 16px;
   border-radius: 4px;
@@ -27,8 +27,8 @@
 }
 
 .kticket-head { text-align: center; margin-bottom: 10px; }
-.kticket-order { font-size: 20px; font-weight: 700; letter-spacing: 0.02em; }
-.kticket-meta { font-size: 12.5px; }
+.kticket-order { font-size: calc(20px * var(--fs)); font-weight: 700; letter-spacing: 0.02em; }
+.kticket-meta { font-size: calc(12.5px * var(--fs)); }
 
 .kticket-station { margin-top: 10px; }
 .kticket-station-name { text-align: center; font-weight: 700; margin-bottom: 4px; }
@@ -36,7 +36,7 @@
 .kticket-line { display: flex; gap: 8px; padding: 2px 0; }
 .kticket-qty { font-weight: 700; min-width: 30px; }
 .kticket-item { flex: 1; }
-.kticket-opts { display: block; font-size: 12px; padding-left: 2px; }
+.kticket-opts { display: block; font-size: calc(12px * var(--fs)); padding-left: 2px; }
 .kticket-opts::before { content: '» '; }
 
 .kticket-empty { text-align: center; color: #555; padding: 12px 0; }
