@@ -103,6 +103,28 @@ export function ChargePage() {
   const change =
     method === 'cash' && entered && entered.gt(due) ? entered.minus(due).toFixed(2) : null
 
+  // Credit standing, exactly as the design grades it: bad when credit cannot be
+  // taken at all, warn when the limit is short of this bill, good when it will
+  // simply work — and no action offered in that last case, because there is
+  // nothing to do.
+  const credit: { text: string; action: string | null; tone: 'good' | 'warn' | 'bad' } = !order.customer_id
+    ? { text: 'Credit needs a customer on the order.', action: 'Attach customer', tone: 'bad' }
+    : order.customer_credit_limit === null
+      ? { text: `${order.customer_name} has no credit facility.`, action: 'Give credit…', tone: 'bad' }
+      : (() => {
+          const limit = new Big(order.customer_credit_limit)
+          const owes = new Big(order.customer_balance ?? '0')
+          const available = limit.minus(owes)
+          const short = available.lt(order.amount_due)
+          return {
+            text: `Limit ${fmtQAR(limit.toFixed(2))} · owes ${fmtQAR(owes.toFixed(2))} · available ${fmtQAR(
+              (available.lt(0) ? new Big(0) : available).toFixed(2),
+            )}`,
+            action: short ? 'Raise limit…' : null,
+            tone: short ? ('warn' as const) : ('good' as const),
+          }
+        })()
+
   const paidSum = order.payments.reduce((a, p) => a.plus(p.amount), new Big(0))
   const paid = order.status === 'completed'
   // Once money is on the order the discount is settled — it may not move.
@@ -229,36 +251,18 @@ export function ChargePage() {
           </div>
 
           {method === 'credit' && (
-            <div className="charge-credit">
-              {!order.customer_id ? (
-                <>
-                  <span>Credit needs a customer on the order.</span>
-                  <button type="button" className="charge-credit-act" onClick={() => setPickingCustomer(true)}>
-                    Attach customer
-                  </button>
-                </>
-              ) : order.customer_credit_limit === null ? (
-                <>
-                  <span>{order.customer_name} has no credit facility.</span>
-                  <button type="button" className="charge-credit-act" onClick={() => setSettingLimit(true)}>
-                    Give credit…
-                  </button>
-                </>
-              ) : (
-                <>
-                  <span>
-                    Limit {fmtQAR(order.customer_credit_limit)} · owes{' '}
-                    {fmtQAR(order.customer_balance ?? '0')} · available{' '}
-                    {fmtQAR(
-                      new Big(order.customer_credit_limit)
-                        .minus(order.customer_balance ?? '0')
-                        .toFixed(2),
-                    )}
-                  </span>
-                  <button type="button" className="charge-credit-act" onClick={() => setSettingLimit(true)}>
-                    Raise limit…
-                  </button>
-                </>
+            <div className={`charge-credit tone-${credit.tone}`}>
+              <span>{credit.text}</span>
+              {credit.action && (
+                <button
+                  type="button"
+                  className="charge-credit-act"
+                  onClick={() =>
+                    order.customer_id ? setSettingLimit(true) : setPickingCustomer(true)
+                  }
+                >
+                  {credit.action}
+                </button>
               )}
             </div>
           )}
@@ -270,6 +274,7 @@ export function ChargePage() {
             <span className="charge-amount-value">
               {entry ? `QAR ${entry}` : fmtQAR(order.amount_due)}
             </span>
+            {change && <span className="charge-amount-change">Change {fmtQAR(change)}</span>}
           </div>
 
           {change && (
@@ -307,7 +312,7 @@ export function ChargePage() {
               {method === 'credit' && order.customer_id && (
                 <button
                   type="button"
-                  className="charge-credit-act"
+                  className="charge-error-act"
                   onClick={() => setSettingLimit(true)}
                 >
                   Raise the limit…

@@ -169,6 +169,7 @@
   letter-spacing: -0.02em;
   line-height: 1.2;
 }
+.charge-amount-change { font-size: calc(12.5px * var(--fs)); color: var(--forest); }
 .charge-changerow {
   background: var(--success-tint);
   border: 1px solid var(--leaf);
@@ -283,30 +284,62 @@
 .charge-receipt { color: var(--forest); font-weight: 500; font-size: calc(13.5px * var(--fs)); }
 .charge-receipt:hover { border-color: var(--leaf); }
 
-/* Credit standing, shown where the decision is made. */
+/* Credit standing, shown where the decision is made — and graded, so the
+   colour answers "can I take this?" before the sentence does. */
 .charge-credit {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  background: var(--gold-tint);
+  flex-direction: column;
+  gap: 9px;
+  background: var(--ctone-bg);
+  border: 1px solid var(--ctone-border);
   border-radius: 12px;
   padding: 13px 15px;
   font-size: calc(12.5px * var(--fs));
-  color: var(--gold-ink);
+  color: var(--ctone-ink);
   line-height: 1.45;
 }
+/* Good: the credit is there and the sale will go through. */
+.charge-credit.tone-good {
+  --ctone-bg: var(--success-tint);
+  --ctone-border: var(--leaf);
+  --ctone-ink: var(--forest);
+  --ctone-btn: var(--forest);
+}
+/* Warn: there is a facility, but it is short of this bill. */
+.charge-credit.tone-warn {
+  --ctone-bg: var(--gold-tint);
+  --ctone-border: var(--gold);
+  --ctone-ink: var(--gold-ink);
+  --ctone-btn: var(--cta);
+}
+/* Bad: credit cannot be taken at all until something changes. */
+.charge-credit.tone-bad {
+  --ctone-bg: var(--cta-tint);
+  --ctone-border: var(--cta);
+  --ctone-ink: var(--cta);
+  --ctone-btn: var(--cta);
+}
 .charge-credit-act {
+  align-self: flex-start;
+  border: 0;
+  background: var(--ctone-btn);
+  color: #fff;
+  border-radius: 9px;
+  min-height: 44px;
+  padding: 0 16px;
+  font-weight: 500;
+  font-size: calc(13px * var(--fs));
+}
+.charge-error-act {
   background: transparent;
-  color: var(--forest);
+  color: var(--cta);
   font-weight: 600;
   font-size: calc(13px * var(--fs));
   min-height: 36px;
   padding: 0;
+  margin-left: 10px;
   text-decoration: underline;
-  margin-left: auto;
 }
-.charge-error .charge-credit-act { color: var(--cta); margin-left: 10px; }
 
 /* Dense: one column, and the keypad follows the chips. */
 @media (max-width: 1023px) {
