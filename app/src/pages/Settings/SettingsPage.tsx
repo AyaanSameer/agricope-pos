@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -187,9 +187,10 @@ export function SettingsPage() {
 /* ---- Groups. Each is title + sub, controls, and a Save that only appears
    once something differs from what the server holds. ----------------------- */
 
+/* The group components re-mount via key when the server value changes, so a
+   plain useState stays in sync without an effect. */
 function useDirty<T>(initial: T) {
   const [value, setValue] = useState(initial)
-  useEffect(() => setValue(initial), [initial])
   return [value, setValue, value !== initial] as const
 }
 
