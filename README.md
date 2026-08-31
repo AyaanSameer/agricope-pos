@@ -1,5 +1,8 @@
 # Agricope POS — frontend
 
+**Live demo: https://ayaansameer.github.io/agricope-pos/** — the whole system on
+in-browser mocks. Test logins and a guide to hand the client: [`docs/DEMO.md`](docs/DEMO.md).
+
 Multi-tenant point of sale for shops and restaurants. React SPA per till; talks only to the
 REST API described in `CONVENTIONS.md` (mocked in-browser until the real backend lands).
 

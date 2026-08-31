@@ -22,17 +22,19 @@ else.
 The `Deploy demo to GitHub Pages` workflow builds and publishes on every push to
 `main`. One-time setup on GitHub: **Settings → Pages → Source: GitHub Actions**.
 
-The URL is `https://<your-username>.github.io/<repo-name>/`.
+**Live at https://ayaansameer.github.io/agricope-pos/** — republished on every push to `main`.
 
 ### Before you send the link
 
-**A GitHub Pages site on a public repository is public** — anyone with the URL
-can open it, and search engines can find it. The seed data contains Drumsticks'
-real menu and prices. A menu is public information anyway, so this is usually
-fine; decide knowingly rather than by accident. Private repositories cannot serve
-Pages without a paid GitHub plan, so if the demo must be password-protected, host
-it on Netlify or Cloudflare Pages instead — the built `app/dist/` folder is
-plain static files and works on any of them.
+**This repository is public, and so is the demo** — anyone with the URL can open
+it, and search engines can index both the site and the source. That was the
+deliberate trade for free hosting: GitHub Pages will not serve from a private
+repository without a paid plan. The seed data contains Drumsticks' real menu and
+prices, which a menu being public information makes acceptable.
+
+If you later need the source closed or the demo gated behind a password, the
+built `app/dist/` is plain static files: Cloudflare Pages and Netlify both
+deploy it from a private repository for free, with access control available.
 
 ### Testing the exact build before you push
 
@@ -40,14 +42,14 @@ plain static files and works on any of them.
 cd "/Applications/Agricope/POS System/app" && VITE_BASE=/YOUR_REPO_NAME/ npm run build && cp dist/index.html dist/404.html && npx vite preview --base /YOUR_REPO_NAME/
 ```
 
-`VITE_BASE` must match the repository name — Pages serves a project site from
+`VITE_BASE` must match the repository name (`agricope-pos`) — Pages serves a project site from
 `/<repo>/`, not from the domain root, and every asset URL carries that prefix.
 
 ---
 
 ## § For the client
 
-**Agricope POS — try it here:** `https://<username>.github.io/<repo>/`
+**Agricope POS — try it here: https://ayaansameer.github.io/agricope-pos/**
 
 Works in any modern browser, on a laptop, tablet or phone. Nothing to install.
 
