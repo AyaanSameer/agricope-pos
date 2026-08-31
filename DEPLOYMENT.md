@@ -74,40 +74,23 @@ jobs later: deploy-staging on merge to `main`, deploy-production on tag.)
 
 ### The database (and the API that owns it)
 
-The schema is Postgres. Two good shapes, pick by how much ops you want:
+**`docs/GCP-SETUP.md` is the runbook** — exact commands for Cloud SQL in
+`me-central1` (Doha), loading the eleven migrations, secrets, and the Cloud Run
+deploy. It also states plainly what is not yet built.
 
-**Recommended — GCP `me-central1` (Doha):** the only major-cloud region *in
-Qatar*, so tills see single-digit-ms latency.
-- **Cloud SQL for PostgreSQL** — managed Postgres: automated daily backups,
-  point-in-time recovery, private IP. Start on a small shared-core tier;
-  resize later without schema changes.
-- **Cloud Run** for the Node API next to it — scales to zero, HTTPS out of
-  the box, deploys from a container built in CI.
-
-**Simpler to start — managed-Postgres platforms:** Supabase or Neon give
-you a production Postgres in minutes (backups, dashboards, connection
-pooling) with the API on Railway or Render beside it. Nearest regions are
-EU (~120 ms from Doha) — fine for testing and the pilot, but move to
-`me-central1` before tills depend on it all day.
-
-Non-negotiables either way:
-- Automated backups **plus** point-in-time recovery turned on before the
-  first real order.
-- One database per environment (staging and production never share).
-- Credentials only in the platform's secret manager — never in the repo.
-- Migrations as files in the backend repo (e.g. `node-pg-migrate`), run by
-  CI on deploy — never by hand in a production console.
+The short version: Cloud SQL for PostgreSQL in `me-central1` (the only major-cloud
+region inside Qatar) with the Node API on Cloud Run beside it, reaching the
+database over a Unix socket so it never needs a public IP. Backups and
+point-in-time recovery on from day one; one database per environment; credentials
+in Secret Manager, never in the repo; migrations run by CI, never by hand in a
+production console.
 
 ### The frontend
 
-The SPA is static files (`app/dist/`). Vercel, Netlify or Cloudflare Pages
-build it on every merge (`npm run build`, publish `dist`, set
-`VITE_USE_MOCKS=false`).
-
-One wiring detail: the app calls the API at the **relative** path `/api/v1`
-(`app/src/api/client.ts`), which keeps cookies/CORS trivial. Either serve
-the SPA from the API service itself, or add a rewrite on the static host
-proxying `/api/*` to the API's URL (all three hosts above support this).
+The SPA calls its API at the **relative** path `/api/v1`
+(`app/src/api/client.ts`), so the simplest correct answer is to serve it from the
+API service itself — same origin, no CORS, one deploy. Build it with
+`VITE_USE_MOCKS=false` or it will keep answering its own calls in the browser.
 
 ## 6 · Environments
 

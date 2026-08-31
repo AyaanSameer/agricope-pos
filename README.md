@@ -12,6 +12,8 @@ REST API described in `CONVENTIONS.md` (mocked in-browser until the real backend
 - `docs/SCHEMA-ALIGNMENT.md` — the frontend contract reviewed against the Postgres schema.
 - `docs/original-system-design.md` — the original system design document.
 - `DEPLOYMENT.md` — branches, environments, hosting and the release path.
+- `docs/GCP-SETUP.md` — deploying to Google Cloud: Cloud SQL in Doha, loading the
+  schema, and what still has to be built before the system can be "live".
 
 ## Repo layout
 - `app/` — the React application (Vite + TypeScript)
