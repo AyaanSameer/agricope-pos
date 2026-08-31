@@ -8,8 +8,10 @@
  */
 type Tone = 'white' | 'colour'
 
-function art(base: string, tone: Tone) {
-  return `/brand/agricope-${base}${tone === 'white' ? '-white' : ''}.svg`
+function art(name: string, tone: Tone) {
+  // BASE_URL, not a leading slash: on a GitHub Pages project site the app is
+  // served from /<repo>/, and a root-absolute path would miss the art entirely.
+  return `${import.meta.env.BASE_URL}brand/agricope-${name}${tone === 'white' ? '-white' : ''}.svg`
 }
 
 /** The arch-over-field-rows mark on its own. */

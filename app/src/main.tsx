@@ -16,12 +16,24 @@ const queryClient = new QueryClient({
   },
 })
 
+/**
+ * Everything the app is served under. '/' in development, '/<repo>/' on a
+ * GitHub Pages project site. The service worker and the router each need it:
+ * the worker script is fetched by URL, and the router has to strip the prefix
+ * before matching a path.
+ */
+const BASE = import.meta.env.BASE_URL
+const ROUTER_BASE = BASE.replace(/\/$/, '') || '/'
+
 async function enableMocking() {
-  // Phase 0–N: the app runs against MSW until the real API is ready.
+  // The app runs against MSW until the real API is ready.
   // Flip VITE_USE_MOCKS=false in .env.local to point at the backend.
   if (import.meta.env.VITE_USE_MOCKS === 'false') return
   const { worker } = await import('./mocks/browser')
-  return worker.start({ onUnhandledRequest: 'bypass' })
+  return worker.start({
+    serviceWorker: { url: `${BASE}mockServiceWorker.js` },
+    onUnhandledRequest: 'bypass',
+  })
 }
 
 enableMocking().then(() => {
@@ -30,7 +42,7 @@ enableMocking().then(() => {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <CartProvider>
-            <BrowserRouter>
+            <BrowserRouter basename={ROUTER_BASE}>
               <App />
             </BrowserRouter>
           </CartProvider>
