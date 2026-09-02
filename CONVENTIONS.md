@@ -200,21 +200,29 @@ administrator's own password (min 8 chars, current re-checked).
 ## The owner's two catalogue choices (2026-09-02)
 
 - **`business_settings.shared_catalog`** (boolean, default `true`). True = one
-  catalogue for every branch. False = `products.store_id` decides: `null` means
-  "all branches", a branch id means that branch only. `GET /products?store_id=`
+  catalogue for every branch. False = **`product_stores` decides**: a product
+  names the SET of branches that sell it, and **no rows means every branch**.
+  So two branches can share a product while a third does not, from one row —
+  reprice it once and both move. On the wire this is `store_ids: string[]`
+  (with `store_names` for display); `[]` = everywhere. `GET /products?store_id=`
   applies the filter **only while sharing is off**, so turning it back on
-  restores every assignment instead of losing it. Owner-only, like the rest of
-  `/business-settings`.
+  restores every assignment instead of losing it. Owner-only.
+- **Sharing a product and copying one are different tools.** Ticking a second
+  branch keeps ONE row: change the price and every branch that sells it moves.
+  `POST /catalog/copy` makes INDEPENDENT rows: right when a branch should start
+  from another's list and then diverge.
+- **A barcode must be unambiguous at any till that could scan it.** Two products
+  may share one only when no branch sells both — set overlap, which no unique
+  index can express, so the API checks it inside the write transaction and
+  answers `400` naming the product that already holds it.
 - **`POST /catalog/copy {from_store_id, to_store_id}`** stands one branch's
   catalogue up from another's. Owner only. Copies the source's **own** products
-  (not the "all branches" ones, which the target already sells), skips any name
-  the target already carries — so running it twice cannot double a menu — and
+  (not the "all branches" ones, which the target already sells, nor any the
+  target is already listed on), skips any name the target already carries — so
+  running it twice cannot double a menu — and
   remaps kitchen routing by station **name**, since stations belong to a branch.
   Returns `{copied, skipped}`. Refused with `409 CATALOG_IS_SHARED` while the
   business runs one catalogue for every branch.
-- **Barcodes are unique per (business, branch), not per business.** Two shops
-  stocking the same tin each carry it; `coalesce(store_id, '')` keeps
-  "all branches" unique business-wide.
 - **Kitchen stations are CRUD.** `POST /kitchen/stations {store_id, name}`,
   `PATCH /kitchen/stations/:id {name}`, `DELETE /kitchen/stations/:id` — owner
   only (`Only the owner can change kitchen stations.`). Names are unique per

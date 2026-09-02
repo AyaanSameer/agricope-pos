@@ -45,9 +45,9 @@ export interface Product {
   option_groups: OptionGroup[]
   kitchen_station_id: string | null
   station_name: string | null
-  /** null = sold at every branch; only consulted when the catalogue is per-branch */
-  store_id: string | null
-  store_name: string | null
+  /** the branches that sell it; [] = every branch */
+  store_ids: string[]
+  store_names: string[]
   is_active: boolean
 }
 
@@ -100,8 +100,8 @@ export interface ProductInput {
   offer_online?: ProductOffer | null
   option_groups?: OptionGroup[]
   kitchen_station_id: string | null
-  /** null = every branch */
-  store_id?: string | null
+  /** the branches that sell it; [] = every branch */
+  store_ids?: string[]
   is_active?: boolean
 }
 

@@ -23,10 +23,15 @@ const PRODUCT_SELECT = `
          coalesce((select array_agg(pc.category_id order by pc.position) from product_categories pc where pc.product_id = p.id), '{}'::text[]) as category_ids,
          (select c.name from product_categories pc join categories c on c.id = pc.category_id
            where pc.product_id = p.id order by pc.position limit 1) as category_name,
-         ks.name as station_name, st.name as store_name
+         ks.name as station_name,
+         coalesce((select array_agg(ps.store_id order by s2.store_number)
+                     from product_stores ps join stores s2 on s2.id = ps.store_id
+                    where ps.product_id = p.id), '{}'::text[]) as store_ids,
+         coalesce((select array_agg(s2.name order by s2.store_number)
+                     from product_stores ps join stores s2 on s2.id = ps.store_id
+                    where ps.product_id = p.id), '{}'::text[]) as store_names
     from products p
-    left join kitchen_stations ks on ks.id = p.kitchen_station_id
-    left join stores st on st.id = p.store_id`
+    left join kitchen_stations ks on ks.id = p.kitchen_station_id`
 
 function parseOptionGroups(raw: unknown): OptionGroup[] {
   if (!Array.isArray(raw)) return []
@@ -78,6 +83,13 @@ async function setCategories(tx: Queryable, productId: string, categoryIds: stri
   }
 }
 
+async function setBranches(tx: Queryable, productId: string, storeIds: string[]) {
+  await tx.query('delete from product_stores where product_id = $1', [productId])
+  for (const id of [...new Set(storeIds)]) {
+    await tx.query('insert into product_stores (product_id, store_id) values ($1, $2)', [productId, id])
+  }
+}
+
 const productBody = z.object({
   name: z.string().optional(),
   name_ar: z.string().nullable().optional(),
@@ -85,7 +97,8 @@ const productBody = z.object({
   category_ids: z.array(z.string()).optional(),
   category_id: z.string().nullable().optional(),
   barcode: z.string().nullable().optional(),
-  store_id: z.string().nullable().optional(),
+  /** the branches that sell it; [] or absent = every branch */
+  store_ids: z.array(z.string()).optional(),
   price: z.union([z.string(), z.number()]).optional(),
   price_online: z.union([z.string(), z.number()]).nullable().optional(),
   tax_rate: z.union([z.string(), z.number()]).optional(),
@@ -98,6 +111,41 @@ const productBody = z.object({
 })
 
 export async function catalogRoutes(app: FastifyInstance, ctx: Ctx) {
+  const assertOwnBranches = async (storeIds: string[] | undefined, businessId: string) => {
+    if (!storeIds?.length) return
+    const ids = [...new Set(storeIds)]
+    const own = await many<{ id: string }>('select id from stores where business_id = $1 and id = any($2)', [businessId, ids])
+    if (own.length !== ids.length) throw invalid('That branch does not belong to this business.')
+  }
+
+  /**
+   * A barcode must resolve to one product at the till that scans it. Two
+   * products may share one only if no branch sells both — which is set
+   * overlap, so it cannot be a unique index and is checked here instead.
+   * An empty set means every branch, and therefore overlaps everything.
+   */
+  const assertBarcodeFree = async (
+    businessId: string,
+    barcode: string | null,
+    storeIds: string[],
+    exceptId: string | null,
+  ) => {
+    if (!barcode) return
+    const everywhere = storeIds.length === 0
+    const clash = await one<{ name: string }>(
+      `select p.name from products p
+        where p.business_id = $1 and p.barcode = $2 and ($3::text is null or p.id <> $3)
+          and (
+            $4::boolean
+            or not exists (select 1 from product_stores ps where ps.product_id = p.id)
+            or exists (select 1 from product_stores ps where ps.product_id = p.id and ps.store_id = any($5::text[]))
+          )
+        limit 1`,
+      [businessId, barcode, exceptId, everywhere, storeIds],
+    )
+    if (clash) throw invalid(`${clash.name} already has that barcode at one of these branches.`)
+  }
+
   // ---------- categories ----------
 
   app.get('/categories', async (req) => {
@@ -147,7 +195,10 @@ export async function catalogRoutes(app: FastifyInstance, ctx: Ctx) {
       const biz = await one<{ shared_catalog: boolean }>('select shared_catalog from businesses where id = $1', [caller.business_id])
       if (!biz?.shared_catalog) {
         params.push(q.store_id)
-        where.push(`(p.store_id is null or p.store_id = $${params.length})`)
+        where.push(
+          `(not exists (select 1 from product_stores ps where ps.product_id = p.id)
+            or exists (select 1 from product_stores ps where ps.product_id = p.id and ps.store_id = $${params.length}))`,
+        )
       }
     }
     if (q.barcode) {
@@ -172,19 +223,8 @@ export async function catalogRoutes(app: FastifyInstance, ctx: Ctx) {
     if (!body.name?.trim() || body.price === undefined || body.price === '') throw invalid('Name and price are required.')
     if (!MONEY_RE.test(String(body.price))) throw invalid('Price must be a decimal string like "4.50".')
     if (body.price_online && !MONEY_RE.test(String(body.price_online))) throw invalid('Online price must be a decimal string like "4.50".')
-    if (
-      body.barcode &&
-      (await one(
-        "select 1 from products where business_id = $1 and barcode = $2 and coalesce(store_id, '') = coalesce($3::text, '')",
-        [caller.business_id, body.barcode, body.store_id ?? null],
-      ))
-    ) {
-      throw invalid('Another product already has that barcode.')
-    }
-    if (body.store_id) {
-      const own = await one('select 1 from stores where id = $1 and business_id = $2', [body.store_id, caller.business_id])
-      if (!own) throw invalid('That branch does not belong to this business.')
-    }
+    await assertBarcodeFree(caller.business_id, body.barcode ?? null, body.store_ids ?? [], null)
+    await assertOwnBranches(body.store_ids, caller.business_id)
     if (body.kitchen_station_id) {
       const st = await one('select 1 from kitchen_stations ks join stores s on s.id = ks.store_id where ks.id = $1 and s.business_id = $2', [body.kitchen_station_id, caller.business_id])
       if (!st) throw invalid('Unknown kitchen station.')
@@ -195,8 +235,8 @@ export async function catalogRoutes(app: FastifyInstance, ctx: Ctx) {
     const categoryIds = Array.isArray(body.category_ids) ? body.category_ids : body.category_id ? [body.category_id] : []
     const id = await withTx(async (tx) => {
       const created = await one<{ id: string }>(
-        `insert into products (business_id, name, name_ar, description, barcode, price, price_online, tax_rate, is_combo, offer, offer_online, option_groups, kitchen_station_id, is_active, store_id)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) returning id`,
+        `insert into products (business_id, name, name_ar, description, barcode, price, price_online, tax_rate, is_combo, offer, offer_online, option_groups, kitchen_station_id, is_active)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) returning id`,
         [
           caller.business_id,
           body.name!.trim(),
@@ -212,11 +252,11 @@ export async function catalogRoutes(app: FastifyInstance, ctx: Ctx) {
           JSON.stringify(optionGroups),
           body.kitchen_station_id ?? null,
           body.is_active ?? true,
-          body.store_id ?? null,
         ],
         tx,
       )
       await setCategories(tx, created!.id, categoryIds, caller.business_id)
+      await setBranches(tx, created!.id, body.store_ids ?? [])
       return created!.id
     })
     return reply.status(201).send(productOut(await loadProduct(ctx.db, caller.business_id, id)))
@@ -227,23 +267,17 @@ export async function catalogRoutes(app: FastifyInstance, ctx: Ctx) {
     const { id } = req.params as { id: string }
     const product = await loadProduct(ctx.db, caller.business_id, id)
     const body = productBody.parse(req.body)
-    if (
-      body.barcode &&
-      (await one(
-        "select 1 from products where business_id = $1 and barcode = $2 and id <> $3 and coalesce(store_id, '') = coalesce($4::text, '')",
-        [caller.business_id, body.barcode, product.id, body.store_id === undefined ? product.store_id : body.store_id],
-      ))
-    ) {
-      throw invalid('Another product already has that barcode.')
-    }
+    await assertBarcodeFree(
+      caller.business_id,
+      body.barcode !== undefined ? body.barcode : product.barcode,
+      body.store_ids ?? product.store_ids,
+      product.id,
+    )
     if (body.price !== undefined && !MONEY_RE.test(String(body.price))) throw invalid('Price must be a decimal string like "4.50".')
     if (body.price_online != null && body.price_online !== '' && !MONEY_RE.test(String(body.price_online))) {
       throw invalid('Online price must be a decimal string like "4.50".')
     }
-    if (body.store_id) {
-      const own = await one('select 1 from stores where id = $1 and business_id = $2', [body.store_id, caller.business_id])
-      if (!own) throw invalid('That branch does not belong to this business.')
-    }
+    await assertOwnBranches(body.store_ids, caller.business_id)
     if (body.kitchen_station_id) {
       const st = await one('select 1 from kitchen_stations ks join stores s on s.id = ks.store_id where ks.id = $1 and s.business_id = $2', [body.kitchen_station_id, caller.business_id])
       if (!st) throw invalid('Unknown kitchen station.')
@@ -272,13 +306,14 @@ export async function catalogRoutes(app: FastifyInstance, ctx: Ctx) {
     if (body.tax_rate !== undefined) set('tax_rate', String(body.tax_rate))
     if (body.is_combo !== undefined) set('is_combo', body.is_combo)
     if (body.kitchen_station_id !== undefined) set('kitchen_station_id', body.kitchen_station_id)
-    if (body.store_id !== undefined) set('store_id', body.store_id)
+
     if (body.is_active !== undefined) set('is_active', body.is_active)
 
     await withTx(async (tx) => {
       if (sets.length) await tx.query(`update products set ${sets.join(', ')} where id = $1`, params)
       if (body.category_ids !== undefined) await setCategories(tx, product.id, body.category_ids, caller.business_id)
       else if (body.category_id !== undefined) await setCategories(tx, product.id, body.category_id ? [body.category_id] : [], caller.business_id)
+      if (body.store_ids !== undefined) await setBranches(tx, product.id, body.store_ids)
     })
     return productOut(await loadProduct(ctx.db, caller.business_id, product.id))
   })
@@ -312,17 +347,27 @@ export async function catalogRoutes(app: FastifyInstance, ctx: Ctx) {
     }
 
     return withTx(async (tx) => {
-      const source = await many<ProductRow & { store_id: string }>(
-        `${PRODUCT_SELECT} where p.business_id = $1 and p.store_id = $2 order by p.created_at, p.id`,
-        [caller.business_id, body.from_store_id],
+      // The source's OWN products — not the ones sold everywhere, which the
+      // target already carries, and not any it is already listed on.
+      const source = await many<ProductRow>(
+        `${PRODUCT_SELECT}
+          where p.business_id = $1
+            and exists (select 1 from product_stores ps where ps.product_id = p.id and ps.store_id = $2)
+            and not exists (select 1 from product_stores ps where ps.product_id = p.id and ps.store_id = $3)
+          order by p.created_at, p.id`,
+        [caller.business_id, body.from_store_id, body.to_store_id],
         tx,
       )
       const taken = new Set(
         (
-          await many<{ name: string }>('select lower(name) as name from products where business_id = $1 and store_id = $2', [
-            caller.business_id,
-            body.to_store_id,
-          ], tx)
+          await many<{ name: string }>(
+            `select lower(p.name) as name from products p
+              where p.business_id = $1
+                and (not exists (select 1 from product_stores ps where ps.product_id = p.id)
+                     or exists (select 1 from product_stores ps where ps.product_id = p.id and ps.store_id = $2))`,
+            [caller.business_id, body.to_store_id],
+            tx,
+          )
         ).map((r) => r.name),
       )
       const targetStations = new Map(
@@ -346,12 +391,11 @@ export async function catalogRoutes(app: FastifyInstance, ctx: Ctx) {
         const stationName = p.kitchen_station_id ? sourceStations.get(p.kitchen_station_id) : undefined
         const station = stationName ? (targetStations.get(stationName) ?? null) : null
         const made = await one<{ id: string }>(
-          `insert into products (business_id, store_id, name, name_ar, description, barcode, price, price_online, tax_rate,
+          `insert into products (business_id, name, name_ar, description, barcode, price, price_online, tax_rate,
                                  is_combo, offer, offer_online, option_groups, kitchen_station_id, is_active)
-           values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) returning id`,
+           values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) returning id`,
           [
             caller.business_id,
-            body.to_store_id,
             p.name,
             p.name_ar,
             p.description,
@@ -370,6 +414,8 @@ export async function catalogRoutes(app: FastifyInstance, ctx: Ctx) {
         )
         // Categories are business-wide, so the placements carry over as they are.
         await setCategories(tx, made!.id, p.category_ids, caller.business_id)
+        // The copy belongs to the target branch alone; the original is untouched.
+        await setBranches(tx, made!.id, [body.to_store_id!])
         copied++
       }
       return { copied, skipped }

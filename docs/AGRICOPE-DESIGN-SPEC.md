@@ -481,7 +481,9 @@ Branch settings, one card per branch (only the active branch when a till is open
   in place. A branch with none says so — it makes no kitchen work.
 - **Catalogue** is business-wide, two option cards: "One catalogue, every branch"
   and "A catalogue per branch". The second makes a **Sold at** field appear on the
-  product editor ("All branches" or one branch), and adds a branch rail to the
+  product editor — a row of tick-chips, "All branches" plus one per branch, so a
+  product can be sold at some branches and not others from a single row (the hint
+  underneath reads "Only 2 of 3 branches sell this") — and adds a branch rail to the
   Catalog screen: **Whole catalogue** followed by one chip per branch. Choosing a
   branch shows exactly what that till sells — its own products plus the ones
   marked "All branches" — with a line saying so, and reveals **Copy from another
