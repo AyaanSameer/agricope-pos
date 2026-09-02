@@ -45,6 +45,9 @@ export interface Product {
   option_groups: OptionGroup[]
   kitchen_station_id: string | null
   station_name: string | null
+  /** null = sold at every branch; only consulted when the catalogue is per-branch */
+  store_id: string | null
+  store_name: string | null
   is_active: boolean
 }
 
@@ -52,6 +55,7 @@ export interface Station {
   id: string
   store_id: string
   name: string
+  sort_order: number
 }
 
 export function listCategories(): Promise<Paginated<Category>> {
@@ -67,6 +71,8 @@ export interface ProductFilters {
   category_id?: string
   barcode?: string
   include_inactive?: boolean
+  /** the till's branch — ignored while the catalogue is shared */
+  store_id?: string
 }
 
 export function listProducts(filters: ProductFilters = {}): Promise<Paginated<Product>> {
@@ -75,6 +81,7 @@ export function listProducts(filters: ProductFilters = {}): Promise<Paginated<Pr
   if (filters.category_id) q.set('category_id', filters.category_id)
   if (filters.barcode) q.set('barcode', filters.barcode)
   if (filters.include_inactive) q.set('include_inactive', 'true')
+  if (filters.store_id) q.set('store_id', filters.store_id)
   const qs = q.toString()
   return api<Paginated<Product>>(`/products${qs ? `?${qs}` : ''}`)
 }
@@ -93,6 +100,8 @@ export interface ProductInput {
   offer_online?: ProductOffer | null
   option_groups?: OptionGroup[]
   kitchen_station_id: string | null
+  /** null = every branch */
+  store_id?: string | null
   is_active?: boolean
 }
 
@@ -104,6 +113,22 @@ export function updateProduct(id: string, input: Partial<ProductInput>): Promise
   return api<Product>(`/products/${id}`, { method: 'PATCH', body: JSON.stringify(input) })
 }
 
-export function listStations(): Promise<Paginated<Station>> {
-  return api<Paginated<Station>>('/kitchen/stations')
+export function listStations(store_id?: string): Promise<Paginated<Station>> {
+  const q = store_id ? `?store_id=${encodeURIComponent(store_id)}` : ''
+  return api<Paginated<Station>>(`/kitchen/stations${q}`)
+}
+
+/* Kitchen stations are the owner's — what a branch has and what each is called. */
+
+export function createStation(input: { store_id: string; name: string }): Promise<Station> {
+  return api<Station>('/kitchen/stations', { method: 'POST', body: JSON.stringify(input) })
+}
+
+export function renameStation(id: string, name: string): Promise<Station> {
+  return api<Station>(`/kitchen/stations/${id}`, { method: 'PATCH', body: JSON.stringify({ name }) })
+}
+
+/** Refused while the station still has tickets on the board. */
+export function deleteStation(id: string): Promise<void> {
+  return api<void>(`/kitchen/stations/${id}`, { method: 'DELETE' })
 }

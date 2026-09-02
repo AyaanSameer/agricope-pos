@@ -372,3 +372,18 @@
   margin-bottom: 14px;
 }
 .admin-error-page { margin-bottom: 14px; }
+
+/* Deleting a tenant: the list says what goes, item by item. */
+.admin-erase-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: calc(12.5px * var(--fs));
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.admin-erase-list strong { color: var(--cta); font-variant-numeric: tabular-nums; }
+.admin-erase-go { background: var(--cta); }
+.admin-erase-go:disabled { opacity: 0.45; }

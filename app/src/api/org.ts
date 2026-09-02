@@ -25,6 +25,8 @@ export interface BusinessSettings {
   receipt_footer: string
   /** discounts above this percent ask for a manager PIN */
   discount_approval_percent: string
+  /** true = one catalogue for every branch; false = each branch keeps its own */
+  shared_catalog: boolean
 }
 
 export function getBusinessSettings(): Promise<BusinessSettings> {
@@ -32,7 +34,7 @@ export function getBusinessSettings(): Promise<BusinessSettings> {
 }
 
 export function updateBusinessSettings(
-  input: Partial<Pick<BusinessSettings, 'receipt_footer' | 'discount_approval_percent'>>,
+  input: Partial<Pick<BusinessSettings, 'receipt_footer' | 'discount_approval_percent' | 'shared_catalog'>>,
 ): Promise<BusinessSettings> {
   return api<BusinessSettings>('/business-settings', { method: 'PATCH', body: JSON.stringify(input) })
 }

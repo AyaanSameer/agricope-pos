@@ -2,6 +2,7 @@ import Big from 'big.js'
 import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { computeTotals } from '../src/lib/totals.js'
+import { many } from '../src/db.js'
 import { call, loginAdmin, loginBusiness, startWorld, stopWorld, tillSession } from './harness.js'
 
 /**
@@ -410,6 +411,89 @@ describe('a malformed request is the caller\'s fault, and says so', () => {
   })
 })
 
+describe('the owner chooses how the catalogue is scoped', () => {
+  it('shares one catalogue by default, and scopes it per branch on request', async () => {
+    const settings = await call(app, 'GET', '/business-settings', { token: ayaan })
+    expect(settings.body.shared_catalog).toBe(true)
+
+    // A product pinned to Karak Corner is still visible at Al Rayyan while sharing is on.
+    const pinned = await call(app, 'POST', '/products', {
+      token: ayaan,
+      body: { name: 'Karak-only special', price: '11.00', store_id: 's-karak', kitchen_station_id: null, category_ids: [] },
+    })
+    expect(pinned.status).toBe(201)
+    expect(pinned.body.store_name).toBe('Karak Corner')
+    const sharedView = await call(app, 'GET', '/products?store_id=s-alrayyan', { token: sara })
+    expect(sharedView.body.data.some((p: { id: string }) => p.id === pinned.body.id)).toBe(true)
+
+    // Turn sharing off and the same till stops seeing it.
+    const off = await call(app, 'PATCH', '/business-settings', { token: ayaan, body: { shared_catalog: false } })
+    expect(off.body.shared_catalog).toBe(false)
+    const alrayyan = await call(app, 'GET', '/products?store_id=s-alrayyan', { token: sara })
+    expect(alrayyan.body.data.some((p: { id: string }) => p.id === pinned.body.id)).toBe(false)
+    // "All branches" products stay everywhere.
+    expect(alrayyan.body.data.some((p: { id: string }) => p.id === 'p-milk')).toBe(true)
+    const karak = await call(app, 'GET', '/products?store_id=s-karak', { token: yusuf })
+    expect(karak.body.data.some((p: { id: string }) => p.id === pinned.body.id)).toBe(true)
+
+    // Sharing back on restores the assignment rather than losing it.
+    await call(app, 'PATCH', '/business-settings', { token: ayaan, body: { shared_catalog: true } })
+    const again = await call(app, 'GET', `/products?store_id=s-alrayyan`, { token: sara })
+    expect(again.body.data.some((p: { id: string }) => p.id === pinned.body.id)).toBe(true)
+    const still = await call(app, 'GET', '/products?include_inactive=true', { token: ayaan })
+    expect(still.body.data.find((p: { id: string }) => p.id === pinned.body.id).store_id).toBe('s-karak')
+  })
+
+  it('refuses a branch that is not this business\'s', async () => {
+    const res = await call(app, 'POST', '/products', {
+      token: ayaan,
+      body: { name: 'Trespasser', price: '1.00', store_id: 's-drumsticks', kitchen_station_id: null, category_ids: [] },
+    })
+    expect(res.status).toBe(400)
+  })
+})
+
+describe('the owner shapes each branch\'s kitchen', () => {
+  it('adds, renames and removes a station, and only the owner may', async () => {
+    const maryam = (await tillSession(app, 'demo@agricope.qa', 's-alrayyan', '9999')).access_token
+    const refused = await call(app, 'POST', '/kitchen/stations', { token: maryam, body: { store_id: 's-karak', name: 'Pass' } })
+    expect(refused.status).toBe(403)
+    expect(refused.body.error.message).toBe('Only the owner can change kitchen stations.')
+
+    const made = await call(app, 'POST', '/kitchen/stations', { token: ayaan, body: { store_id: 's-karak', name: 'Pastry' } })
+    expect(made.status).toBe(201)
+    const dupe = await call(app, 'POST', '/kitchen/stations', { token: ayaan, body: { store_id: 's-karak', name: 'pastry' } })
+    expect(dupe.status).toBe(400)
+
+    const renamed = await call(app, 'PATCH', `/kitchen/stations/${made.body.id}`, { token: ayaan, body: { name: 'Desserts' } })
+    expect(renamed.body.name).toBe('Desserts')
+
+    // A product routed here loses its routing when the station goes, and keeps everything else.
+    const prod = await call(app, 'POST', '/products', {
+      token: ayaan,
+      body: { name: 'Umm Ali', price: '18.00', kitchen_station_id: made.body.id, category_ids: [] },
+    })
+    expect(prod.body.station_name).toBe('Desserts')
+    const gone = await call(app, 'DELETE', `/kitchen/stations/${made.body.id}`, { token: ayaan })
+    expect(gone.status).toBe(204)
+    const orphan = await call(app, 'GET', '/products?search=Umm', { token: ayaan })
+    expect(orphan.body.data[0].kitchen_station_id).toBeNull()
+    expect(orphan.body.data[0].name).toBe('Umm Ali')
+  })
+
+  it('will not remove a station with work still on the board', async () => {
+    // The seeded tab has a grill ticket in progress.
+    const res = await call(app, 'DELETE', '/kitchen/stations/st-grill', { token: ayaan })
+    expect(res.status).toBe(409)
+    expect(res.body.error.code).toBe('STATION_BUSY')
+  })
+
+  it('is invisible across tenants', async () => {
+    const res = await call(app, 'PATCH', '/kitchen/stations/st-ds-fry', { token: ayaan, body: { name: 'Mine now' } })
+    expect(res.status).toBe(404)
+  })
+})
+
 describe('deactivate first, delete second', () => {
   it('a login must be off before it can go, and its name stays on its orders', async () => {
     const active = await call(app, 'DELETE', '/users/u-amal', { token: ayaan })
@@ -507,6 +591,31 @@ describe('deactivate first, delete second', () => {
     expect(gone.status).toBe(204)
     const list = await call(app, 'GET', '/admin/businesses', { token: admin })
     expect(list.body.data.map((b: { id: string }) => b.id).sort()).toEqual(['b-drumsticks', 'b-karakhouse'])
+
+    // Nothing of theirs survives anywhere — every table, checked by name.
+    const leftovers = await many<{ table_name: string; n: number }>(`
+      select 'stores' as table_name, count(*)::int as n from stores where business_id = 'b-demo'
+      union all select 'users', count(*)::int from users where business_id = 'b-demo'
+      union all select 'products', count(*)::int from products where business_id = 'b-demo'
+      union all select 'categories', count(*)::int from categories where business_id = 'b-demo'
+      union all select 'customers', count(*)::int from customers where business_id = 'b-demo'
+      union all select 'staff_members', count(*)::int from staff_members where business_id = 'b-demo'
+      union all select 'orders', count(*)::int from orders o where o.store_id in ('s-alrayyan', 's-karak')
+      union all select 'order_items', count(*)::int from order_items i where not exists (select 1 from orders o where o.id = i.order_id)
+      union all select 'payments', count(*)::int from payments p where not exists (select 1 from orders o where o.id = p.order_id)
+      union all select 'credit_ledger', count(*)::int from credit_ledger l where not exists (select 1 from customers c where c.id = l.customer_id)
+      union all select 'shifts', count(*)::int from shifts where store_id in ('s-alrayyan', 's-karak')
+      union all select 'cash_movements', count(*)::int from cash_movements m where not exists (select 1 from shifts s where s.id = m.shift_id)
+      union all select 'dining_tables', count(*)::int from dining_tables where store_id in ('s-alrayyan', 's-karak')
+      union all select 'kitchen_stations', count(*)::int from kitchen_stations where store_id in ('s-alrayyan', 's-karak')
+      union all select 'kitchen_tickets', count(*)::int from kitchen_tickets t where not exists (select 1 from orders o where o.id = t.order_id)
+      union all select 'kitchen_ticket_items', count(*)::int from kitchen_ticket_items i where not exists (select 1 from kitchen_tickets t where t.id = i.ticket_id)
+      union all select 'attendance', count(*)::int from attendance a where not exists (select 1 from staff_members s where s.id = a.staff_id)
+      union all select 'product_categories', count(*)::int from product_categories pc where not exists (select 1 from products p where p.id = pc.product_id)
+      union all select 'order_sequences', count(*)::int from order_sequences where store_id in ('s-alrayyan', 's-karak')
+    `)
+    expect(leftovers.filter((r) => r.n > 0)).toEqual([])
+
     // the other tenant is untouched
     const ds = await call(app, 'GET', '/products', { token: imran })
     expect(ds.body.data.length).toBeGreaterThan(50)

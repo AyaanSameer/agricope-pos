@@ -107,6 +107,9 @@ export interface ProductRow {
   is_active: boolean
   category_ids: string[]
   category_name?: string | null
+  /** null = sold at every branch */
+  store_id: string | null
+  store_name?: string | null
 }
 
 export function productOut(p: ProductRow) {
@@ -128,6 +131,8 @@ export function productOut(p: ProductRow) {
     option_groups: p.option_groups ?? [],
     kitchen_station_id: p.kitchen_station_id,
     station_name: p.station_name ?? null,
+    store_id: p.store_id,
+    store_name: p.store_name ?? null,
     is_active: p.is_active,
   }
 }

@@ -197,6 +197,27 @@ receipt or a report.
 `POST /admin/change-password {current_password, new_password}` — the platform
 administrator's own password (min 8 chars, current re-checked).
 
+## The owner's two catalogue choices (2026-09-02)
+
+- **`business_settings.shared_catalog`** (boolean, default `true`). True = one
+  catalogue for every branch. False = `products.store_id` decides: `null` means
+  "all branches", a branch id means that branch only. `GET /products?store_id=`
+  applies the filter **only while sharing is off**, so turning it back on
+  restores every assignment instead of losing it. Owner-only, like the rest of
+  `/business-settings`.
+- **Kitchen stations are CRUD.** `POST /kitchen/stations {store_id, name}`,
+  `PATCH /kitchen/stations/:id {name}`, `DELETE /kitchen/stations/:id` — owner
+  only (`Only the owner can change kitchen stations.`). Names are unique per
+  branch. A delete is refused with `409 STATION_BUSY` while tickets are still
+  `new` or `in_progress`; otherwise products routed there fall back to no
+  station and simply stop making kitchen work.
+- **Deleting a business erases everything under it.** Orders are cleared first
+  (the branch FK is `RESTRICT`), then the tenant row cascades to branches,
+  logins, staff and attendance, catalog and categories, customers and the whole
+  credit ledger, tables, stations, shifts and cash movements. A test asserts
+  zero surviving rows in all nineteen tables. The console makes the admin type
+  the business name before the button will fire.
+
 ## Open questions for the next contract sync
 1. How does an order-level discount apportion across lines for per-line tax?
 2. Is service charge taxable?

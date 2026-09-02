@@ -59,8 +59,13 @@ export function RegisterPage() {
   const openOrders = openOrdersQuery.data?.total ?? 0
 
   const productsQuery = useQuery({
-    queryKey: ['products', { search, categoryId, showInactive: false }],
-    queryFn: () => listProducts({ search: search || undefined, category_id: categoryId ?? undefined }),
+    queryKey: ['products', { search, categoryId, store: activeStore?.id, showInactive: false }],
+    queryFn: () =>
+      listProducts({
+        search: search || undefined,
+        category_id: categoryId ?? undefined,
+        store_id: activeStore?.id,
+      }),
     enabled: !!activeStore,
   })
 
@@ -96,7 +101,7 @@ export function RegisterPage() {
 
   // USB scanners type fast and hit Enter — resolve the code and drop it in the cart.
   useBarcodeScanner(async (code) => {
-    const res = await listProducts({ barcode: code })
+    const res = await listProducts({ barcode: code, store_id: activeStore?.id })
     const product = res.data[0]
     if (product) ring(product)
   })

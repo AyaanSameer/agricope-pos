@@ -12,6 +12,7 @@ import {
   sessionFor,
   staffMembers,
   stations,
+  storeBusinessId,
   stores,
   storeName,
   toPublicProduct,
@@ -20,9 +21,9 @@ import {
   toUserRecord,
   users,
 } from './db'
-import type { DbOptionGroup, DbProduct, DbStaffMember, DbUser } from './db'
+import type { DbOptionGroup, DbProduct, DbStaffMember, DbStation, DbUser } from './db'
 import type { ProductOffer } from '../lib/pricing'
-import { settingsFor } from './posdb'
+import { settingsFor, tickets } from './posdb'
 import { apiError, requireRole } from './http'
 
 const MONEY_RE = /^\d+(\.\d{1,2})?$/
@@ -234,7 +235,7 @@ export const orgHandlers = [
     if (caller instanceof Response) return caller
     const st = settingsFor(caller.business_id)
     const body = (await request.json()) as Partial<
-      Pick<typeof st, 'receipt_footer' | 'discount_approval_percent'>
+      Pick<typeof st, 'receipt_footer' | 'discount_approval_percent' | 'shared_catalog'>
     >
     if (body.receipt_footer !== undefined) st.receipt_footer = body.receipt_footer.trim()
     if (body.discount_approval_percent !== undefined) {
@@ -244,6 +245,9 @@ export const orgHandlers = [
       }
       st.discount_approval_percent = String(n)
     }
+    // Per-branch assignments are kept, not cleared, so turning sharing back off
+    // restores what the owner had.
+    if (body.shared_catalog !== undefined) st.shared_catalog = body.shared_catalog
     return HttpResponse.json(st)
   }),
 
@@ -389,9 +393,14 @@ export const orgHandlers = [
     const search = url.searchParams.get('search')?.toLowerCase()
     const categoryId = url.searchParams.get('category_id')
     const includeInactive = url.searchParams.get('include_inactive') === 'true'
+    const storeId = url.searchParams.get('store_id')
     let data = products.filter(
       (p) => p.business_id === caller.business_id && (includeInactive || p.is_active),
     )
+    // A branch-scoped catalogue only exists once the owner has asked for one.
+    if (storeId && !settingsFor(caller.business_id).shared_catalog) {
+      data = data.filter((p) => p.store_id === null || p.store_id === storeId)
+    }
     if (barcode) data = data.filter((p) => p.barcode === barcode)
     if (categoryId) data = data.filter((p) => p.category_ids.includes(categoryId))
     if (search) data = data.filter((p) => p.name.toLowerCase().includes(search))
@@ -443,6 +452,7 @@ export const orgHandlers = [
       offer_online: offerOnline,
       option_groups: optionGroups,
       kitchen_station_id: body.kitchen_station_id ?? null,
+      store_id: body.store_id ?? null,
       is_active: body.is_active ?? true,
     }
     products.push(product)
@@ -500,6 +510,7 @@ export const orgHandlers = [
     if (body.tax_rate !== undefined) product.tax_rate = String(body.tax_rate)
     if (body.is_combo !== undefined) product.is_combo = body.is_combo
     if (body.kitchen_station_id !== undefined) product.kitchen_station_id = body.kitchen_station_id
+    if (body.store_id !== undefined) product.store_id = body.store_id
     if (body.is_active !== undefined) product.is_active = body.is_active
     return HttpResponse.json(toPublicProduct(product))
   }),
@@ -508,11 +519,91 @@ export const orgHandlers = [
     await delay(150)
     const caller = requester(request)
     if (!caller) return apiError(401, 'UNAUTHENTICATED', 'Sign in to continue.')
+    const url = new URL(request.url)
+    const storeId = url.searchParams.get('store_id')
     const ownStores = new Set(
       stores.filter((s) => s.business_id === caller.business_id).map((s) => s.id),
     )
-    const data = stations.filter((s) => ownStores.has(s.store_id))
+    let data = stations.filter((s) => ownStores.has(s.store_id))
+    if (storeId) data = data.filter((s) => s.store_id === storeId)
+    data = [...data].sort((a, b) => a.sort_order - b.sort_order)
     return HttpResponse.json({ data, total: data.length, page: 1, limit: 50 })
+  }),
+
+  /* ---- kitchen stations: the owner shapes each branch's kitchen ---- */
+
+  http.post('/api/v1/kitchen/stations', async ({ request }) => {
+    await delay(250)
+    const caller = requireRole(request, ['owner'])
+    if (caller instanceof Response) return caller
+    const body = (await request.json()) as { store_id?: string; name?: string }
+    const name = body.name?.trim()
+    if (!name) return apiError(400, 'VALIDATION_ERROR', 'The station needs a name (e.g. Grill).')
+    if (!body.store_id || !stores.some((s) => s.id === body.store_id && s.business_id === caller.business_id)) {
+      return apiError(400, 'VALIDATION_ERROR', 'A valid branch is required.')
+    }
+    if (stations.some((s) => s.store_id === body.store_id && s.name.toLowerCase() === name.toLowerCase())) {
+      return apiError(400, 'VALIDATION_ERROR', 'That branch already has a station with this name.')
+    }
+    const station: DbStation = {
+      id: `st-${Math.random().toString(36).slice(2, 8)}`,
+      store_id: body.store_id,
+      name,
+      sort_order: stations.filter((s) => s.store_id === body.store_id).length + 1,
+    }
+    stations.push(station)
+    return HttpResponse.json(station, { status: 201 })
+  }),
+
+  http.patch('/api/v1/kitchen/stations/:id', async ({ request, params }) => {
+    await delay(250)
+    const caller = requireRole(request, ['owner'])
+    if (caller instanceof Response) return caller
+    const station = stations.find(
+      (s) => s.id === params.id && storeBusinessId(s.store_id) === caller.business_id,
+    )
+    if (!station) return apiError(404, 'NOT_FOUND', 'No such kitchen station.')
+    const body = (await request.json()) as { name?: string }
+    if (body.name !== undefined) {
+      const name = body.name.trim()
+      if (!name) return apiError(400, 'VALIDATION_ERROR', 'The station needs a name.')
+      if (
+        stations.some(
+          (s) => s.store_id === station.store_id && s.id !== station.id && s.name.toLowerCase() === name.toLowerCase(),
+        )
+      ) {
+        return apiError(400, 'VALIDATION_ERROR', 'That branch already has a station with this name.')
+      }
+      station.name = name
+    }
+    return HttpResponse.json(station)
+  }),
+
+  http.delete('/api/v1/kitchen/stations/:id', async ({ request, params }) => {
+    await delay(250)
+    const caller = requireRole(request, ['owner'])
+    if (caller instanceof Response) return caller
+    const idx = stations.findIndex(
+      (s) => s.id === params.id && storeBusinessId(s.store_id) === caller.business_id,
+    )
+    if (idx === -1) return apiError(404, 'NOT_FOUND', 'No such kitchen station.')
+    const station = stations[idx]
+    // Live tickets hang off a station — the kitchen would lose work in progress.
+    const live = tickets.filter(
+      (t) => t.station_id === station.id && (t.status === 'new' || t.status === 'in_progress'),
+    ).length
+    if (live > 0) {
+      return apiError(
+        409,
+        'STATION_BUSY',
+        `${station.name} has ${live} ticket${live === 1 ? '' : 's'} still on the board. Clear them before removing it.`,
+      )
+    }
+    // Products routed here simply stop making kitchen work.
+    for (const p of products) if (p.kitchen_station_id === station.id) p.kitchen_station_id = null
+    for (let i = tickets.length - 1; i >= 0; i--) if (tickets[i].station_id === station.id) tickets.splice(i, 1)
+    stations.splice(idx, 1)
+    return new HttpResponse(null, { status: 204 })
   }),
 
   /* ---------- staff: workforce attendance, distinct from till logins ---------- */

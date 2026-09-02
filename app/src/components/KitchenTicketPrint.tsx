@@ -24,7 +24,7 @@ export function KitchenTicketPrint({
     queryKey: ['products', { forTicket: true }],
     queryFn: () => listProducts({ include_inactive: true }),
   })
-  const stationsQuery = useQuery({ queryKey: ['stations'], queryFn: listStations })
+  const stationsQuery = useQuery({ queryKey: ['stations'], queryFn: () => listStations() })
 
   const groups = useMemo(() => {
     const catalog = productsQuery.data?.data ?? []

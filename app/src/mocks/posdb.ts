@@ -10,6 +10,8 @@ export interface BusinessSettings {
   discount_approval_percent: string
   receipt_footer: string
   business_name: string
+  /** true = one catalogue for every branch; false = each branch keeps its own */
+  shared_catalog: boolean
 }
 
 const SETTINGS: Record<string, BusinessSettings> = {
@@ -17,11 +19,13 @@ const SETTINGS: Record<string, BusinessSettings> = {
     discount_approval_percent: '10',
     receipt_footer: 'Thank you — see you tomorrow!',
     business_name: 'Agricope Demo Trading Co.',
+    shared_catalog: true,
   },
   'b-drumsticks': {
     discount_approval_percent: '10',
     receipt_footer: 'Thank you for choosing Drumsticks!',
     business_name: 'Drumsticks',
+    shared_catalog: true,
   },
 }
 

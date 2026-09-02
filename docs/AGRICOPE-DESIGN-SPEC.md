@@ -475,6 +475,13 @@ Till logins for this business.
 Branch settings, one card per branch (only the active branch when a till is open).
 
 - Header: "Settings", sub-line "Branch & business settings · owner only".
+- **Kitchen stations** sit with each branch, under Kitchen output: the list of
+  stations, each with **Rename** and **Remove**, and a name field with
+  **+ Add station**. Removing one that still has tickets on the board is refused
+  in place. A branch with none says so — it makes no kitchen work.
+- **Catalogue** is business-wide, two option cards: "One catalogue, every branch"
+  and "A catalogue per branch". The second makes a **Sold at** field appear on the
+  product editor ("All branches" or one branch).
 - **Branch card:** name, "{type} · {address}", and a type pill (Retail / Restaurant).
 - **Kitchen output block** — title, explanation, then a **radio group of two large option cards**:
   - **KDS board** — "Live tickets on a screen at the pass, bumped by the kitchen."

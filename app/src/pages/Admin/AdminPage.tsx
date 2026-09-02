@@ -57,6 +57,7 @@ export function AdminPage() {
   const [modal, setModal] = useState<Modal>(null)
   const [confirmingLogout, setConfirmingLogout] = useState(false)
   const [confirming, setConfirming] = useState<Confirming>(null)
+  const [eraseTyped, setEraseTyped] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
@@ -377,7 +378,10 @@ export function AdminPage() {
                   <button
                     type="button"
                     className="admin-action danger"
-                    onClick={() => setConfirming({ kind: 'delete-business', business: b })}
+                    onClick={() => {
+                      setEraseTyped('')
+                      setConfirming({ kind: 'delete-business', business: b })
+                    }}
                   >
                     Delete permanently
                   </button>
@@ -523,21 +527,74 @@ export function AdminPage() {
       )}
 
       {confirming?.kind === 'delete-business' && (
-        <ConfirmDialog
-          title={`Delete ${confirming.business.name}?`}
-          message={
-            `This erases the tenant and everything under it — ` +
-            `${confirming.business.stores.length} branch${confirming.business.stores.length === 1 ? '' : 'es'}, ` +
-            `${confirming.business.user_count} login${confirming.business.user_count === 1 ? '' : 's'}, ` +
-            `${confirming.business.product_count} product${confirming.business.product_count === 1 ? '' : 's'}, ` +
-            `and ${confirming.business.order_count} order${confirming.business.order_count === 1 ? '' : 's'} of history. ` +
-            `This cannot be undone.`
-          }
-          confirmLabel={removeBusiness.isPending ? 'Deleting…' : 'Delete permanently'}
-          danger
-          onConfirm={() => removeBusiness.mutate(confirming.business)}
-          onCancel={() => setConfirming(null)}
-        />
+        <div className="admin-modal" role="dialog" aria-modal="true">
+          <form
+            className="admin-form card"
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (eraseTyped.trim() === confirming.business.name) removeBusiness.mutate(confirming.business)
+            }}
+          >
+            <h3>Delete {confirming.business.name}?</h3>
+            <p className="admin-note">
+              Everything this business owns is erased, permanently and immediately. There is no
+              undo and no backup on this side of the deletion.
+            </p>
+            {/* Say what goes, item by item — a count is harder to wave away than a warning. */}
+            <ul className="admin-erase-list">
+              <li>
+                <strong>{confirming.business.order_count}</strong> order
+                {confirming.business.order_count === 1 ? '' : 's'} — every receipt, payment and
+                refund on record
+              </li>
+              <li>
+                <strong>{confirming.business.stores.length}</strong> branch
+                {confirming.business.stores.length === 1 ? '' : 'es'}, with their tables, kitchen
+                stations and shift history
+              </li>
+              <li>
+                <strong>{confirming.business.product_count}</strong> product
+                {confirming.business.product_count === 1 ? '' : 's'} and every category
+              </li>
+              <li>
+                <strong>{confirming.business.user_count}</strong> login
+                {confirming.business.user_count === 1 ? '' : 's'}, plus all staff and attendance
+              </li>
+              <li>Every customer, their credit limits and the whole ledger of what they owe</li>
+            </ul>
+            <label className="field">
+              <span>
+                Type <strong>{confirming.business.name}</strong> to confirm
+              </span>
+              <input
+                value={eraseTyped}
+                autoFocus
+                autoComplete="off"
+                onChange={(e) => setEraseTyped(e.target.value)}
+              />
+            </label>
+            {error && <div className="admin-error">{error}</div>}
+            <div className="admin-form-actions">
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => {
+                  setConfirming(null)
+                  setEraseTyped('')
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn-primary admin-erase-go"
+                disabled={removeBusiness.isPending || eraseTyped.trim() !== confirming.business.name}
+              >
+                {removeBusiness.isPending ? 'Deleting…' : 'Delete everything'}
+              </button>
+            </div>
+          </form>
+        </div>
       )}
 
       {confirming?.kind === 'delete-branch' && (

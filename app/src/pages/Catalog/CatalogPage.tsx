@@ -11,6 +11,7 @@ import {
   updateProduct,
 } from '../../api/catalog'
 import type { OptionGroup, Product, ProductInput } from '../../api/catalog'
+import { getBusinessSettings, listStores } from '../../api/org'
 import { ApiError } from '../../api/client'
 import { fmt } from '../../lib/money'
 import { offerActive, resolveUnitPrice } from '../../lib/pricing'
@@ -52,6 +53,7 @@ interface Draft {
   offer_online_ends: string
   option_groups: GroupDraft[]
   kitchen_station_id: string | null
+  store_id: string | null
   is_active: boolean
 }
 
@@ -73,6 +75,7 @@ const EMPTY: Draft = {
   offer_online_ends: '',
   option_groups: [],
   kitchen_station_id: null,
+  store_id: null,
   is_active: true,
 }
 
@@ -129,6 +132,7 @@ function productToDraft(p: Product): Draft {
     offer_online_ends: p.offer_online?.ends_at ? p.offer_online.ends_at.slice(0, 10) : '',
     option_groups: p.option_groups.map(groupToDraft),
     kitchen_station_id: p.kitchen_station_id,
+    store_id: p.store_id,
     is_active: p.is_active,
   }
 }
@@ -162,6 +166,7 @@ function draftToInput(d: Draft): ProductInput {
       : null,
     option_groups: draftToGroups(d.option_groups),
     kitchen_station_id: d.kitchen_station_id,
+    store_id: d.store_id,
     is_active: d.is_active,
   }
 }
@@ -178,7 +183,11 @@ export function CatalogPage() {
   const [newCategory, setNewCategory] = useState('')
 
   const categoriesQuery = useQuery({ queryKey: ['categories'], queryFn: listCategories })
-  const stationsQuery = useQuery({ queryKey: ['stations'], queryFn: listStations })
+  const stationsQuery = useQuery({ queryKey: ['stations'], queryFn: () => listStations() })
+  // The branch field only exists once the owner has asked for per-branch catalogues.
+  const bizQuery = useQuery({ queryKey: ['business-settings'], queryFn: getBusinessSettings })
+  const storesQuery = useQuery({ queryKey: ['stores'], queryFn: listStores })
+  const perBranch = bizQuery.data ? !bizQuery.data.shared_catalog : false
   const productsQuery = useQuery({
     queryKey: ['products', { search, categoryId, showInactive }],
     queryFn: () =>
@@ -517,6 +526,22 @@ export function CatalogPage() {
                 <div className="editor-block">
                   <div className="block-label">Routing &amp; scanning</div>
                 </div>
+                {perBranch && (
+                  <div className="editor-row">
+                    <label className="field">
+                      <span>Sold at</span>
+                      <select
+                        value={draft.store_id ?? ''}
+                        onChange={(e) => setDraft({ ...draft, store_id: e.target.value || null })}
+                      >
+                        <option value="">All branches</option>
+                        {(storesQuery.data?.data ?? []).map((st) => (
+                          <option key={st.id} value={st.id}>{st.name}</option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                )}
                 <div className="editor-row">
                   <label className="field">
                     <span>Kitchen station</span>

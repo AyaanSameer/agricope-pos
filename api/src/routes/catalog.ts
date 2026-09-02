@@ -4,7 +4,7 @@ import type { Ctx } from '../app.js'
 import { requireRole, requireUser } from '../auth.js'
 import { many, one, withTx } from '../db.js'
 import type { Queryable } from '../db.js'
-import { invalid, notFound } from '../errors.js'
+import { conflict, invalid, notFound } from '../errors.js'
 import type { ProductOffer } from '../lib/pricing.js'
 import { paginated, productOut } from '../serialize.js'
 import type { ProductRow } from '../serialize.js'
@@ -23,9 +23,10 @@ const PRODUCT_SELECT = `
          coalesce((select array_agg(pc.category_id order by pc.position) from product_categories pc where pc.product_id = p.id), '{}'::text[]) as category_ids,
          (select c.name from product_categories pc join categories c on c.id = pc.category_id
            where pc.product_id = p.id order by pc.position limit 1) as category_name,
-         ks.name as station_name
+         ks.name as station_name, st.name as store_name
     from products p
-    left join kitchen_stations ks on ks.id = p.kitchen_station_id`
+    left join kitchen_stations ks on ks.id = p.kitchen_station_id
+    left join stores st on st.id = p.store_id`
 
 function parseOptionGroups(raw: unknown): OptionGroup[] {
   if (!Array.isArray(raw)) return []
@@ -84,6 +85,7 @@ const productBody = z.object({
   category_ids: z.array(z.string()).optional(),
   category_id: z.string().nullable().optional(),
   barcode: z.string().nullable().optional(),
+  store_id: z.string().nullable().optional(),
   price: z.union([z.string(), z.number()]).optional(),
   price_online: z.union([z.string(), z.number()]).nullable().optional(),
   tax_rate: z.union([z.string(), z.number()]).optional(),
@@ -133,11 +135,21 @@ export async function catalogRoutes(app: FastifyInstance, ctx: Ctx) {
         category_id: z.string().optional(),
         barcode: z.string().optional(),
         include_inactive: z.string().optional(),
+        store_id: z.string().optional(),
       })
       .parse(req.query)
     const params: unknown[] = [caller.business_id]
     const where = ['p.business_id = $1']
     if (q.include_inactive !== 'true') where.push('p.is_active')
+    // A branch-scoped catalogue only exists once the owner has asked for one.
+    // While it is shared, a product's home branch is remembered but ignored.
+    if (q.store_id) {
+      const biz = await one<{ shared_catalog: boolean }>('select shared_catalog from businesses where id = $1', [caller.business_id])
+      if (!biz?.shared_catalog) {
+        params.push(q.store_id)
+        where.push(`(p.store_id is null or p.store_id = $${params.length})`)
+      }
+    }
     if (q.barcode) {
       params.push(q.barcode)
       where.push(`p.barcode = $${params.length}`)
@@ -163,6 +175,10 @@ export async function catalogRoutes(app: FastifyInstance, ctx: Ctx) {
     if (body.barcode && (await one('select 1 from products where business_id = $1 and barcode = $2', [caller.business_id, body.barcode]))) {
       throw invalid('Another product already has that barcode.')
     }
+    if (body.store_id) {
+      const own = await one('select 1 from stores where id = $1 and business_id = $2', [body.store_id, caller.business_id])
+      if (!own) throw invalid('That branch does not belong to this business.')
+    }
     if (body.kitchen_station_id) {
       const st = await one('select 1 from kitchen_stations ks join stores s on s.id = ks.store_id where ks.id = $1 and s.business_id = $2', [body.kitchen_station_id, caller.business_id])
       if (!st) throw invalid('Unknown kitchen station.')
@@ -173,8 +189,8 @@ export async function catalogRoutes(app: FastifyInstance, ctx: Ctx) {
     const categoryIds = Array.isArray(body.category_ids) ? body.category_ids : body.category_id ? [body.category_id] : []
     const id = await withTx(async (tx) => {
       const created = await one<{ id: string }>(
-        `insert into products (business_id, name, name_ar, description, barcode, price, price_online, tax_rate, is_combo, offer, offer_online, option_groups, kitchen_station_id, is_active)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) returning id`,
+        `insert into products (business_id, name, name_ar, description, barcode, price, price_online, tax_rate, is_combo, offer, offer_online, option_groups, kitchen_station_id, is_active, store_id)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) returning id`,
         [
           caller.business_id,
           body.name!.trim(),
@@ -190,6 +206,7 @@ export async function catalogRoutes(app: FastifyInstance, ctx: Ctx) {
           JSON.stringify(optionGroups),
           body.kitchen_station_id ?? null,
           body.is_active ?? true,
+          body.store_id ?? null,
         ],
         tx,
       )
@@ -210,6 +227,10 @@ export async function catalogRoutes(app: FastifyInstance, ctx: Ctx) {
     if (body.price !== undefined && !MONEY_RE.test(String(body.price))) throw invalid('Price must be a decimal string like "4.50".')
     if (body.price_online != null && body.price_online !== '' && !MONEY_RE.test(String(body.price_online))) {
       throw invalid('Online price must be a decimal string like "4.50".')
+    }
+    if (body.store_id) {
+      const own = await one('select 1 from stores where id = $1 and business_id = $2', [body.store_id, caller.business_id])
+      if (!own) throw invalid('That branch does not belong to this business.')
     }
     if (body.kitchen_station_id) {
       const st = await one('select 1 from kitchen_stations ks join stores s on s.id = ks.store_id where ks.id = $1 and s.business_id = $2', [body.kitchen_station_id, caller.business_id])
@@ -239,6 +260,7 @@ export async function catalogRoutes(app: FastifyInstance, ctx: Ctx) {
     if (body.tax_rate !== undefined) set('tax_rate', String(body.tax_rate))
     if (body.is_combo !== undefined) set('is_combo', body.is_combo)
     if (body.kitchen_station_id !== undefined) set('kitchen_station_id', body.kitchen_station_id)
+    if (body.store_id !== undefined) set('store_id', body.store_id)
     if (body.is_active !== undefined) set('is_active', body.is_active)
 
     await withTx(async (tx) => {
@@ -251,11 +273,90 @@ export async function catalogRoutes(app: FastifyInstance, ctx: Ctx) {
 
   app.get('/kitchen/stations', async (req) => {
     const caller = await requireUser(ctx, req)
-    const rows = await many<{ id: string; store_id: string; name: string }>(
-      `select ks.id, ks.store_id, ks.name from kitchen_stations ks join stores s on s.id = ks.store_id
-        where s.business_id = $1 order by s.store_number, ks.sort_order, ks.name`,
-      [caller.business_id],
+    const q = z.object({ store_id: z.string().optional() }).parse(req.query)
+    const params: unknown[] = [caller.business_id]
+    let scope = ''
+    if (q.store_id) {
+      params.push(q.store_id)
+      scope = `and ks.store_id = $${params.length}`
+    }
+    const rows = await many<{ id: string; store_id: string; name: string; sort_order: number }>(
+      `select ks.id, ks.store_id, ks.name, ks.sort_order from kitchen_stations ks join stores s on s.id = ks.store_id
+        where s.business_id = $1 ${scope} order by s.store_number, ks.sort_order, ks.name`,
+      params,
     )
     return paginated(rows, 50)
+  })
+
+  /**
+   * Stations are the owner's floor plan for the kitchen: what a branch has,
+   * what each is called, and which retire. Products route to them, so the
+   * names show up on tickets and on the KDS.
+   */
+  const ownStation = async (id: string, businessId: string) => {
+    const row = await one<{ id: string; store_id: string; name: string }>(
+      `select ks.id, ks.store_id, ks.name from kitchen_stations ks join stores s on s.id = ks.store_id
+        where ks.id = $1 and s.business_id = $2`,
+      [id, businessId],
+    )
+    if (!row) throw notFound('kitchen station')
+    return row
+  }
+
+  app.post('/kitchen/stations', async (req, reply) => {
+    const caller = await requireRole(ctx, req, ['owner'], 'Only the owner can change kitchen stations.')
+    const body = z.object({ store_id: z.string().optional(), name: z.string().optional() }).parse(req.body)
+    const name = body.name?.trim()
+    if (!name) throw invalid('The station needs a name (e.g. Grill).')
+    if (!body.store_id || !(await one('select 1 from stores where id = $1 and business_id = $2', [body.store_id, caller.business_id]))) {
+      throw invalid('A valid branch is required.')
+    }
+    if (await one('select 1 from kitchen_stations where store_id = $1 and lower(name) = lower($2)', [body.store_id, name])) {
+      throw invalid('That branch already has a station with this name.')
+    }
+    const next = await one<{ n: number }>('select coalesce(max(sort_order), 0) + 1 as n from kitchen_stations where store_id = $1', [body.store_id])
+    const row = await one('insert into kitchen_stations (store_id, name, sort_order) values ($1, $2, $3) returning id, store_id, name, sort_order', [
+      body.store_id,
+      name,
+      next!.n,
+    ])
+    return reply.status(201).send(row)
+  })
+
+  app.patch('/kitchen/stations/:id', async (req) => {
+    const caller = await requireRole(ctx, req, ['owner'], 'Only the owner can change kitchen stations.')
+    const { id } = req.params as { id: string }
+    const station = await ownStation(id, caller.business_id)
+    const body = z.object({ name: z.string().optional() }).parse(req.body)
+    if (body.name !== undefined) {
+      const name = body.name.trim()
+      if (!name) throw invalid('The station needs a name.')
+      if (await one('select 1 from kitchen_stations where store_id = $1 and id <> $2 and lower(name) = lower($3)', [station.store_id, station.id, name])) {
+        throw invalid('That branch already has a station with this name.')
+      }
+      await ctx.db.query('update kitchen_stations set name = $2 where id = $1', [station.id, name])
+    }
+    return one('select id, store_id, name, sort_order from kitchen_stations where id = $1', [station.id])
+  })
+
+  app.delete('/kitchen/stations/:id', async (req, reply) => {
+    const caller = await requireRole(ctx, req, ['owner'], 'Only the owner can change kitchen stations.')
+    const { id } = req.params as { id: string }
+    const station = await ownStation(id, caller.business_id)
+    // Live tickets hang off a station and would go with it — the kitchen would
+    // lose work it is in the middle of. Finish the board first.
+    const live = await one<{ n: number }>(
+      "select count(*)::int as n from kitchen_tickets where station_id = $1 and status in ('new', 'in_progress')",
+      [station.id],
+    )
+    if (live && live.n > 0) {
+      throw conflict(
+        'STATION_BUSY',
+        `${station.name} has ${live.n} ticket${live.n === 1 ? '' : 's'} still on the board. Clear them before removing it.`,
+      )
+    }
+    // Products routed here simply stop making kitchen work (FK is SET NULL).
+    await ctx.db.query('delete from kitchen_stations where id = $1', [station.id])
+    return reply.status(204).send()
   })
 }

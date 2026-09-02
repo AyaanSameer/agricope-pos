@@ -161,3 +161,22 @@ form.settings-block + form.settings-block {
   background: var(--cta-tint);
   color: var(--cta);
 }
+
+/* Kitchen stations — a short list the owner edits in place. */
+.settings-stations { display: flex; flex-direction: column; gap: 6px; }
+.settings-stations-empty { font-size: calc(12.5px * var(--fs)); color: var(--hint); padding: 2px 0; }
+.settings-station {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-warm);
+}
+.settings-station-name { flex: 1; font-size: calc(13px * var(--fs)); font-weight: 500; }
+.settings-station-remove { color: var(--cta); }
+.settings-station-edit { display: flex; align-items: center; gap: 8px; width: 100%; }
+.settings-station-edit input { flex: 1; }
+.settings-station-add { display: flex; gap: 8px; align-items: center; }
+.settings-station-add input { flex: 1 1 200px; }

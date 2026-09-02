@@ -123,14 +123,15 @@ export async function orgRoutes(app: FastifyInstance, ctx: Ctx) {
   // ---------- business-wide settings ----------
 
   const settings = async (businessId: string) => {
-    const row = await one<{ name: string; receipt_footer: string; discount_approval_percent: string }>(
-      'select name, receipt_footer, discount_approval_percent from businesses where id = $1',
+    const row = await one<{ name: string; receipt_footer: string; discount_approval_percent: string; shared_catalog: boolean }>(
+      'select name, receipt_footer, discount_approval_percent, shared_catalog from businesses where id = $1',
       [businessId],
     )
     return {
       business_name: row?.name ?? '',
       receipt_footer: row?.receipt_footer ?? '',
       discount_approval_percent: rate(row?.discount_approval_percent ?? 0),
+      shared_catalog: row?.shared_catalog ?? true,
     }
   }
 
@@ -141,7 +142,13 @@ export async function orgRoutes(app: FastifyInstance, ctx: Ctx) {
 
   app.patch('/business-settings', async (req) => {
     const caller = await requireRole(ctx, req, ['owner'])
-    const body = z.object({ receipt_footer: z.string().optional(), discount_approval_percent: z.string().optional() }).parse(req.body)
+    const body = z
+      .object({
+        receipt_footer: z.string().optional(),
+        discount_approval_percent: z.string().optional(),
+        shared_catalog: z.boolean().optional(),
+      })
+      .parse(req.body)
     if (body.receipt_footer !== undefined) {
       await ctx.db.query('update businesses set receipt_footer = $2 where id = $1', [caller.business_id, body.receipt_footer.trim()])
     }
@@ -149,6 +156,11 @@ export async function orgRoutes(app: FastifyInstance, ctx: Ctx) {
       const n = Number(body.discount_approval_percent)
       if (!Number.isFinite(n) || n < 0 || n > 100) throw invalid('The approval threshold is a percent, 0–100.')
       await ctx.db.query('update businesses set discount_approval_percent = $2 where id = $1', [caller.business_id, n])
+    }
+    if (body.shared_catalog !== undefined) {
+      // Per-branch assignments are kept, not cleared, so turning sharing back
+      // off restores what the owner had rather than losing it.
+      await ctx.db.query('update businesses set shared_catalog = $2 where id = $1', [caller.business_id, body.shared_catalog])
     }
     return settings(caller.business_id)
   })

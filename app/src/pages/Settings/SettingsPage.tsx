@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { createStation, deleteStation, listStations, renameStation } from '../../api/catalog'
+import type { Station } from '../../api/catalog'
+import { ConfirmDialog } from '../../components/ConfirmDialog'
 import {
   getBusinessSettings,
   listStores,
@@ -37,11 +40,16 @@ export function SettingsPage() {
   })
 
   const saveBiz = useMutation({
-    mutationFn: (input: { receipt_footer?: string; discount_approval_percent?: string }) =>
-      updateBusinessSettings(input),
+    mutationFn: (input: {
+      receipt_footer?: string
+      discount_approval_percent?: string
+      shared_catalog?: boolean
+    }) => updateBusinessSettings(input),
     onSuccess: () => {
       setError(null)
       queryClient.invalidateQueries({ queryKey: ['business-settings'] })
+      // The register's grid depends on this — let it refetch.
+      queryClient.invalidateQueries({ queryKey: ['products'] })
     },
     onError: (err) =>
       setError(err instanceof ApiError ? err.message : 'Could not save — try again.'),
@@ -143,6 +151,9 @@ export function SettingsPage() {
               </div>
             </div>
 
+            {/* ---- Kitchen stations ------------------------------------- */}
+            <StationsGroup storeId={store.id} />
+
             {/* ---- Service charge & tax --------------------------------- */}
             <ServiceGroup
               key={`svc-${store.id}-${store.service_charge_rate}`}
@@ -167,6 +178,12 @@ export function SettingsPage() {
                 </div>
               </div>
             </div>
+
+            <CatalogScopeGroup
+              shared={bizQuery.data.shared_catalog}
+              busy={saveBiz.isPending}
+              onSave={(shared_catalog) => saveBiz.mutate({ shared_catalog })}
+            />
 
             <ReceiptGroup
               key={`rc-${bizQuery.data.receipt_footer}`}
@@ -322,6 +339,198 @@ function ServiceGroup({
         </div>
       )}
     </form>
+  )
+}
+
+/**
+ * One catalogue or one per branch. Shared is the simple case and the default;
+ * a branch catalogue is what a business needs when its shops genuinely sell
+ * different things. Turning sharing back on never loses the assignments.
+ */
+function CatalogScopeGroup({
+  shared,
+  busy,
+  onSave,
+}: {
+  shared: boolean
+  busy: boolean
+  onSave: (shared: boolean) => void
+}) {
+  return (
+    <div className="settings-block">
+      <div className="settings-block-head">
+        <div className="settings-block-title">Catalogue</div>
+        <p className="settings-block-sub">
+          Whether every branch sells from the same product list, or each keeps its own.
+        </p>
+      </div>
+      <div className="settings-seg" role="radiogroup" aria-label="Catalogue">
+        {(
+          [
+            {
+              value: true,
+              label: 'One catalogue, every branch',
+              hint: 'Every product is on sale everywhere. Simplest to run — change a price once.',
+            },
+            {
+              value: false,
+              label: 'A catalogue per branch',
+              hint: 'Each product names the branch that sells it, or "All branches" for the ones every shop carries.',
+            },
+          ] as const
+        ).map((opt) => (
+          <button
+            key={String(opt.value)}
+            type="button"
+            role="radio"
+            aria-checked={shared === opt.value}
+            className={shared === opt.value ? 'settings-opt active' : 'settings-opt'}
+            disabled={busy}
+            onClick={() => shared !== opt.value && onSave(opt.value)}
+          >
+            <span className="settings-opt-top">
+              <span className="settings-radio" aria-hidden="true" />
+              <span className="settings-opt-label">{opt.label}</span>
+            </span>
+            <span className="settings-opt-hint">{opt.hint}</span>
+          </button>
+        ))}
+      </div>
+      <div className="settings-effect">
+        <span className="settings-effect-tag">Effect</span>
+        <span className="settings-effect-text">
+          {shared
+            ? 'Every till shows the whole catalogue · the Catalog page hides the branch field'
+            : 'A till shows only its branch’s products and the ones marked "All branches" · past orders are untouched'}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The branch's kitchen: which stations exist and what they are called. Products
+ * route to them, so these names are what the kitchen reads on a ticket.
+ */
+function StationsGroup({ storeId }: { storeId: string }) {
+  const queryClient = useQueryClient()
+  const [adding, setAdding] = useState('')
+  const [editing, setEditing] = useState<{ id: string; name: string } | null>(null)
+  const [deleting, setDeleting] = useState<Station | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const stationsQuery = useQuery({
+    queryKey: ['stations', storeId],
+    queryFn: () => listStations(storeId),
+  })
+  const done = () => {
+    setError(null)
+    setAdding('')
+    setEditing(null)
+    setDeleting(null)
+    queryClient.invalidateQueries({ queryKey: ['stations'] })
+    queryClient.invalidateQueries({ queryKey: ['products'] })
+  }
+  const fail = (err: unknown) => {
+    setDeleting(null)
+    setError(err instanceof ApiError ? err.message : 'Could not save — try again.')
+  }
+
+  const add = useMutation({ mutationFn: () => createStation({ store_id: storeId, name: adding }), onSuccess: done, onError: fail })
+  const rename = useMutation({
+    mutationFn: () => renameStation(editing!.id, editing!.name),
+    onSuccess: done,
+    onError: fail,
+  })
+  const remove = useMutation({ mutationFn: (id: string) => deleteStation(id), onSuccess: done, onError: fail })
+
+  const stations = stationsQuery.data?.data ?? []
+
+  return (
+    <div className="settings-block">
+      <div className="settings-block-head">
+        <div className="settings-block-title">Kitchen stations</div>
+        <p className="settings-block-sub">
+          Where this branch’s work is routed. A product sends its ticket to one station, and
+          the name is what the kitchen reads.
+        </p>
+      </div>
+
+      <div className="settings-stations">
+        {stationsQuery.isPending && <div className="settings-loading">Loading…</div>}
+        {stationsQuery.data && stations.length === 0 && (
+          <div className="settings-stations-empty">
+            No stations yet — this branch makes no kitchen work until one exists.
+          </div>
+        )}
+        {stations.map((st) => (
+          <div key={st.id} className="settings-station">
+            {editing?.id === st.id ? (
+              <form
+                className="settings-station-edit"
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  if (editing.name.trim()) rename.mutate()
+                }}
+              >
+                <input
+                  value={editing.name}
+                  autoFocus
+                  onChange={(e) => setEditing({ id: st.id, name: e.target.value })}
+                />
+                <button type="submit" className="chip" disabled={rename.isPending}>
+                  Save
+                </button>
+                <button type="button" className="chip" onClick={() => setEditing(null)}>
+                  Cancel
+                </button>
+              </form>
+            ) : (
+              <>
+                <span className="settings-station-name">{st.name}</span>
+                <button type="button" className="chip" onClick={() => setEditing({ id: st.id, name: st.name })}>
+                  Rename
+                </button>
+                <button type="button" className="chip settings-station-remove" onClick={() => setDeleting(st)}>
+                  Remove
+                </button>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <form
+        className="settings-station-add"
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (adding.trim()) add.mutate()
+        }}
+      >
+        <input
+          placeholder="Grill, Fryer, Bar…"
+          value={adding}
+          onChange={(e) => setAdding(e.target.value)}
+        />
+        <button type="submit" className="btn-secondary" disabled={!adding.trim() || add.isPending}>
+          {add.isPending ? 'Adding…' : '+ Add station'}
+        </button>
+      </form>
+
+      {error && <div className="settings-flash err">{error}</div>}
+
+      {deleting && (
+        <ConfirmDialog
+          title={`Remove ${deleting.name}?`}
+          message="Products routed here stop making kitchen work until you give them another station. Past tickets and receipts are untouched."
+          confirmLabel={remove.isPending ? 'Removing…' : 'Remove station'}
+          danger
+          busy={remove.isPending}
+          onConfirm={() => remove.mutate(deleting.id)}
+          onCancel={() => setDeleting(null)}
+        />
+      )}
+    </div>
   )
 }
 

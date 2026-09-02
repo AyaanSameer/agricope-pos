@@ -208,6 +208,7 @@ export interface DbStation {
   id: string
   store_id: string
   name: string
+  sort_order: number
 }
 
 export interface DbOptionChoice {
@@ -226,6 +227,8 @@ export interface DbOptionGroup {
 export interface DbProduct {
   id: string
   business_id: string
+  /** null = sold at every branch; only consulted when sharing is off */
+  store_id: string | null
   name: string
   name_ar: string | null
   description: string | null
@@ -256,12 +259,12 @@ export const categories: DbCategory[] = [
 ]
 
 export const stations: DbStation[] = [
-  { id: 'st-kitchen', store_id: 's-karak', name: 'Kitchen' },
-  { id: 'st-bar', store_id: 's-karak', name: 'Bar' },
-  { id: 'st-grill', store_id: 's-karak', name: 'Grill' },
-  { id: 'st-ds-fry', store_id: 's-drumsticks', name: 'Fry station' },
-  { id: 'st-ds-asm', store_id: 's-drumsticks', name: 'Assembly & Pack' },
-  { id: 'st-ds-cold', store_id: 's-drumsticks', name: 'Drinks & Cold' },
+  { id: 'st-kitchen', store_id: 's-karak', name: 'Kitchen', sort_order: 1 },
+  { id: 'st-bar', store_id: 's-karak', name: 'Bar', sort_order: 2 },
+  { id: 'st-grill', store_id: 's-karak', name: 'Grill', sort_order: 3 },
+  { id: 'st-ds-fry', store_id: 's-drumsticks', name: 'Fry station', sort_order: 1 },
+  { id: 'st-ds-asm', store_id: 's-drumsticks', name: 'Assembly & Pack', sort_order: 2 },
+  { id: 'st-ds-cold', store_id: 's-drumsticks', name: 'Drinks & Cold', sort_order: 3 },
 ]
 
 const DS_STATION: Record<'FRY' | 'ASM' | 'COLD', string> = {
@@ -277,6 +280,7 @@ function demoProduct(
   return {
     id: p.id,
     business_id: 'b-demo',
+    store_id: null,
     name: p.name,
     name_ar: null,
     description: null,
@@ -314,6 +318,7 @@ export const products: DbProduct[] = [
   ...drumsticksItems.map((d): DbProduct => ({
     id: d.id,
     business_id: 'b-drumsticks',
+    store_id: null,
     name: d.name,
     name_ar: d.name_ar,
     description: d.description,
@@ -371,6 +376,8 @@ export function toPublicProduct(p: DbProduct) {
     option_groups: p.option_groups,
     kitchen_station_id: p.kitchen_station_id,
     station_name: stationName(p.kitchen_station_id),
+    store_id: p.store_id,
+    store_name: storeName(p.store_id),
     is_active: p.is_active,
   }
 }

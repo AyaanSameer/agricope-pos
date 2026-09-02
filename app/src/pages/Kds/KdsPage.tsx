@@ -29,7 +29,7 @@ export function KdsPage() {
   // The KDS ages tickets by the second — a ticking clock, not a render read.
   const now = useNow(1_000)
 
-  const stationsQuery = useQuery({ queryKey: ['stations'], queryFn: listStations })
+  const stationsQuery = useQuery({ queryKey: ['stations'], queryFn: () => listStations() })
   const stations = stationsQuery.data?.data ?? []
   const activeStation = stationId ?? stations[0]?.id ?? null
 
