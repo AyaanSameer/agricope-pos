@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { checkInStaff, checkOutStaff, createStaff, listStaff, updateStaff } from '../../api/staff'
+import { checkInStaff, checkOutStaff, createStaff, deleteStaff, listStaff, updateStaff } from '../../api/staff'
 import type { StaffInput, StaffMember } from '../../api/staff'
 import { listStores } from '../../api/org'
 import { ApiError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
+import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { shortBranch } from '../../lib/branch'
 import './staff.css'
 
@@ -49,8 +50,10 @@ function firstCheckIn(staff: StaffMember[]): string {
 
 export function StaffPage() {
   const queryClient = useQueryClient()
-  const { activeStore } = useAuth()
+  const { activeStore, session } = useAuth()
+  const isOwner = session?.user.role === 'owner'
   const [draft, setDraft] = useState<Draft | null>(null)
+  const [deleting, setDeleting] = useState<StaffMember | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const staffQuery = useQuery({
@@ -63,6 +66,29 @@ export function StaffPage() {
 
   const checkIn = useMutation({ mutationFn: checkInStaff, onSuccess: invalidate })
   const checkOut = useMutation({ mutationFn: checkOutStaff, onSuccess: invalidate })
+
+  // Deactivate is the reversible step every manager has; it also checks the
+  // person out, since an inactive member cannot be on the floor.
+  const setActive = useMutation({
+    mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) =>
+      updateStaff(id, { is_active }),
+    onSuccess: invalidate,
+    onError: (err) =>
+      window.alert(err instanceof ApiError ? err.message : 'Could not update — try again.'),
+  })
+
+  // Delete is the owner's second decision, offered only once they are off.
+  const remove = useMutation({
+    mutationFn: (id: string) => deleteStaff(id),
+    onSuccess: () => {
+      setDeleting(null)
+      invalidate()
+    },
+    onError: (err) => {
+      setDeleting(null)
+      window.alert(err instanceof ApiError ? err.message : 'Could not delete — try again.')
+    },
+  })
 
   const save = useMutation({
     mutationFn: (d: Draft) => {
@@ -213,6 +239,24 @@ export function StaffPage() {
               >
                 Edit
               </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={setActive.isPending}
+                onClick={() => setActive.mutate({ id: s.id, is_active: !s.is_active })}
+              >
+                {s.is_active ? 'Deactivate' : 'Restore'}
+              </button>
+              {/* Only the owner removes a person outright, and only once they are off. */}
+              {isOwner && !s.is_active && (
+                <button
+                  type="button"
+                  className="btn-secondary staff-danger"
+                  onClick={() => setDeleting(s)}
+                >
+                  Delete
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -282,6 +326,18 @@ export function StaffPage() {
             </div>
           </form>
         </div>
+      )}
+
+      {deleting && (
+        <ConfirmDialog
+          title={`Delete ${deleting.name}?`}
+          message="Removes them and their attendance record. This cannot be undone."
+          confirmLabel={remove.isPending ? 'Deleting…' : 'Delete staff member'}
+          danger
+          busy={remove.isPending}
+          onConfirm={() => remove.mutate(deleting.id)}
+          onCancel={() => setDeleting(null)}
+        />
       )}
     </div>
   )

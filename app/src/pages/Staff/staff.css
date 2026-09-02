@@ -174,3 +174,7 @@
 }
 .staff-error { color: var(--danger, #c0392b); font-size: calc(13px * var(--fs)); }
 .staff-form-actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+/* The destructive action reads as one — same red the console uses. */
+.staff-danger { color: var(--cta); border-color: var(--cta-tint); }
+.staff-danger:hover { background: var(--cta-tint); }

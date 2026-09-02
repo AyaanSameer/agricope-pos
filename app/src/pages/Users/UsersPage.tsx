@@ -85,8 +85,8 @@ export function UsersPage() {
       {/* Deleting a login is the owner's call — deactivating keeps them on past receipts. */}
       <div className="users-owner-note">
         <span className="users-owner-tag">Owner only</span>
-        Only the owner can delete a login. Managers can deactivate, which keeps the person on past
-        receipts.
+        Deactivate a login first — that keeps the person on past receipts and stops them signing
+        in. Only the owner can then delete it outright.
       </div>
 
       <div className="users-table">
@@ -116,7 +116,9 @@ export function UsersPage() {
               <button type="button" className="users-btn" onClick={() => edit(u)}>
                 Edit
               </button>
-              {isOwner && u.id !== session?.user.id && (
+              {/* Deletion is offered only once the login is off — the two-step
+                  rule the server enforces, made visible rather than surprising. */}
+              {isOwner && u.id !== session?.user.id && !u.is_active && (
                 <button
                   type="button"
                   className="users-btn danger"

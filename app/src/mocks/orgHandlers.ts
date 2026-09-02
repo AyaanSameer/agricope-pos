@@ -114,6 +114,9 @@ export const orgHandlers = [
     if (!business || business.password !== body.password) {
       return apiError(401, 'INVALID_CREDENTIALS', 'Email or password is incorrect.')
     }
+    if (!business.is_active) {
+      return apiError(403, 'BUSINESS_SUSPENDED', 'This account is suspended. Contact Agricope.')
+    }
     return HttpResponse.json(businessSessionFor(business))
   }),
 
@@ -312,7 +315,33 @@ export const orgHandlers = [
     if (users[idx].id === caller.id) {
       return apiError(400, 'VALIDATION_ERROR', 'You cannot delete your own account.')
     }
+    // Deactivate first, delete second: switching a login off is reversible and
+    // is the step that proves the person is really gone from the rota.
+    if (users[idx].is_active) {
+      return apiError(409, 'STILL_ACTIVE', 'Deactivate this login before deleting it.')
+    }
     users.splice(idx, 1)
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  // Staff follow the same two-step rule. Attendance rows go with the person —
+  // they are a rota record, not a financial one.
+  http.delete('/api/v1/staff/:id', async ({ request, params }) => {
+    await delay(300)
+    const caller = requireRole(request, ['owner'])
+    if (caller instanceof Response) return caller
+    const idx = staffMembers.findIndex(
+      (s) => s.id === params.id && s.business_id === caller.business_id,
+    )
+    if (idx === -1) return apiError(404, 'NOT_FOUND', 'No such staff member.')
+    if (staffMembers[idx].is_active) {
+      return apiError(409, 'STILL_ACTIVE', 'Deactivate this staff member before deleting them.')
+    }
+    const staffId = staffMembers[idx].id
+    for (let i = attendance.length - 1; i >= 0; i--) {
+      if (attendance[i].staff_id === staffId) attendance.splice(i, 1)
+    }
+    staffMembers.splice(idx, 1)
     return new HttpResponse(null, { status: 204 })
   }),
 

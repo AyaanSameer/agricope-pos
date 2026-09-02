@@ -51,3 +51,8 @@ export function checkInStaff(id: string): Promise<StaffMember> {
 export function checkOutStaff(id: string): Promise<StaffMember> {
   return api<StaffMember>(`/staff/${id}/check-out`, { method: 'POST', body: JSON.stringify({}) })
 }
+
+/** Owner only, and refused while the staff member is still active. */
+export function deleteStaff(id: string): Promise<void> {
+  return api<void>(`/staff/${id}`, { method: 'DELETE' })
+}

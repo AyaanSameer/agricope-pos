@@ -42,14 +42,16 @@ export interface DbBusiness {
   name: string
   email: string // the one login for all branches
   password: string
+  /** Switched off: nobody can sign in, and only then may it be deleted. */
+  is_active: boolean
 }
 
 export const businesses: DbBusiness[] = [
-  { id: 'b-demo', name: 'Agricope Demo Trading Co.', email: 'demo@agricope.qa', password: 'demo123' },
-  { id: 'b-drumsticks', name: 'Drumsticks', email: 'drumsticks@agricope.qa', password: 'demo123' },
+  { id: 'b-demo', name: 'Agricope Demo Trading Co.', email: 'demo@agricope.qa', password: 'demo123', is_active: true },
+  { id: 'b-drumsticks', name: 'Drumsticks', email: 'drumsticks@agricope.qa', password: 'demo123', is_active: true },
   // Onboarded but not yet handed over — no branches, no owner login. The console
   // is where that gets finished.
-  { id: 'b-karakhouse', name: 'Karak House', email: 'karakhouse@agricope.qa', password: 'demo123' },
+  { id: 'b-karakhouse', name: 'Karak House', email: 'karakhouse@agricope.qa', password: 'demo123', is_active: true },
 ]
 
 // ---------- stores (branches) ----------

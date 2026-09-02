@@ -324,3 +324,51 @@
 .admin-note { margin: 0; font-size: calc(12.5px * var(--fs)); color: var(--ink-3); line-height: 1.5; }
 .admin-error { color: var(--danger); font-size: calc(13px * var(--fs)); }
 .admin-form-actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+/* ---- lifecycle: suspend, then delete ---------------------------------- */
+
+/* A suspended tenant stays legible but visibly out of service. */
+.admin-biz.suspended { opacity: 0.72; }
+.admin-biz.suspended .admin-mono { filter: grayscale(1); }
+
+.admin-suspended-tag {
+  margin-left: 8px;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: var(--cta-tint);
+  color: var(--cta);
+  font-family: var(--font-head);
+  font-size: calc(9.5px * var(--fs));
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+/* Row actions sit right and stay quiet until the row matters. */
+.admin-row-actions { margin-left: auto; display: flex; gap: 12px; flex: none; }
+.admin-row.off .admin-row-name { color: var(--ink-3); }
+.admin-row.off .admin-row-sub { color: var(--cta); }
+
+.admin-action.danger { color: var(--cta); }
+.admin-action:disabled { opacity: 0.5; }
+
+/* The tenant-level pair, fenced off from the sections above it. */
+.admin-biz-foot {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.admin-notice {
+  background: var(--leaf-plate);
+  color: var(--forest);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: calc(12.5px * var(--fs));
+  margin-bottom: 14px;
+}
+.admin-error-page { margin-bottom: 14px; }

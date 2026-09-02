@@ -1,8 +1,20 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createBranch, createBusiness, createOwner, listBusinesses, updateBusinessLogin } from '../../api/admin'
+import {
+  changeAdminPassword,
+  createBranch,
+  createBusiness,
+  createOwner,
+  deleteBranch,
+  deleteBusiness,
+  listBusinesses,
+  setBusinessActive,
+  updateBranch,
+  updateBusinessLogin,
+} from '../../api/admin'
 import type { AdminBusiness } from '../../api/admin'
+import type { Store } from '../../api/types'
 import { ApiError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
@@ -30,6 +42,13 @@ type Modal =
   | { kind: 'branch'; business: AdminBusiness }
   | { kind: 'owner'; business: AdminBusiness }
   | { kind: 'login'; business: AdminBusiness }
+  | { kind: 'password' }
+  | null
+
+/** Destructive steps always pass through a confirm that names the consequence. */
+type Confirming =
+  | { kind: 'delete-business'; business: AdminBusiness }
+  | { kind: 'delete-branch'; business: AdminBusiness; store: Store }
   | null
 
 export function AdminPage() {
@@ -37,7 +56,9 @@ export function AdminPage() {
   const queryClient = useQueryClient()
   const [modal, setModal] = useState<Modal>(null)
   const [confirmingLogout, setConfirmingLogout] = useState(false)
+  const [confirming, setConfirming] = useState<Confirming>(null)
   const [error, setError] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
 
   // shared form fields — reset whenever a modal opens
   const [f1, setF1] = useState('') // name
@@ -78,12 +99,62 @@ export function AdminPage() {
     onSuccess: done,
     onError: fail,
   })
+  const ownPassword = useMutation({
+    mutationFn: () => changeAdminPassword(f2, f3),
+    onSuccess: () => {
+      done()
+      setNotice('Your console password has been changed.')
+    },
+    onError: fail,
+  })
+
+  /* ---- lifecycle: suspend is reversible, delete is not ------------------- */
+
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['admin-businesses'] })
+    setConfirming(null)
+    setError(null)
+  }
+  const lifecycleFail = (err: unknown) => {
+    setConfirming(null)
+    setError(err instanceof ApiError ? err.message : 'Could not do that — try again.')
+  }
+
+  const suspendBusiness = useMutation({
+    mutationFn: ({ b, active }: { b: AdminBusiness; active: boolean }) =>
+      setBusinessActive(b.id, active),
+    onSuccess: refresh,
+    onError: lifecycleFail,
+  })
+  const removeBusiness = useMutation({
+    mutationFn: (b: AdminBusiness) => deleteBusiness(b.id),
+    onSuccess: () => {
+      refresh()
+      setNotice('Business deleted.')
+    },
+    onError: lifecycleFail,
+  })
+  const suspendBranch = useMutation({
+    mutationFn: ({ b, s, active }: { b: AdminBusiness; s: Store; active: boolean }) =>
+      updateBranch(b.id, s.id, { is_active: active }),
+    onSuccess: refresh,
+    onError: lifecycleFail,
+  })
+  const removeBranch = useMutation({
+    mutationFn: ({ b, s }: { b: AdminBusiness; s: Store }) => deleteBranch(b.id, s.id),
+    onSuccess: () => {
+      refresh()
+      setNotice('Branch deleted.')
+    },
+    onError: lifecycleFail,
+  })
 
   function open(next: Exclude<Modal, null>) {
     setF1('')
     // Editing a login starts from the current email; everything else starts blank.
     setF2(next.kind === 'login' ? next.business.email : '')
     setF3('')
+    setNotice(null)
     setBranchType('restaurant')
     setError(null)
     setModal(next)
@@ -95,11 +166,16 @@ export function AdminPage() {
     if (modal.kind === 'business') addBusiness.mutate()
     else if (modal.kind === 'branch') addBranch.mutate(modal.business)
     else if (modal.kind === 'login') editLogin.mutate(modal.business)
+    else if (modal.kind === 'password') ownPassword.mutate()
     else addOwner.mutate(modal.business)
   }
 
   const busy =
-    addBusiness.isPending || addBranch.isPending || addOwner.isPending || editLogin.isPending
+    addBusiness.isPending ||
+    addBranch.isPending ||
+    addOwner.isPending ||
+    editLogin.isPending ||
+    ownPassword.isPending
   const businesses = businessesQuery.data?.data ?? []
   const awaitingOwner = businesses.filter((b) => b.owners.length === 0).length
 
@@ -115,6 +191,9 @@ export function AdminPage() {
         </div>
         <div className="admin-bar-right">
           <span className="admin-who">{adminSession.admin.name}</span>
+          <button type="button" className="btn-secondary" onClick={() => open({ kind: 'password' })}>
+            Change password
+          </button>
           <button type="button" className="btn-secondary" onClick={() => setConfirmingLogout(true)}>
             Log out
           </button>
@@ -158,17 +237,23 @@ export function AdminPage() {
           </div>
         </div>
 
+        {notice && <div className="admin-notice">{notice}</div>}
+        {error && !modal && <div className="admin-error admin-error-page">{error}</div>}
+
         {businessesQuery.isPending && <div className="admin-loading">Loading…</div>}
 
         <div className="admin-grid">
           {businesses.map((b, i) => (
-            <div key={b.id} className="admin-biz">
+            <div key={b.id} className={b.is_active ? 'admin-biz' : 'admin-biz suspended'}>
               <div className="admin-biz-head">
                 <span className={`admin-mono ${MONOGRAM_TONES[i % MONOGRAM_TONES.length]}`}>
                   {monogram(b.name)}
                 </span>
                 <div className="admin-biz-id">
-                  <div className="admin-biz-name">{b.name}</div>
+                  <div className="admin-biz-name">
+                    {b.name}
+                    {!b.is_active && <span className="admin-suspended-tag">Suspended</span>}
+                  </div>
                   <div className="admin-biz-login">
                     Login · {b.email}
                     <button
@@ -210,13 +295,37 @@ export function AdminPage() {
                   <div className="admin-empty">No branches yet — add the first one.</div>
                 )}
                 {b.stores.map((s) => (
-                  <div key={s.id} className="admin-row">
+                  <div key={s.id} className={s.is_active ? 'admin-row' : 'admin-row off'}>
                     <span className={`admin-type ${s.type}`}>
                       {s.type === 'retail' ? 'Retail' : 'Restaurant'}
                     </span>
                     {/* The business name is on the card already — drop its prefix. */}
                     <span className="admin-row-name">{shortBranch(s.name)}</span>
-                    <span className="admin-row-sub">{s.address ?? '—'}</span>
+                    <span className="admin-row-sub">
+                      {s.is_active ? (s.address ?? '—') : 'Deactivated'}
+                    </span>
+                    <span className="admin-row-actions">
+                      <button
+                        type="button"
+                        className="admin-action"
+                        disabled={suspendBranch.isPending}
+                        onClick={() =>
+                          suspendBranch.mutate({ b, s, active: !s.is_active })
+                        }
+                      >
+                        {s.is_active ? 'Deactivate' : 'Restore'}
+                      </button>
+                      {/* Deletion only becomes offerable once the branch is off. */}
+                      {!s.is_active && (
+                        <button
+                          type="button"
+                          className="admin-action danger"
+                          onClick={() => setConfirming({ kind: 'delete-branch', business: b, store: s })}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -250,6 +359,28 @@ export function AdminPage() {
                   <div className="admin-blocked">
                     No owner yet — this business cannot sign in until you create one.
                   </div>
+                )}
+              </div>
+
+              {/* Suspend is the reversible step and always available; delete only
+                  appears once suspended, so it can never be a single mis-click. */}
+              <div className="admin-biz-foot">
+                <button
+                  type="button"
+                  className="admin-action"
+                  disabled={suspendBusiness.isPending}
+                  onClick={() => suspendBusiness.mutate({ b, active: !b.is_active })}
+                >
+                  {b.is_active ? 'Suspend business' : 'Restore business'}
+                </button>
+                {!b.is_active && (
+                  <button
+                    type="button"
+                    className="admin-action danger"
+                    onClick={() => setConfirming({ kind: 'delete-business', business: b })}
+                  >
+                    Delete permanently
+                  </button>
                 )}
               </div>
             </div>
@@ -300,6 +431,36 @@ export function AdminPage() {
                     <input value={f2} onChange={(e) => setF2(e.target.value)} />
                   </label>
                 </div>
+              </>
+            )}
+            {modal.kind === 'password' && (
+              <>
+                <h3>Change your console password</h3>
+                <p className="admin-note">
+                  This is the platform administrator sign-in — it is not tied to any business.
+                </p>
+                <label className="field">
+                  <span>Current password</span>
+                  <input
+                    type="password"
+                    autoComplete="current-password"
+                    value={f2}
+                    onChange={(e) => setF2(e.target.value)}
+                    required
+                    autoFocus
+                  />
+                </label>
+                <label className="field">
+                  <span>New password (at least 8 characters)</span>
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={8}
+                    value={f3}
+                    onChange={(e) => setF3(e.target.value)}
+                    required
+                  />
+                </label>
               </>
             )}
             {modal.kind === 'login' && (
@@ -359,6 +520,37 @@ export function AdminPage() {
             </div>
           </form>
         </div>
+      )}
+
+      {confirming?.kind === 'delete-business' && (
+        <ConfirmDialog
+          title={`Delete ${confirming.business.name}?`}
+          message={
+            `This erases the tenant and everything under it — ` +
+            `${confirming.business.stores.length} branch${confirming.business.stores.length === 1 ? '' : 'es'}, ` +
+            `${confirming.business.user_count} login${confirming.business.user_count === 1 ? '' : 's'}, ` +
+            `${confirming.business.product_count} product${confirming.business.product_count === 1 ? '' : 's'}, ` +
+            `and ${confirming.business.order_count} order${confirming.business.order_count === 1 ? '' : 's'} of history. ` +
+            `This cannot be undone.`
+          }
+          confirmLabel={removeBusiness.isPending ? 'Deleting…' : 'Delete permanently'}
+          danger
+          onConfirm={() => removeBusiness.mutate(confirming.business)}
+          onCancel={() => setConfirming(null)}
+        />
+      )}
+
+      {confirming?.kind === 'delete-branch' && (
+        <ConfirmDialog
+          title={`Delete ${shortBranch(confirming.store.name)}?`}
+          message="Removes the branch, its tables and its kitchen stations. A branch that has taken orders keeps its history and will refuse to be deleted."
+          confirmLabel={removeBranch.isPending ? 'Deleting…' : 'Delete branch'}
+          danger
+          onConfirm={() =>
+            removeBranch.mutate({ b: confirming.business, s: confirming.store })
+          }
+          onCancel={() => setConfirming(null)}
+        />
       )}
 
       {confirmingLogout && (
