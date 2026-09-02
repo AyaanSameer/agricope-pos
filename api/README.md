@@ -40,10 +40,24 @@ real thing inside it — Drumsticks' 65-product menu — has its own way in:
 npm run import:catalogue -- --business drumsticks@agricope.qa --branch "Barwa Village"
 ```
 
-Run it after the console has created the business and its branch. It adds
-the categories, the three kitchen stations and the products, respects the
-business's shared-or-per-branch catalogue setting, and skips anything already
-there by name — so it is safe to run again.
+Run it after the business and its branch exist. It adds the categories, the
+three kitchen stations and the products, respects the business's
+shared-or-per-branch catalogue setting, and skips anything already there by
+name — so it is safe to run again.
+
+Making them exist is the step before, and it does not need a deployed console:
+
+```bash
+npm run create:admin -- --name "Agricope Admin" --email admin@agricope.qa --password '…'
+npm run create:business -- --name "Drumsticks" --email drumsticks@agricope.qa --password '…' \
+  --branch "Drumsticks — Barwa Village" --type restaurant \
+  --owner "Ayaan Sameer" --owner-email ayaan@agricope.qa --pin 1111
+```
+
+`create:business` writes exactly what `POST /admin/businesses` and `POST
+/users` write, starter category included, so a business made here is
+indistinguishable from one made in the console. The owner's PIN is hashed with
+`PIN_PEPPER`; the deployed API must run with the same value.
 
 ## Test it
 
@@ -72,6 +86,7 @@ frontend's byte for byte.
 | `src/serialize.ts` | Row → wire. Decimal strings for money, no hashes or tenant ids leaking. |
 | `scripts/seed.ts` | The demo world, built through the real engine. |
 | `scripts/catalogue.ts` | Drumsticks' menu as a loader, used by the seed and by `import-catalogue.ts` for go-live. |
+| `scripts/create-admin.ts`, `scripts/create-business.ts` | Go-live, before any console exists: the first platform administrator, then a business with its first branch and owner. |
 
 ### Things that are deliberate
 

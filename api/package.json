@@ -16,7 +16,8 @@
     "seed": "tsx scripts/seed.ts",
     "test": "vitest run",
     "import:catalogue": "tsx scripts/import-catalogue.ts",
-    "create:admin": "tsx scripts/create-admin.ts"
+    "create:admin": "tsx scripts/create-admin.ts",
+    "create:business": "tsx scripts/create-business.ts"
   },
   "dependencies": {
     "@fastify/rate-limit": "^10.3.0",

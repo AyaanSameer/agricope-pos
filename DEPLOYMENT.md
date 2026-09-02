@@ -182,9 +182,20 @@ proxy, no tunnel:
 cd "/Applications/Agricope/POS System/api" && DATABASE_URL='<neon url>' npm run create:admin -- --name "Agricope Admin" --email admin@agricope.qa --password 'A-STRONG-ONE'
 ```
 
-Sign in to the console with that, create Drumsticks, its branch, and its
-owner login. Then load their real 65-product menu — the one thing the demo
-seed contains that production actually needs:
+Then the business, its first branch and its owner's till login. The console
+does this too, but the console only exists once the app is deployed, and this
+way production can be built before anyone deploys anything:
+
+```bash
+cd "/Applications/Agricope/POS System/api" && DATABASE_URL='<neon url>' npm run create:business -- --name "Drumsticks" --email drumsticks@agricope.qa --password 'ANOTHER-STRONG-ONE' --branch "Drumsticks — Barwa Village" --type restaurant --owner "Ayaan Sameer" --owner-email ayaan@agricope.qa --pin 1111
+```
+
+The owner's PIN is hashed with `PIN_PEPPER`. Use the same value here that the
+deployed API will run with, or the owner cannot get past the PIN pad. Every
+other member of staff is added by the owner from inside the app.
+
+Then their real 65-product menu — the one thing the demo seed contains that
+production actually needs:
 
 ```bash
 cd "/Applications/Agricope/POS System/api" && DATABASE_URL='<neon url>' npm run import:catalogue -- --business drumsticks@agricope.qa --branch "Barwa Village"
