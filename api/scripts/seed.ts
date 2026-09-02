@@ -5,7 +5,7 @@ import { hashPassword, hashPin } from '../src/auth.js'
 import { close, connect, one, withTx } from '../src/db.js'
 import { createOrder, insertItems, loadOrder, loadProductsForSale, recompute, saveTotals, snapshotItem } from '../src/services/orders.js'
 import type { LoadedOrder, OrderType } from '../src/services/orders.js'
-import { drumsticksCategories, drumsticksItems } from './drumsticks.js'
+import { loadDrumsticksCatalogue } from './catalogue.js'
 
 /**
  * The development world — the same one the in-browser demo shows — written
@@ -21,7 +21,6 @@ import { drumsticksCategories, drumsticksItems } from './drumsticks.js'
  */
 
 const minutesAgo = (m: number) => new Date(Date.now() - m * 60_000)
-const inDays = (d: number) => new Date(Date.now() + d * 86_400_000).toISOString()
 
 async function pay(
   tx: PoolClient,
@@ -113,13 +112,9 @@ export async function seedWorld(tx: PoolClient, opts: SeedOptions) {
   for (const [id, name, sort] of demoCats) {
     await tx.query(`insert into categories (id, business_id, name, sort_order) values ($1, 'b-demo', $2, $3)`, [id, name, sort])
   }
-  for (const [i, c] of drumsticksCategories.entries()) {
-    await tx.query(`insert into categories (id, business_id, name, sort_order) values ($1, 'b-drumsticks', $2, $3)`, [c.id, c.name, i + 1])
-  }
 
   await tx.query(`insert into kitchen_stations (id, store_id, name, sort_order) values
-    ('st-kitchen', 's-karak', 'Kitchen', 1), ('st-bar', 's-karak', 'Bar', 2), ('st-grill', 's-karak', 'Grill', 3),
-    ('st-ds-fry', 's-drumsticks', 'Fry station', 1), ('st-ds-asm', 's-drumsticks', 'Assembly & Pack', 2), ('st-ds-cold', 's-drumsticks', 'Drinks & Cold', 3)`)
+    ('st-kitchen', 's-karak', 'Kitchen', 1), ('st-bar', 's-karak', 'Bar', 2), ('st-grill', 's-karak', 'Grill', 3)`)
 
   type P = { id: string; name: string; cat: string | null; barcode: string | null; price: string; station: string | null; active?: boolean; description?: string }
   const demoProducts: P[] = [
@@ -147,21 +142,8 @@ export async function seedWorld(tx: PoolClient, opts: SeedOptions) {
     )
     if (p.cat) await tx.query(`insert into product_categories (product_id, category_id, position) values ($1, $2, 0)`, [p.id, p.cat])
   }
-  const DS_STATION = { FRY: 'st-ds-fry', ASM: 'st-ds-asm', COLD: 'st-ds-cold' } as const
-  for (const d of drumsticksItems) {
-    const offer = d.offer_percent ? { percent: d.offer_percent, starts_at: null, ends_at: inDays(30) } : null
-    const optionGroups = d.flavors
-      ? [{ id: `og-${d.id}`, name: d.flavor_label ?? 'Flavor', required: true, choices: d.flavors.map((f, i) => ({ id: `oc-${d.id}-${i}`, name: f, price_delta: '0.00' })) }]
-      : []
-    await tx.query(
-      `insert into products (id, business_id, name, name_ar, description, price, price_online, tax_rate, is_combo, offer, offer_online, option_groups, kitchen_station_id)
-       values ($1, 'b-drumsticks', $2, $3, $4, $5, $6, 0, $7, $8, $8, $9, $10)`,
-      [d.id, d.name, d.name_ar, d.description, d.price, d.price_online, d.is_combo, offer ? JSON.stringify(offer) : null, JSON.stringify(optionGroups), DS_STATION[d.station]],
-    )
-    for (const [i, cat] of d.category_ids.entries()) {
-      await tx.query(`insert into product_categories (product_id, category_id, position) values ($1, $2, $3)`, [d.id, cat, i])
-    }
-  }
+  // Drumsticks' real menu, through the same loader the go-live import uses.
+  await loadDrumsticksCatalogue(tx, { businessId: 'b-drumsticks', branchId: 's-drumsticks', perBranch: false, fixedIds: true })
 
   await tx.query(`insert into dining_tables (id, store_id, name, zone, seats) values
     ('t-1', 's-karak', 'T1', 'Main hall', 2), ('t-2', 's-karak', 'T2', 'Main hall', 4), ('t-3', 's-karak', 'T3', 'Main hall', 4),

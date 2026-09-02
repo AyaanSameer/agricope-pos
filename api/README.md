@@ -25,6 +25,20 @@ Then in `../app`, put `VITE_USE_MOCKS=false` in `.env.local` and run
 that already holds a business unless you pass `--reset`, so it cannot be
 pointed at production by accident.
 
+## Loading a real menu into production
+
+The seed builds a whole fake world and must never touch production. The one
+real thing inside it — Drumsticks' 65-product menu — has its own way in:
+
+```bash
+npm run import:catalogue -- --business drumsticks@agricope.qa --branch "Barwa Village"
+```
+
+Run it after the console has created the business and its branch. It adds
+the categories, the three kitchen stations and the products, respects the
+business's shared-or-per-branch catalogue setting, and skips anything already
+there by name — so it is safe to run again.
+
 ## Test it
 
 ```bash
@@ -51,6 +65,7 @@ frontend's byte for byte.
 | `src/routes/` | One file per domain, mirroring the mock handlers they replaced. Validate with zod, authorise, call the engine, serialise. |
 | `src/serialize.ts` | Row → wire. Decimal strings for money, no hashes or tenant ids leaking. |
 | `scripts/seed.ts` | The demo world, built through the real engine. |
+| `scripts/catalogue.ts` | Drumsticks' menu as a loader, used by the seed and by `import-catalogue.ts` for go-live. |
 
 ### Things that are deliberate
 

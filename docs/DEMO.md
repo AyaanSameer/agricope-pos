@@ -23,6 +23,8 @@ The `Deploy demo to GitHub Pages` workflow builds and publishes on every push to
 `main`. One-time setup on GitHub: **Settings → Pages → Source: GitHub Actions**.
 
 **Live at https://ayaansameer.github.io/agricope-pos/** — republished on every push to `main`.
+Once the repository moves to the organisation the address becomes
+`https://<organisation>.github.io/<repo>/`; update the link below and re-send it.
 
 ### Before you send the link
 

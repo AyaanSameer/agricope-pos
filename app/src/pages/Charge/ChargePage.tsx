@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Big from 'big.js'
@@ -44,10 +44,12 @@ export function ChargePage() {
   })
   const order = orderQuery.data
 
-  useEffect(() => {
+  /** A new method starts from a blank amount; the old one's is meaningless for it. */
+  function chooseMethod(next: PaymentMethod) {
+    setMethod(next)
     setEntry('')
     setError(null)
-  }, [method])
+  }
 
   const pay = useMutation({
     mutationFn: () => {
@@ -245,7 +247,7 @@ export function ChargePage() {
                 key={m.key}
                 type="button"
                 className={method === m.key ? 'method active' : 'method'}
-                onClick={() => setMethod(m.key)}
+                onClick={() => chooseMethod(m.key)}
               >
                 {m.label}
               </button>

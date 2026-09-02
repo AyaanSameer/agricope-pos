@@ -3,8 +3,10 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "The Agricope POS REST API — implements CONVENTIONS.md against Postgres.",
-  "engines": { "node": ">=22" },
+  "description": "The Agricope POS REST API \u2014 implements CONVENTIONS.md against Postgres.",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
@@ -12,7 +14,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "migrate": "tsx scripts/migrate.ts",
     "seed": "tsx scripts/seed.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "import:catalogue": "tsx scripts/import-catalogue.ts",
+    "create:admin": "tsx scripts/create-admin.ts"
   },
   "dependencies": {
     "@fastify/rate-limit": "^10.3.0",

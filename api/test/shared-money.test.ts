@@ -15,4 +15,11 @@ describe('shared money code is byte-identical to the frontend', () => {
       expect(api.replace("from './money.js'", "from './money'")).toBe(app)
     })
   }
+
+  // The client's menu is one file too: the demo shows what production imports.
+  it('drumsticks menu data', () => {
+    const app = readFileSync(new URL('../../app/src/mocks/drumsticks.ts', import.meta.url), 'utf8')
+    const api = readFileSync(new URL('../scripts/drumsticks.ts', import.meta.url), 'utf8')
+    expect(api).toBe(app)
+  })
 })

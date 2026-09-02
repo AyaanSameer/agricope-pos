@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Big from 'big.js'
@@ -184,25 +184,23 @@ export function CatalogPage() {
   const [error, setError] = useState<string | null>(null)
   const [addingCategory, setAddingCategory] = useState(false)
   const [newCategory, setNewCategory] = useState('')
-  /** the branch whose catalogue is on screen; null only while it is still loading */
-  const [branchId, setBranchId] = useState<string | null>(null)
+  /** the branch the owner picked on the rail; until they pick, the page decides */
+  const [pickedBranch, setPickedBranch] = useState<string | null>(null)
 
   const categoriesQuery = useQuery({ queryKey: ['categories'], queryFn: listCategories })
   const stationsQuery = useQuery({ queryKey: ['stations'], queryFn: () => listStations() })
-  // The branch field only exists once the owner has asked for per-branch catalogues.
+  // The branch rail only exists once the owner has asked for per-branch catalogues.
   const bizQuery = useQuery({ queryKey: ['business-settings'], queryFn: getBusinessSettings })
   const storesQuery = useQuery({ queryKey: ['stores'], queryFn: listStores })
   const perBranch = bizQuery.data ? !bizQuery.data.shared_catalog : false
   const branches = storesQuery.data?.data ?? []
 
-  // With a catalogue per branch the page always shows one branch's list, so it
-  // opens on the till's own branch when there is one and the first otherwise.
-  useEffect(() => {
-    if (!perBranch || branchId || branches.length === 0) return
-    const mine = branches.find((b) => b.id === activeStore?.id)
-    setBranchId((mine ?? branches[0]).id)
-  }, [perBranch, branchId, branches, activeStore?.id])
-
+  // With a catalogue per branch the page always shows one branch's list: the
+  // one the owner picked, else the till's own branch, else the first. Derived
+  // here rather than set in an effect, so there is never a render without it.
+  const branchId = perBranch
+    ? (pickedBranch ?? (branches.find((b) => b.id === activeStore?.id) ?? branches[0])?.id ?? null)
+    : null
   const scoped = !perBranch || !!branchId
   const productsQuery = useQuery({
     queryKey: ['products', { search, categoryId, showInactive, branchId }],
@@ -339,7 +337,7 @@ export function CatalogPage() {
                 key={st.id}
                 type="button"
                 className={branchId === st.id ? 'chip active' : 'chip'}
-                onClick={() => setBranchId(st.id)}
+                onClick={() => setPickedBranch(st.id)}
               >
                 {shortBranch(st.name)}
               </button>

@@ -1,10 +1,12 @@
-# Agricope POS — frontend
+# Agricope POS
 
 **Live demo: https://ayaansameer.github.io/agricope-pos/** — the whole system on
 in-browser mocks. Test logins and a guide to hand the client: [`docs/DEMO.md`](docs/DEMO.md).
 
-Multi-tenant point of sale for shops and restaurants. React SPA per till; talks only to the
-REST API described in `CONVENTIONS.md` (mocked in-browser until the real backend lands).
+Multi-tenant point of sale for shops and restaurants in Qatar. A React SPA per till, a
+Fastify + Postgres API behind it, and one container that serves both. `CONVENTIONS.md` is
+the contract between them; the SPA also carries an in-browser mock of that API for
+development and the public demo.
 
 ## Documents
 - `CONVENTIONS.md` — **the API contract**: money as strings, error codes, the totals formula.
@@ -12,13 +14,14 @@ REST API described in `CONVENTIONS.md` (mocked in-browser until the real backend
 - `docs/AGRICOPE-DESIGN-SPEC.md` — the complete UI specification: all 18 screens and
   19 overlays, every control, the rules that constrain them, and the visual language.
 - `docs/SYSTEM-DESIGN.md` — the shorter narrative overview.
-- `docs/SCHEMA-ALIGNMENT.md` — the frontend contract reviewed against the Postgres schema.
+- `docs/SCHEMA-ALIGNMENT.md` — historical: the earlier 39-table schema reviewed against the
+  frontend, and why the database was built to the contract instead.
 - `docs/original-system-design.md` — the original system design document.
 - `docs/DEMO.md` — **the client demo**: publishing it to GitHub Pages, and the
   guide to hand the client (test logins, what to try, what not to expect).
-- `DEPLOYMENT.md` — branches, environments, hosting and the release path.
-- `docs/GCP-SETUP.md` — deploying to Google Cloud: Cloud SQL in Doha, loading the
-  schema, and what still has to be built before the system can be "live".
+- `DEPLOYMENT.md` — **start here to go live**: local testing, the organisation repo, the
+  database, connecting the deployed code to it, the first business, releases.
+- `docs/GCP-SETUP.md` — the exact Google Cloud commands `DEPLOYMENT.md` points at.
 
 ## Repo layout
 - `app/` — the React application (Vite + TypeScript). Runs on in-browser mocks by default.
@@ -35,9 +38,10 @@ npm install
 npm run dev
 ```
 
-**The whole system, on a real database** — Postgres 14+ required:
+**The whole system, on a real database** — Postgres 14+ required (Postgres.app on a Mac is
+fine; create the database from its UI or with `psql -c 'create database agricope_pos'`):
 ```bash
-cd api && createdb agricope_pos && cp .env.example .env   # set JWT_SECRET and PIN_PEPPER
+cd api && cp .env.example .env   # set DATABASE_URL, JWT_SECRET and PIN_PEPPER
 npm install && npm run migrate && npm run seed && npm run dev   # API on :3000
 ```
 then in `app/.env.local` put `VITE_USE_MOCKS=false` and run `npm run dev` there — Vite

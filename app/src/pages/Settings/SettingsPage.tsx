@@ -377,7 +377,7 @@ function CatalogScopeGroup({
             {
               value: false,
               label: 'A catalogue per branch',
-              hint: 'Each product names the branch that sells it, or "All branches" for the ones every shop carries.',
+              hint: 'Each branch keeps its own product list. Start a new branch by copying another’s, then let them drift.',
             },
           ] as const
         ).map((opt) => (
@@ -402,8 +402,8 @@ function CatalogScopeGroup({
         <span className="settings-effect-tag">Effect</span>
         <span className="settings-effect-text">
           {shared
-            ? 'Every till shows the whole catalogue · the Catalog page hides the branch field'
-            : 'A till shows only its branch’s products and the ones marked "All branches" · past orders are untouched'}
+            ? 'Every till shows the same products · one price change reaches every branch'
+            : 'A till shows only its branch’s products · Copy a catalogue appears below · past orders are untouched'}
         </span>
       </div>
     </div>

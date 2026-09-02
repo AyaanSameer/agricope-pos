@@ -1,3 +1,10 @@
+> **Historical.** This reviews the earlier `pos-schema` design (39 tables) against the
+> frontend. That schema was **not adopted**: the database the system runs on is
+> `api/migrations/`, built to the frontend's contract, and the conflicts listed here were
+> resolved by that choice. Kept because its analysis of the money model — and its ideas
+> for a costing ledger and margin reporting — are the right starting point when those
+> features are built.
+
 # Schema alignment — `pos-schema` vs. the shipped frontend
 
 Review of the eleven-migration Postgres schema (`pos-schema.zip`, 39 tables / 9 views / 3
