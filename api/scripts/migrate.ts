@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import pg from 'pg'
+import { normalizeDatabaseUrl } from '../src/db.js'
 
 /**
  * Apply migrations/*.sql in name order, once each, recording every file in
@@ -11,7 +12,8 @@ import pg from 'pg'
  *   DATABASE_URL=postgres://… npm run migrate
  */
 export async function migrate(databaseUrl: string, dir = fileURLToPath(new URL('../migrations', import.meta.url))) {
-  const client = new pg.Client({ connectionString: databaseUrl })
+  // Its own client, so it needs the same sslrootcert=system handling the pool has.
+  const client = new pg.Client({ connectionString: normalizeDatabaseUrl(databaseUrl) })
   await client.connect()
   try {
     await client.query(

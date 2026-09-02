@@ -91,10 +91,25 @@ It looks like:
 postgres://neondb_owner:PASSWORD@ep-xxxx.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
 ```
 
-Change `sslmode=require` to `sslmode=verify-full`. That is the check the API's
-Postgres driver performs anyway; spelling it out stops the driver printing a
-deprecation warning at every boot. Keep the string somewhere safe — it is the
-database password.
+Change the SSL parameters to these two, and use the result everywhere:
+
+```
+?sslmode=verify-full&sslrootcert=system
+```
+
+`verify-full` is the check the API's driver performs anyway, and spelling it
+out stops the driver printing a deprecation warning at every boot.
+`sslrootcert=system` is for `psql` and `pg_dump`: they refuse `verify-full`
+without a root certificate and look for one at `~/.postgresql/root.crt`, which
+does not exist on a normal Mac. Pointing them at the operating system's trust
+store is enough, because Neon's certificate comes from Let's Encrypt.
+
+The API strips that one parameter before handing the string to its driver,
+which reads `sslrootcert` as a file path and would otherwise open a file
+called "system" and die at boot. That is deliberate, so one string can live in
+the secret manager instead of two that drift apart.
+
+Keep the string somewhere safe. It is the database password.
 
 **Fill it, one of two ways.**
 
@@ -111,7 +126,7 @@ the fake orders — lands on Neon as it is. Fine for a staging copy the team can
 try; not what production should start from.
 
 ```bash
-/Applications/Postgres.app/Contents/Versions/18/bin/pg_dump -h localhost --no-owner --no-privileges agricope_pos | /Applications/Postgres.app/Contents/Versions/18/bin/psql '<neon url>'
+/Applications/Postgres.app/Contents/Versions/18/bin/pg_dump -h localhost --no-owner --no-privileges agricope_pos | /Applications/Postgres.app/Contents/Versions/18/bin/psql -v ON_ERROR_STOP=1 '<neon url>'
 ```
 
 The dump carries `schema_migrations`, so the API finds nothing to apply and

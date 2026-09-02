@@ -12,11 +12,36 @@ pg.types.setTypeParser(1082, (v) => v) // date → 'YYYY-MM-DD'
 
 export type Queryable = Pick<PoolClient, 'query'>
 
+/**
+ * One connection string has to work in three places: psql, pg_dump, and here.
+ * A hosted Postgres reached over the internet wants `sslmode=verify-full`, and
+ * libpq then demands a root certificate — `sslrootcert=system` points it at the
+ * operating system's trust store. Node has no such need: it verifies against
+ * its own bundled roots, and node-postgres reads `sslrootcert` as a FILE PATH,
+ * so it would try to open a file called "system" and throw ENOENT at boot.
+ *
+ * Dropping the parameter here is what lets the owner keep a single string in
+ * the secret manager instead of two that drift apart. Verification is not
+ * weakened: `sslmode=verify-full` still asks for a full check against Node's
+ * roots, which is where the certificate would have been validated anyway.
+ */
+export function normalizeDatabaseUrl(databaseUrl: string): string {
+  try {
+    const url = new URL(databaseUrl)
+    if (url.searchParams.get('sslrootcert')?.toLowerCase() !== 'system') return databaseUrl
+    url.searchParams.delete('sslrootcert')
+    return url.toString()
+  } catch {
+    // Not a URL — a libpq keyword string, say. Hand it on untouched.
+    return databaseUrl
+  }
+}
+
 let pool: pg.Pool | null = null
 
 export function connect(databaseUrl: string): pg.Pool {
   pool = new pg.Pool({
-    connectionString: databaseUrl,
+    connectionString: normalizeDatabaseUrl(databaseUrl),
     max: 10,
     // A serverless Postgres (Neon) suspends its compute after a quiet spell and
     // closes every idle connection when it does. Keep ours short-lived so the

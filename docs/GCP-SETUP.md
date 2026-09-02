@@ -64,11 +64,11 @@ Three values, none of which may ever appear in the repository. The whole
 connection string is one secret, so no password is ever spelled out in a
 deploy command or a shell history.
 
-With Neon, the value is the connection string from `DEPLOYMENT.md` §3
-(`sslmode=verify-full`):
+With Neon, the value is the connection string from `DEPLOYMENT.md` §3,
+both SSL parameters included:
 
 ```bash
-printf 'postgres://neondb_owner:PASSWORD@ep-xxxx.eu-central-1.aws.neon.tech/neondb?sslmode=verify-full' | gcloud secrets create pos-database-url --data-file=- --replication-policy=user-managed --locations=europe-west3
+printf 'postgres://neondb_owner:PASSWORD@ep-xxxx.eu-central-1.aws.neon.tech/neondb?sslmode=verify-full&sslrootcert=system' | gcloud secrets create pos-database-url --data-file=- --replication-policy=user-managed --locations=europe-west3
 ```
 
 With Cloud SQL it is the socket form instead:
