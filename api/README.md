@@ -21,6 +21,9 @@ npm run dev                         # http://localhost:3000
 Then in `../app`, put `VITE_USE_MOCKS=false` in `.env.local` and run
 `npm run dev` — Vite proxies `/api` here. Same screens, real database.
 
+`DATABASE_URL` can just as well be a Neon branch's connection string — the
+API does not care where Postgres lives, only that the string reaches it.
+
 `npm run seed -- --reset` wipes and reseeds. It refuses to run on a database
 that already holds a business unless you pass `--reset`, so it cannot be
 pointed at production by accident.
@@ -93,5 +96,5 @@ frontend's byte for byte.
 `../Dockerfile` builds the frontend with mocks off and packages it with this
 API into one image that serves both — same origin, no CORS. It expects
 `DATABASE_URL`, `JWT_SECRET` and `PIN_PEPPER` in the environment and runs the
-migrations at boot. `../docs/GCP-SETUP.md` has the Cloud Run + Cloud SQL
-commands.
+migrations at boot. `../DEPLOYMENT.md` is the go-live order (Neon for the
+database); `../docs/GCP-SETUP.md` has the Cloud Run commands.

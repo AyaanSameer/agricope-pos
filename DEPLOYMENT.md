@@ -8,7 +8,7 @@ first; `docs/GCP-SETUP.md` is the command sheet it refers to.
 database's address. The API reads `DATABASE_URL` from its environment when it
 starts — from `api/.env` on your Mac, from a secret on the server. Same code,
 different environment. That is how the deployed system is "connected" to the
-uploaded database while your laptop keeps testing against its own.
+Neon database while your laptop keeps testing against its own.
 
 ---
 
@@ -73,30 +73,86 @@ demo host. If it is public, the demo moves to
 `https://YOUR-ORG.github.io/agricope-pos/` on the next push — update the link
 in `docs/DEMO.md`.
 
-## 3 · Create the database
+## 3 · Create the database — on Neon
 
-There is no database file to upload. You create a Postgres server in the
-cloud, and **the API creates the schema in it the first time it starts** —
-`api/migrations/` applied once each, recorded in `schema_migrations`. The
-database starts empty on purpose: the demo seed is fake, and production gets
-its first business from the console.
+There is no database file that *has* to be uploaded. You create a Postgres on
+Neon, and either let **the API create the schema the first time it starts**
+(`api/migrations/` applied once each, recorded in `schema_migrations`) or copy
+your local database up as-is. Both are below.
 
-`docs/GCP-SETUP.md` §2 has the commands for Cloud SQL in `me-central1` (Doha —
-single-digit-millisecond latency for the tills). Backups and point-in-time
-recovery are turned on in the creation command, before the first order, which
-is the only time that is not too late.
+**Create the project.** In the Neon console: new project, Postgres **17**,
+region **Frankfurt (aws-eu-central-1)** — Neon has no Middle East region and
+Frankfurt is the nearest. Then copy the connection string from the project's
+*Connect* panel, choosing the **direct** connection, not the *pooled* one (the
+API keeps its own pool, and a direct connection is the one migrations need).
+It looks like:
+
+```
+postgres://neondb_owner:PASSWORD@ep-xxxx.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+```
+
+Change `sslmode=require` to `sslmode=verify-full`. That is the check the API's
+Postgres driver performs anyway; spelling it out stops the driver printing a
+deprecation warning at every boot. Keep the string somewhere safe — it is the
+database password.
+
+**Fill it, one of two ways.**
+
+*A — clean, for production.* Create the schema, then the first
+administrator, and go on to step 5 for the business and its menu:
+
+```bash
+cd "/Applications/Agricope/POS System/api" && DATABASE_URL='<neon url>' npm run migrate
+```
+
+*B — copy your local database up, for a shared test copy.* Everything on
+your Mac's `agricope_pos` — the three demo tenants, their `demo123` logins,
+the fake orders — lands on Neon as it is. Fine for a staging copy the team can
+try; not what production should start from.
+
+```bash
+/Applications/Postgres.app/Contents/Versions/18/bin/pg_dump -h localhost --no-owner --no-privileges agricope_pos | /Applications/Postgres.app/Contents/Versions/18/bin/psql '<neon url>'
+```
+
+The dump carries `schema_migrations`, so the API finds nothing to apply and
+starts straight on the copied data. (Rehearsed locally: the dump restores in
+full into an empty database.)
+
+**Two things about Neon worth knowing.**
+
+- **It suspends when quiet.** On the free plan the compute stops after five
+  idle minutes; the first query after that waits about a second while it
+  wakes, and every idle connection is dropped. The API handles the drop and
+  gives the wake-up long enough. For production, turn auto-suspend off in the
+  project's compute settings (a paid-plan option) so the first sale after a
+  lull never waits.
+- **Branches are the local-testing answer.** In the Neon console, create a
+  branch called `dev` from `main`. Put *its* connection string in `api/.env`
+  on your Mac and you are testing against a real cloud copy that cannot
+  touch production; reset the branch from `main` whenever you want it fresh.
+  Your local Postgres.app keeps working exactly as before if you would rather
+  stay offline.
+
+`docs/GCP-SETUP.md` §2 still has the Cloud SQL commands if you ever want the
+database inside Qatar instead.
 
 ## 4 · Deploy the code, connected to it
 
 The root `Dockerfile` builds the frontend with mocks off and packages it with
 the API into one image; the API serves both, so `/api/v1` is same-origin and
-needs no CORS. Cloud Run runs that image next to the database, reaching it
-over a private socket.
+needs no CORS.
 
-The connection is three secrets — `DATABASE_URL`, `JWT_SECRET`, `PIN_PEPPER`
-— that Cloud Run injects into the container's environment. They never enter
-the repository. `docs/GCP-SETUP.md` §3–4 has the commands: create the
-secrets, build the image, deploy with `--set-secrets`.
+The connection is three secrets — `DATABASE_URL` (the Neon string),
+`JWT_SECRET`, `PIN_PEPPER` — that the host injects into the container's
+environment. They never enter the repository. `docs/GCP-SETUP.md` §3–4 has
+the Cloud Run commands: create the secrets, build the image, deploy with
+`--set-secrets`.
+
+**Put the API next to the database.** Deploy Cloud Run in `europe-west3`
+(Frankfurt), the same city as the Neon project. Then the API talks to
+Postgres inside one datacentre, and a till in Doha pays one ~100 ms hop per
+action — fine. The other way round (API in Doha, database in Frankfurt) makes
+every order pay that hop several times over.
 
 The URL Cloud Run prints is the whole product: login, the tills, the console,
 the API, one origin.
@@ -104,10 +160,11 @@ the API, one origin.
 ## 5 · The first administrator, the first business, the real menu
 
 A fresh production database has no platform administrator, so nobody can open
-the console yet. Through the Cloud SQL Auth Proxy (`GCP-SETUP.md` §5):
+the console yet. Both scripts take the Neon connection string directly — no
+proxy, no tunnel:
 
 ```bash
-cd "/Applications/Agricope/POS System/api" && DATABASE_URL='<proxy url>' npm run create:admin -- --name "Agricope Admin" --email admin@agricope.qa --password 'A-STRONG-ONE'
+cd "/Applications/Agricope/POS System/api" && DATABASE_URL='<neon url>' npm run create:admin -- --name "Agricope Admin" --email admin@agricope.qa --password 'A-STRONG-ONE'
 ```
 
 Sign in to the console with that, create Drumsticks, its branch, and its
@@ -115,7 +172,7 @@ owner login. Then load their real 65-product menu — the one thing the demo
 seed contains that production actually needs:
 
 ```bash
-cd "/Applications/Agricope/POS System/api" && DATABASE_URL='<proxy url>' npm run import:catalogue -- --business drumsticks@agricope.qa --branch "Barwa Village"
+cd "/Applications/Agricope/POS System/api" && DATABASE_URL='<neon url>' npm run import:catalogue -- --business drumsticks@agricope.qa --branch "Barwa Village"
 ```
 
 It adds categories, the three kitchen stations and the products, honours the
@@ -131,12 +188,11 @@ from the console after the first sign-in.
   protected, so nothing lands red.
 - **Release by tag.** `v0.1.0`, `v0.1.1`… Build the image with that tag,
   deploy that tag. Rolling back is deploying the previous one.
-- **Staging first**, once you can afford it: a second, smaller Cloud SQL
-  instance and a second Cloud Run service deployed from `main`. Production
-  only ever runs a tag that ran on staging.
+- **Staging first:** a Neon branch and a second Cloud Run service deployed
+  from `main`. Production only ever runs a tag that ran on staging.
 
 | | Data | API | Who |
 |---|---|---|---|
-| Local | in-memory mocks, or your Postgres | MSW in the browser, or `npm run dev` | you |
-| Staging | staging Postgres, disposable | `main` | the team, pilot rehearsals |
+| Local | in-memory mocks, your Postgres, or a Neon `dev` branch | MSW in the browser, or `npm run dev` | you |
+| Staging | a Neon branch or a copy of local, disposable | `main` | the team, pilot rehearsals |
 | Production | the real database | tagged release | tills |

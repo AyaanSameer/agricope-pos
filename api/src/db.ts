@@ -15,7 +15,22 @@ export type Queryable = Pick<PoolClient, 'query'>
 let pool: pg.Pool | null = null
 
 export function connect(databaseUrl: string): pg.Pool {
-  pool = new pg.Pool({ connectionString: databaseUrl, max: 10 })
+  pool = new pg.Pool({
+    connectionString: databaseUrl,
+    max: 10,
+    // A serverless Postgres (Neon) suspends its compute after a quiet spell and
+    // closes every idle connection when it does. Keep ours short-lived so the
+    // pool rarely holds a dead one, and give the first query after a wake-up
+    // long enough for the compute to start.
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 15_000,
+    keepAlive: true,
+  })
+  // An idle client the server dropped raises here. Without a listener the
+  // event is uncaught and takes the process down between two sales.
+  pool.on('error', (err) => {
+    console.error('idle database connection closed:', err.message)
+  })
   return pool
 }
 
