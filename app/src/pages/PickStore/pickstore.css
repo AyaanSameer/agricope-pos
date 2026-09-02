@@ -43,6 +43,7 @@
   gap: 22px;
 }
 .pickstore-inner-pin { max-width: var(--pin-card-w); gap: 16px; }
+.pickstore .pin-card { animation: agUp var(--dur-3) var(--ease-out) backwards; }
 
 .pickstore-head {
   text-align: center;
@@ -93,7 +94,7 @@
 }
 .pickstore-fill { flex: 1; }
 .pickstore-tile:hover { border-color: var(--leaf); transform: translateY(-2px); }
-.pickstore-tile:active { transform: none; }
+.pickstore-tile:active { transform: scale(0.98); }
 /* The back office is not a till, so it does not read as one. */
 .pickstore-tile.all {
   background: var(--forest);

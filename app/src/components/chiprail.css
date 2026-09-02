@@ -3,6 +3,7 @@
    and keyboard still scroll the track. */
 .chiprail { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .chiprail-arrow {
+  animation: agFade var(--dur-2) ease both;
   width: calc(var(--ctl-h) - 6px);
   height: calc(var(--ctl-h) - 6px);
   min-height: 0;

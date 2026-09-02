@@ -238,8 +238,11 @@
   align-items: center;
   gap: 14px;
   text-align: center;
+  animation: agUp var(--dur-3) var(--ease-out) backwards;
 }
+/* The tick lands a beat after the card — the one moment worth a flourish. */
 .charge-done-check {
+  animation: agPop 320ms var(--ease-out) 80ms backwards;
   width: 62px;
   height: 62px;
   flex: none;

@@ -81,7 +81,7 @@
   border-color: var(--leaf);
   transform: translateY(-2px);
 }
-.hub-tile:active { transform: none; }
+.hub-tile:active { transform: scale(0.98); }
 
 .hub-plate {
   width: calc(42px * var(--fs));

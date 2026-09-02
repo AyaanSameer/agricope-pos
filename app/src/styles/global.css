@@ -56,6 +56,14 @@
   --radius-lg: 16px;
   --radius-modal: 20px;
 
+  /* Motion: three durations, two curves, nothing bounces. State changes
+     take --dur-1, small things arriving --dur-2, screens and cards --dur-3. */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-1: 120ms;
+  --dur-2: 180ms;
+  --dur-3: 240ms;
+
   /* ---- Device matrix (laptop 1440×900 is the base) --------------------
      Every size in a screen is calc(px * var(--fs)); the rest are per-device.
      Density switch fires under 1024: roomy above, dense below. */
@@ -304,6 +312,12 @@ input:focus, select:focus, button:focus-visible {
   to { transform: none; }
 }
 /* A wrong PIN shakes the pad — the one place motion carries a message. */
+@keyframes agPage { from { opacity: 0; } to { opacity: 1; } }
+@keyframes agRow { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes agTick { from { opacity: 0.35; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+@keyframes agPop { from { opacity: 0; transform: scale(0.6); } 60% { opacity: 1; transform: scale(1.06); } to { opacity: 1; transform: none; } }
+@keyframes agDrawer { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
+@keyframes agBreathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
 @keyframes agShake {
   0%, 100% { transform: translateX(0); }
   15% { transform: translateX(-7px); }
@@ -320,15 +334,85 @@ input:focus, select:focus, button:focus-visible {
 .ag-sheet { animation: agSheet 0.26s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .ag-shake { animation: agShake 0.4s ease both; }
 
-/* Interactive surfaces settle rather than snap. */
+/* ---- Feel ------------------------------------------------------------------
+   Interactive surfaces settle rather than snap; a press is felt, not just
+   recoloured. Enter animations use `backwards` so that once they finish the
+   element's own hover and press transforms are back in charge. */
 .hub-tile,
 .tile,
 .cat-row,
 .chip,
+.seg-btn,
+.jump-btn,
+.ftable,
+.cust-row,
+.cpick-row,
+.pickstore-tile,
 .hub-foot-btn,
-.rp-range-opt { transition: transform 0.13s, border-color 0.13s, background 0.12s, color 0.12s; }
+.rp-range-opt,
+.toggle .knob,
+button {
+  transition:
+    background var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease),
+    color var(--dur-1) var(--ease),
+    box-shadow var(--dur-1) var(--ease),
+    opacity var(--dur-1) var(--ease),
+    transform var(--dur-1) var(--ease);
+}
+input, select { transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease); }
 
-button { transition: background 0.12s, border-color 0.13s, color 0.12s; }
+button:not(:disabled):active { transform: scale(0.98); }
+.btn-primary:hover:not(:disabled) { background: var(--forest-hover); }
+.btn-secondary:hover:not(:disabled) { border-color: var(--border-strong); }
+.chip:hover:not(.active) { border-color: var(--border-strong); }
+
+/* A screen fades in; the cards that stand alone on a ground rise in. */
+.content > .page,
+.content > .hub,
+.content > .register-split,
+.content > .charge,
+.content > .tab-page,
+.content > .receipt-page,
+.content > .kds,
+.content > .toosmall,
+.admin-main { animation: agPage var(--dur-3) var(--ease-out) backwards; }
+.login-card,
+.pickstore-inner { animation: agUp var(--dur-3) var(--ease-out) backwards; }
+
+/* Lists arrive as a soft wave: the first eight rows stagger, the rest land
+   together, so a long list never keeps anyone waiting. */
+.orders-row:not(.orders-head-row),
+.orders-card,
+.cust-row,
+.cat-row,
+.staff-card,
+.users-row,
+.ftable,
+.tab-line,
+.cpick-row,
+.admin-biz,
+.admin-stat,
+.hub-tile,
+.hub-stat,
+.rp-kpi,
+.tile,
+.cart-line,
+.pickstore-tile { animation: agRow var(--dur-2) var(--ease-out) backwards; }
+:is(.orders-row, .orders-card, .cust-row, .cat-row, .staff-card, .users-row, .ftable, .tab-line, .cpick-row, .admin-biz, .admin-stat, .hub-tile, .hub-stat, .rp-kpi, .tile, .cart-line, .pickstore-tile):nth-child(2) { animation-delay: 20ms; }
+:is(.orders-row, .orders-card, .cust-row, .cat-row, .staff-card, .users-row, .ftable, .tab-line, .cpick-row, .admin-biz, .admin-stat, .hub-tile, .hub-stat, .rp-kpi, .tile, .cart-line, .pickstore-tile):nth-child(3) { animation-delay: 40ms; }
+:is(.orders-row, .orders-card, .cust-row, .cat-row, .staff-card, .users-row, .ftable, .tab-line, .cpick-row, .admin-biz, .admin-stat, .hub-tile, .hub-stat, .rp-kpi, .tile, .cart-line, .pickstore-tile):nth-child(4) { animation-delay: 60ms; }
+:is(.orders-row, .orders-card, .cust-row, .cat-row, .staff-card, .users-row, .ftable, .tab-line, .cpick-row, .admin-biz, .admin-stat, .hub-tile, .hub-stat, .rp-kpi, .tile, .cart-line, .pickstore-tile):nth-child(5) { animation-delay: 80ms; }
+:is(.orders-row, .orders-card, .cust-row, .cat-row, .staff-card, .users-row, .ftable, .tab-line, .cpick-row, .admin-biz, .admin-stat, .hub-tile, .hub-stat, .rp-kpi, .tile, .cart-line, .pickstore-tile):nth-child(6) { animation-delay: 100ms; }
+:is(.orders-row, .orders-card, .cust-row, .cat-row, .staff-card, .users-row, .ftable, .tab-line, .cpick-row, .admin-biz, .admin-stat, .hub-tile, .hub-stat, .rp-kpi, .tile, .cart-line, .pickstore-tile):nth-child(7) { animation-delay: 120ms; }
+:is(.orders-row, .orders-card, .cust-row, .cat-row, .staff-card, .users-row, .ftable, .tab-line, .cpick-row, .admin-biz, .admin-stat, .hub-tile, .hub-stat, .rp-kpi, .tile, .cart-line, .pickstore-tile):nth-child(n+8) { animation-delay: 140ms; }
+
+/* A number that changed says so — the caller remounts it with a key. */
+.ag-tick { display: inline-block; animation: agTick var(--dur-3) var(--ease-out) backwards; }
+
+/* Waiting breathes instead of sitting still. */
+.orders-loading, .cat-loading, .receipt-loading, .rp-loading, .settings-loading,
+.staff-loading, .users-loading, .admin-loading, .pickstore-loading { animation: agBreathe 1.4s var(--ease) infinite; }
 
 /* Print is physical: an 80mm receipt is 80mm whatever device sent it. */
 @media print {
@@ -337,15 +421,11 @@ button { transition: background 0.12s, border-color 0.13s, color 0.12s; }
 
 /* Motion is decoration here; the layout never depends on it. */
 @media (prefers-reduced-motion: reduce) {
-  .ag-scrim,
-  .ag-scrim-sheet,
-  .ag-modal,
-  .ag-modal-lift,
-  .ag-sheet,
-  .ag-shake { animation: none; }
-  *,
-  *::before,
-  *::after { transition-duration: 0.01ms !important; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Every overlay in the app enters the same way: the scrim fades, the thing

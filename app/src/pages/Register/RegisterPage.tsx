@@ -267,7 +267,12 @@ export function RegisterPage() {
             <div className="trow"><span>Service charge</span><span>{fmt(cart.totals.service_charge_total)}</span></div>
           )}
           <div className="trow"><span>Incl. tax</span><span>{fmt(cart.totals.tax_total)}</span></div>
-          <div className="trow total"><span>Total</span><span>{fmtQAR(cart.totals.total)}</span></div>
+          <div className="trow total">
+            <span>Total</span>
+            <span key={cart.totals.total} className="ag-tick">
+              {fmtQAR(cart.totals.total)}
+            </span>
+          </div>
         </div>
 
         {chargeError && <div className="cart-error">{chargeError}</div>}

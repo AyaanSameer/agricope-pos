@@ -43,6 +43,7 @@
   transition: transform 0.14s, border-color 0.14s;
 }
 .ftable:hover { border-color: var(--leaf); transform: translateY(-2px); }
+.ftable:active { transform: scale(0.98); }
 .ftable.free { background: var(--surface-warm); border-color: var(--border-strong); }
 .ftable.warn { border-color: var(--gold); }
 .ftable-top { display: flex; align-items: center; gap: 9px; }

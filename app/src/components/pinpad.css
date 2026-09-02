@@ -44,7 +44,7 @@
   color: var(--ink);
 }
 .pinpad-key-back { font-size: calc(var(--key-size) - 6px); }
-.pinpad-key:active { background: var(--success-tint); }
+.pinpad-key:active { background: var(--success-tint); transform: scale(0.96); }
 .pinpad-key:disabled { opacity: 0.55; }
 
 .pin-dots {
@@ -64,4 +64,5 @@
 .pin-dots .dot.filled {
   background: var(--forest);
   border-color: var(--forest);
+  animation: agPop var(--dur-2) var(--ease-out) backwards;
 }

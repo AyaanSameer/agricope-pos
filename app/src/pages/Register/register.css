@@ -73,7 +73,7 @@
   text-align: left;
 }
 .tile:hover { border-color: var(--leaf); transform: translateY(-2px); }
-.tile:active { outline: 3px solid var(--leaf); }
+.tile:active { transform: scale(0.98); border-color: var(--leaf); }
 .tile-cat {
   display: flex;
   align-items: center;
@@ -146,6 +146,7 @@
 /* Selected is the forest fill, as the design draws it — the same state the
    category chips below use, so the two rows read as one control language. */
 .seg-btn.active { background: var(--forest); color: #fff; }
+.seg-btn:hover:not(.active) { background: var(--beige); }
 
 .cart {
   flex: 0 0 var(--cart-w);

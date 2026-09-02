@@ -139,7 +139,9 @@ export function ChargePage() {
       <div className="charge-side">
         <div className="charge-due">
           <span className="charge-due-eyebrow">Remaining due</span>
-          <span className="charge-due-amount">{fmtQAR(order.amount_due)}</span>
+          <span key={order.amount_due} className="charge-due-amount ag-tick">
+            {fmtQAR(order.amount_due)}
+          </span>
           <span className="charge-due-paid">
             {order.payments.length > 0
               ? `${fmtQAR(paidSum.toFixed(2))} of ${fmtQAR(order.total)} taken`
