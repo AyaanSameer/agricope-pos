@@ -1,4 +1,5 @@
-.orders-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.orders-filters { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.orders-filters .jump-btn { margin-left: auto; }
 .orders-body { display: flex; gap: 16px; align-items: flex-start; }
 .orders-table {
   flex: 1;
@@ -111,7 +112,7 @@
   z-index: 30;
   background: var(--surface);
   border-left: 1px solid var(--border);
-  box-shadow: -10px 0 30px rgba(15, 23, 42, 0.2);
+  box-shadow: -10px 0 30px rgba(26, 31, 23, 0.2);
   padding: 18px;
   overflow-y: auto;
   display: flex;
@@ -213,7 +214,7 @@
     border-left: none;
     border-top: 1px solid var(--border);
     border-radius: 20px 20px 0 0;
-    box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.2);
+    box-shadow: 0 -10px 30px rgba(26, 31, 23, 0.2);
     animation: agSheet 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 }

@@ -67,3 +67,23 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
 }
+
+/* The way between the two screens a cashier lives on: Register ⇄ Orders. */
+.jump-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: var(--ctl-h);
+  min-height: var(--ctl-h);
+  padding: 0 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--forest);
+  font-weight: 500;
+  font-size: calc(13px * var(--fs));
+  text-decoration: none;
+  white-space: nowrap;
+}
+.jump-btn:hover { border-color: var(--leaf); }
+.jump-btn:active { background: var(--success-tint); }

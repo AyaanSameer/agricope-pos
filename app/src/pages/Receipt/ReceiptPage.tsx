@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import Big from 'big.js'
@@ -8,19 +7,9 @@ import { ReceiptView } from './ReceiptView'
 import type { ReceiptData } from './ReceiptView'
 import './receipt.css'
 
-/** Staff-side receipt: print (80mm stylesheet) + share by link/QR/WhatsApp. */
+/** Staff-side receipt: print (80mm stylesheet), or send it on WhatsApp. */
 export function ReceiptPage() {
   const { id } = useParams<{ id: string }>()
-  const [copied, setCopied] = useState(false)
-  const copy = (url: string) => {
-    navigator.clipboard.writeText(url).then(
-      () => {
-        setCopied(true)
-        window.setTimeout(() => setCopied(false), 1600)
-      },
-      () => setCopied(false),
-    )
-  }
   const receiptQuery = useQuery({
     queryKey: ['receipt', id],
     queryFn: () => api<ReceiptData>(`/orders/${id}/receipt`),
@@ -31,7 +20,6 @@ export function ReceiptPage() {
   if (!data) return <div className="receipt-loading">Receipt not found.</div>
 
   const publicUrl = `${window.location.origin}/r/${data.order.receipt_token}`
-  const shortUrl = publicUrl.replace(/^https?:\/\//, '')
   const waUrl = `https://wa.me/?text=${encodeURIComponent(`Your receipt from ${data.business.name}: ${publicUrl}`)}`
   const { order } = data
 
@@ -71,25 +59,16 @@ export function ReceiptPage() {
           <span>{state.note}</span>
         </div>
 
-        <a className="receipt-act primary" href={waUrl} target="_blank" rel="noreferrer">
-          Send on WhatsApp
-        </a>
-        <button type="button" className="receipt-act" onClick={() => window.print()}>
+        {/* The paper is what gets handed over — printing is the one big button. */}
+        <button type="button" className="receipt-act primary" onClick={() => window.print()}>
           Print 80 mm receipt
         </button>
-        <a className="receipt-act" href={publicUrl} target="_blank" rel="noreferrer">
-          Open the customer&rsquo;s link
+        <a className="receipt-act" href={waUrl} target="_blank" rel="noreferrer">
+          Send on WhatsApp
         </a>
         <Link className="receipt-act" to="/register">
           New sale
         </Link>
-
-        <div className="receipt-link">
-          <span className="receipt-link-url">{shortUrl}</span>
-          <button type="button" className="receipt-copy" onClick={() => copy(publicUrl)}>
-            {copied ? 'Copied' : 'Copy'}
-          </button>
-        </div>
       </aside>
     </div>
   )

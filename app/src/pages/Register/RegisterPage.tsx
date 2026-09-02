@@ -56,13 +56,6 @@ export function RegisterPage() {
       api<{ total: number }>(`/orders?status=open${activeStore ? `&store_id=${activeStore.id}` : ''}`),
     enabled: !!activeStore,
   })
-  const floorQuery = useQuery({
-    queryKey: ['floor', activeStore?.id],
-    queryFn: () =>
-      api<{ data: { order: unknown | null }[] }>(`/tables/floor?store_id=${activeStore!.id}`),
-    enabled: !!activeStore && isRestaurant,
-  })
-  const occupied = floorQuery.data?.data.filter((t) => t.order).length ?? 0
   const openOrders = openOrdersQuery.data?.total ?? 0
 
   const productsQuery = useQuery({
@@ -157,13 +150,7 @@ export function RegisterPage() {
               ))}
           </div>
           <div className="register-jump">
-            {isRestaurant && (
-              <Link to="/floor" className="register-jump-btn">
-                Tables
-                {occupied > 0 && <span className="register-jump-count">{occupied}</span>}
-              </Link>
-            )}
-            <Link to="/orders" className="register-jump-btn">
+            <Link to="/orders" className="jump-btn">
               Orders
               {openOrders > 0 && <span className="register-jump-count">{openOrders}</span>}
             </Link>

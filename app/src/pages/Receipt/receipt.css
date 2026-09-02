@@ -98,35 +98,6 @@
 .receipt-act.primary { border-color: var(--forest); background: var(--forest); color: #fff; }
 .receipt-act.primary:hover { background: var(--forest-deep); border-color: var(--forest-deep); }
 
-.receipt-link {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 13px 14px;
-}
-.receipt-link-url {
-  flex: 1;
-  min-width: 0;
-  font-family: var(--font-mono);
-  font-size: calc(11.5px * var(--fs));
-  color: var(--ink-3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.receipt-copy {
-  flex: none;
-  min-height: 0;
-  padding: 0;
-  background: transparent;
-  color: var(--forest);
-  font-weight: 500;
-  font-size: calc(12px * var(--fs));
-}
-
 /* 80mm thermal print: the paper is the page */
 @media print {
   body * { visibility: hidden; }

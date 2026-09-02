@@ -5,6 +5,7 @@ import { AppShell } from './components/AppShell'
 import { HubPage } from './pages/Hub/HubPage'
 import { TooSmallPage } from './pages/TooSmall/TooSmallPage'
 import { useDevice } from './lib/useDevice'
+import { useDocumentTitle } from './lib/useDocumentTitle'
 import { LoginPage } from './pages/Login/LoginPage'
 import { RegisterPage } from './pages/Register/RegisterPage'
 import { PickStorePage } from './pages/PickStore/PickStorePage'
@@ -84,6 +85,7 @@ function RequireRole({ roles, children }: { roles: Role[]; children: ReactNode }
 }
 
 export default function App() {
+  useDocumentTitle()
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />

@@ -332,24 +332,6 @@
 
 /* Phase 15: one-tap jumps out of the till to the queue and the floor */
 .register-jump { display: flex; gap: 8px; }
-.register-jump-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  height: var(--ctl-h);
-  min-height: var(--ctl-h);
-  padding: 0 14px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--forest);
-  font-weight: 500;
-  font-size: calc(13px * var(--fs));
-  text-decoration: none;
-  white-space: nowrap;
-}
-.register-jump-btn:hover { border-color: var(--leaf); }
-.register-jump-btn:active { background: var(--success-tint); }
 .register-jump-count {
   font-family: var(--font-head);
   font-weight: 600;
@@ -386,7 +368,7 @@
     border-left: none;
     border-top: 1px solid var(--border);
     border-radius: 20px 20px 0 0;
-    box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.2);
+    box-shadow: 0 -10px 30px rgba(26, 31, 23, 0.2);
     animation: agSheet 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 

@@ -26,29 +26,36 @@
   font-size: calc(17px * var(--fs));
   color: var(--ink);
 }
-/* Adding a customer belongs to the moment you find they are not on the list. */
-.cpick-new {
-  height: auto;
-  min-height: 0;
-  padding: 4px 0;
-  border: 0;
-  background: transparent;
+/* Adding a customer belongs to the moment you find they are not on the list.
+   A real button, at control height — this is pressed with a finger. */
+.cpick-new,
+.cpick-empty-new {
+  height: var(--ctl-h);
+  min-height: var(--ctl-h);
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
   color: var(--forest);
-  font-size: calc(12.5px * var(--fs));
+  font-size: calc(13px * var(--fs));
   font-weight: 500;
+  white-space: nowrap;
 }
-.cpick-new:hover { text-decoration: underline; }
+.cpick-new:hover,
+.cpick-empty-new:hover { border-color: var(--leaf); }
+.cpick-new:active,
+.cpick-empty-new:active { background: var(--success-tint); }
 .cpick-back {
   order: -1;
-  width: 30px;
-  height: 30px;
-  min-height: 30px;
+  width: var(--ctl-h);
+  height: var(--ctl-h);
+  min-height: var(--ctl-h);
   padding: 0;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--surface);
   color: var(--ink-2);
-  font-size: calc(15px * var(--fs));
+  font-size: calc(17px * var(--fs));
 }
 .cpick-back:hover { border-color: var(--border-strong); }
 
@@ -102,17 +109,6 @@
   padding: 10px 2px;
 }
 .cpick-empty p { margin: 0; color: var(--ink-3); font-size: calc(12.5px * var(--fs)); }
-.cpick-empty-new {
-  height: auto;
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--forest);
-  font-weight: 500;
-  font-size: calc(12.5px * var(--fs));
-}
-.cpick-empty-new:hover { text-decoration: underline; }
 
 .cpick-none {
   flex-shrink: 0;

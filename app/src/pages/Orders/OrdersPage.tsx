@@ -66,6 +66,9 @@ export function OrdersPage() {
             {s ? s[0].toUpperCase() + s.slice(1) : 'All'}
           </button>
         ))}
+        <Link to="/register" className="jump-btn">
+          Register
+        </Link>
       </div>
 
       <div className="orders-body">
