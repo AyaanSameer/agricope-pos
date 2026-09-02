@@ -38,8 +38,8 @@ const TILES: Tile[] = [
   { key: 'shifts', label: 'Shifts', icon: 'shifts', to: '/shifts', plate: 'green', roles: ['owner', 'manager', 'cashier'] },
   { key: 'reports', label: 'Reports', icon: 'reports', to: '/reports', plate: 'warm', roles: ['owner', 'manager'] },
   { key: 'staff', label: 'Staff', icon: 'staff', to: '/staff', plate: 'green', roles: ['owner', 'manager'] },
-  { key: 'users', label: 'Users', icon: 'users', to: '/users', plate: 'warm', roles: ['owner', 'manager'] },
-  { key: 'settings', label: 'Settings', icon: 'settings', to: '/settings', plate: 'warm', roles: ['owner', 'manager'] },
+  { key: 'users', label: 'Users', icon: 'users', to: '/users', plate: 'warm', roles: ['owner'] },
+  { key: 'settings', label: 'Settings', icon: 'settings', to: '/settings', plate: 'warm', roles: ['owner'] },
 ]
 
 interface FloorTable {

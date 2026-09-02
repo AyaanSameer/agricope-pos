@@ -386,6 +386,30 @@ describe('reports', () => {
   })
 })
 
+describe('a malformed request is the caller\'s fault, and says so', () => {
+  it('answers 400, not 500, for a body that is not JSON', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/v1/staff',
+      headers: { authorization: `Bearer ${ayaan}`, 'content-type': 'application/json' },
+      payload: '{not json',
+    })
+    expect(res.statusCode).toBe(400)
+    expect(JSON.parse(res.body).error.code).toBe('VALIDATION_ERROR')
+  })
+
+  it('still reaches the role check when a DELETE carries a JSON content-type and no body', async () => {
+    const maryam = (await tillSession(app, 'demo@agricope.qa', 's-alrayyan', '9999')).access_token
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/api/v1/staff/stf-hassan',
+      headers: { authorization: `Bearer ${maryam}`, 'content-type': 'application/json' },
+    })
+    expect(res.statusCode).toBe(400)
+    expect(JSON.parse(res.body).error.message).toBe('The request body could not be read as JSON.')
+  })
+})
+
 describe('deactivate first, delete second', () => {
   it('a login must be off before it can go, and its name stays on its orders', async () => {
     const active = await call(app, 'DELETE', '/users/u-amal', { token: ayaan })
@@ -399,10 +423,55 @@ describe('deactivate first, delete second', () => {
     expect(orders.body.data.some((o: { cashier_name: string }) => o.cashier_name === 'Amal Nasser')).toBe(true)
   })
 
-  it('a manager cannot delete a login at all', async () => {
+  it('a manager cannot reach logins or settings at all', async () => {
     const maryam = (await tillSession(app, 'demo@agricope.qa', 's-alrayyan', '9999')).access_token
-    const res = await call(app, 'DELETE', '/users/u-yusuf', { token: maryam })
-    expect(res.status).toBe(403)
+    for (const [method, url] of [
+      ['GET', '/users'],
+      ['POST', '/users'],
+      ['DELETE', '/users/u-yusuf'],
+      ['GET', '/business-settings'],
+      ['PATCH', '/business-settings'],
+      ['PATCH', '/stores/s-alrayyan'],
+    ] as const) {
+      const res = await call(app, method, url, { token: maryam, body: method === 'GET' ? undefined : {} })
+      expect([method, url, res.status]).toEqual([method, url, 403])
+    }
+    // The owner reaches every one of them.
+    const owner = await call(app, 'GET', '/users', { token: ayaan })
+    expect(owner.status).toBe(200)
+  })
+
+  it('a manager runs the staff rota but cannot switch a person off', async () => {
+    const maryam = (await tillSession(app, 'demo@agricope.qa', 's-alrayyan', '9999')).access_token
+    // The rota is theirs: add, edit, and the attendance clock.
+    const added = await call(app, 'POST', '/staff', {
+      token: maryam,
+      body: { name: 'Bilal Haq', role_title: 'Porter', store_id: 's-alrayyan' },
+    })
+    expect(added.status).toBe(201)
+    expect(added.body.is_active).toBe(true)
+    const renamed = await call(app, 'PATCH', `/staff/${added.body.id}`, { token: maryam, body: { role_title: 'Night porter' } })
+    expect(renamed.status).toBe(200)
+    const clockedIn = await call(app, 'POST', `/staff/${added.body.id}/check-in`, { token: maryam, body: {} })
+    expect(clockedIn.status).toBe(200)
+    expect(clockedIn.body.checked_in_at).not.toBeNull()
+
+    // The on/off switch is not.
+    const off = await call(app, 'PATCH', `/staff/${added.body.id}`, { token: maryam, body: { is_active: false } })
+    expect(off.status).toBe(403)
+    expect(off.body.error.message).toBe('Only the owner can deactivate a staff member.')
+    const bornOff = await call(app, 'POST', '/staff', {
+      token: maryam,
+      body: { name: 'Never Started', role_title: 'Porter', store_id: 's-alrayyan', is_active: false },
+    })
+    expect(bornOff.status).toBe(403)
+
+    // The owner deactivates, then deletes — the same two steps as a login.
+    const ownerOff = await call(app, 'PATCH', `/staff/${added.body.id}`, { token: ayaan, body: { is_active: false } })
+    expect(ownerOff.status).toBe(200)
+    expect(ownerOff.body.is_active).toBe(false)
+    const gone = await call(app, 'DELETE', `/staff/${added.body.id}`, { token: ayaan })
+    expect(gone.status).toBe(204)
   })
 
   it('a branch with history can be switched off but never deleted', async () => {

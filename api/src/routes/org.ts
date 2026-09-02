@@ -4,14 +4,18 @@ import type { Ctx } from '../app.js'
 import { PIN_RE, hashPin, requireBusiness, requireRole } from '../auth.js'
 import { many, one } from '../db.js'
 import type { Queryable } from '../db.js'
-import { conflict, invalid, notFound } from '../errors.js'
+import { conflict, forbidden, invalid, notFound } from '../errors.js'
 import { paginated, rate, storeOut, userRecordOut } from '../serialize.js'
 import type { StoreRow, UserRow } from '../serialize.js'
 
 /**
  * The business's own house: its branches and settings, the logins on its
- * tills, and the workforce it clocks in and out. Owners and managers only —
- * the till itself never reaches these.
+ * tills, and the workforce it clocks in and out.
+ *
+ * Who reaches what: branch and business settings, and the logins themselves,
+ * are the OWNER's alone — they decide who may sell and on what terms. A
+ * manager runs the day: the staff rota, attendance, the catalog and the
+ * reports. Switching a person off, staff included, stays with the owner.
  */
 
 const ROLES = ['owner', 'manager', 'cashier', 'waiter'] as const
@@ -84,7 +88,7 @@ export async function orgRoutes(app: FastifyInstance, ctx: Ctx) {
   })
 
   app.patch('/stores/:id', async (req) => {
-    const caller = await requireRole(ctx, req, ['owner', 'manager'])
+    const caller = await requireRole(ctx, req, ['owner'])
     const { id } = req.params as { id: string }
     const store = await one<StoreRow>('select * from stores where id = $1 and business_id = $2', [id, caller.business_id])
     if (!store) throw notFound('branch')
@@ -131,12 +135,12 @@ export async function orgRoutes(app: FastifyInstance, ctx: Ctx) {
   }
 
   app.get('/business-settings', async (req) => {
-    const caller = await requireRole(ctx, req, ['owner', 'manager'])
+    const caller = await requireRole(ctx, req, ['owner'])
     return settings(caller.business_id)
   })
 
   app.patch('/business-settings', async (req) => {
-    const caller = await requireRole(ctx, req, ['owner', 'manager'])
+    const caller = await requireRole(ctx, req, ['owner'])
     const body = z.object({ receipt_footer: z.string().optional(), discount_approval_percent: z.string().optional() }).parse(req.body)
     if (body.receipt_footer !== undefined) {
       await ctx.db.query('update businesses set receipt_footer = $2 where id = $1', [caller.business_id, body.receipt_footer.trim()])
@@ -152,13 +156,13 @@ export async function orgRoutes(app: FastifyInstance, ctx: Ctx) {
   // ---------- logins ----------
 
   app.get('/users', async (req) => {
-    const caller = await requireRole(ctx, req, ['owner', 'manager'])
+    const caller = await requireRole(ctx, req, ['owner'])
     const rows = await many<UserRow>(`${USER_SELECT} where u.business_id = $1 order by u.created_at, u.name`, [caller.business_id])
     return paginated(rows.map(userRecordOut), 50)
   })
 
   app.post('/users', async (req, reply) => {
-    const caller = await requireRole(ctx, req, ['owner', 'manager'])
+    const caller = await requireRole(ctx, req, ['owner'])
     const body = z
       .object({
         name: z.string().optional(),
@@ -191,7 +195,7 @@ export async function orgRoutes(app: FastifyInstance, ctx: Ctx) {
   })
 
   app.patch('/users/:id', async (req) => {
-    const caller = await requireRole(ctx, req, ['owner', 'manager'])
+    const caller = await requireRole(ctx, req, ['owner'])
     const { id } = req.params as { id: string }
     const user = await one<UserRow>(`${USER_SELECT} where u.id = $1 and u.business_id = $2`, [id, caller.business_id])
     if (!user) throw notFound('user')
@@ -258,6 +262,9 @@ export async function orgRoutes(app: FastifyInstance, ctx: Ctx) {
       })
       .parse(req.body)
     if (!body.name?.trim() || !body.role_title?.trim()) throw invalid('Name and role are required.')
+    if (body.is_active === false && caller.role !== 'owner') {
+      throw forbidden('Only the owner can deactivate a staff member.')
+    }
     if (body.store_id && !(await one('select 1 from stores where id = $1 and business_id = $2', [body.store_id, caller.business_id]))) {
       throw invalid('That branch does not belong to this business.')
     }
@@ -281,6 +288,10 @@ export async function orgRoutes(app: FastifyInstance, ctx: Ctx) {
         is_active: z.boolean().optional(),
       })
       .parse(req.body)
+    // A manager runs the rota; switching a person off is the owner's call.
+    if (body.is_active !== undefined && caller.role !== 'owner') {
+      throw forbidden('Only the owner can deactivate a staff member.')
+    }
     if (body.name !== undefined) await ctx.db.query('update staff_members set name = $2 where id = $1', [member.id, body.name.trim()])
     if (body.role_title !== undefined) await ctx.db.query('update staff_members set role_title = $2 where id = $1', [member.id, body.role_title.trim()])
     if (body.store_id !== undefined) await ctx.db.query('update staff_members set store_id = $2 where id = $1', [member.id, body.store_id])

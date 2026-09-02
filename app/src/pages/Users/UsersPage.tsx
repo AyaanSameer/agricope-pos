@@ -22,7 +22,6 @@ const EMPTY: Draft = { name: '', email: '', role: 'cashier', store_id: null, pin
 export function UsersPage() {
   const queryClient = useQueryClient()
   const { session } = useAuth()
-  const isOwner = session?.user.role === 'owner'
   const usersQuery = useQuery({ queryKey: ['users'], queryFn: listUsers })
   const storesQuery = useQuery({ queryKey: ['stores'], queryFn: listStores })
   const [draft, setDraft] = useState<Draft | null>(null)
@@ -82,11 +81,12 @@ export function UsersPage() {
         </button>
       </div>
 
-      {/* Deleting a login is the owner's call — deactivating keeps them on past receipts. */}
+      {/* This whole screen is the owner's; the note explains the two-step rule. */}
       <div className="users-owner-note">
         <span className="users-owner-tag">Owner only</span>
-        Deactivate a login first — that keeps the person on past receipts and stops them signing
-        in. Only the owner can then delete it outright.
+        Logins are yours alone — managers cannot see or change them. Deactivate one first: that
+        stops the person signing in while keeping their name on past receipts. Then it can be
+        deleted outright.
       </div>
 
       <div className="users-table">
@@ -118,7 +118,7 @@ export function UsersPage() {
               </button>
               {/* Deletion is offered only once the login is off — the two-step
                   rule the server enforces, made visible rather than surprising. */}
-              {isOwner && u.id !== session?.user.id && !u.is_active && (
+              {u.id !== session?.user.id && !u.is_active && (
                 <button
                   type="button"
                   className="users-btn danger"

@@ -63,8 +63,8 @@ Then pick the branch, and enter a PIN:
 | PIN | Who | What they can reach |
 |---|---|---|
 | `3333` | Rhea, cashier | Register, orders, customers, shifts |
-| `2222` | Imran, manager | The above, plus catalog, staff, reports and settings |
-| `1111` | Yousuf, owner | Everything, including users and the floor plan |
+| `2222` | Imran, manager | The above, plus catalog, staff and reports |
+| `1111` | Yousuf, owner | Everything — only the owner gets Users, Settings and the floor plan |
 | `4444` | Aisha, waiter | Tables, orders and the kitchen — no cash drawer |
 
 Sign in as the manager or owner first — they see the most.

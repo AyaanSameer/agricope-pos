@@ -20,7 +20,7 @@ import './settings.css'
  */
 export function SettingsPage() {
   const queryClient = useQueryClient()
-  const { activeStore, session } = useAuth()
+  const { activeStore } = useAuth()
   const storesQuery = useQuery({ queryKey: ['stores'], queryFn: listStores })
   const bizQuery = useQuery({ queryKey: ['business-settings'], queryFn: getBusinessSettings })
   const [error, setError] = useState<string | null>(null)
@@ -55,7 +55,7 @@ export function SettingsPage() {
       <div className="page-head">
         <div>
           <h2>Settings</h2>
-          <p className="page-sub">Branch settings · owner &amp; manager only</p>
+          <p className="page-sub">Branch &amp; business settings · owner only</p>
         </div>
       </div>
 
@@ -182,7 +182,7 @@ export function SettingsPage() {
               onSave={(discount_approval_percent) => saveBiz.mutate({ discount_approval_percent })}
             />
 
-            {session?.user.role === 'owner' && <PasswordGroup />}
+            <PasswordGroup />
           </div>
         )}
       </div>

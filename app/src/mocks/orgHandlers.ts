@@ -185,7 +185,7 @@ export const orgHandlers = [
 
   http.patch('/api/v1/stores/:id', async ({ request, params }) => {
     await delay(250)
-    const caller = requireRole(request, ['owner', 'manager'])
+    const caller = requireRole(request, ['owner'])
     if (caller instanceof Response) return caller
     const store = stores.find((s) => s.id === params.id && s.business_id === caller.business_id)
     if (!store) return apiError(404, 'NOT_FOUND', 'No such branch.')
@@ -223,14 +223,14 @@ export const orgHandlers = [
   // ---- Business settings: the tenant JSONB — receipt footer, approvals ----
   http.get('/api/v1/business-settings', async ({ request }) => {
     await delay(200)
-    const caller = requireRole(request, ['owner', 'manager'])
+    const caller = requireRole(request, ['owner'])
     if (caller instanceof Response) return caller
     return HttpResponse.json(settingsFor(caller.business_id))
   }),
 
   http.patch('/api/v1/business-settings', async ({ request }) => {
     await delay(250)
-    const caller = requireRole(request, ['owner', 'manager'])
+    const caller = requireRole(request, ['owner'])
     if (caller instanceof Response) return caller
     const st = settingsFor(caller.business_id)
     const body = (await request.json()) as Partial<
@@ -249,7 +249,7 @@ export const orgHandlers = [
 
   http.get('/api/v1/users', async ({ request }) => {
     await delay(250)
-    const caller = requireRole(request, ['owner', 'manager'])
+    const caller = requireRole(request, ['owner'])
     if (caller instanceof Response) return caller
     const data = users.filter((u) => u.business_id === caller.business_id).map(toUserRecord)
     return HttpResponse.json({ data, total: data.length, page: 1, limit: 50 })
@@ -257,7 +257,7 @@ export const orgHandlers = [
 
   http.post('/api/v1/users', async ({ request }) => {
     await delay(300)
-    const caller = requireRole(request, ['owner', 'manager'])
+    const caller = requireRole(request, ['owner'])
     if (caller instanceof Response) return caller
     const body = (await request.json()) as Partial<DbUser> & { pin?: string }
     if (!body.name || !body.email || !body.role) {
@@ -286,7 +286,7 @@ export const orgHandlers = [
 
   http.patch('/api/v1/users/:id', async ({ request, params }) => {
     await delay(300)
-    const caller = requireRole(request, ['owner', 'manager'])
+    const caller = requireRole(request, ['owner'])
     if (caller instanceof Response) return caller
     const user = users.find((u) => u.id === params.id && u.business_id === caller.business_id)
     if (!user) return apiError(404, 'NOT_FOUND', 'No such user.')
@@ -541,6 +541,9 @@ export const orgHandlers = [
     if (!body.name?.trim() || !body.role_title?.trim()) {
       return apiError(400, 'VALIDATION_ERROR', 'Name and role are required.')
     }
+    if (body.is_active === false && caller.role !== 'owner') {
+      return apiError(403, 'FORBIDDEN', 'Only the owner can deactivate a staff member.')
+    }
     if (body.store_id && !stores.some((s) => s.id === body.store_id && s.business_id === caller.business_id)) {
       return apiError(400, 'VALIDATION_ERROR', 'That branch does not belong to this business.')
     }
@@ -565,6 +568,10 @@ export const orgHandlers = [
     )
     if (!member) return apiError(404, 'NOT_FOUND', 'No such staff member.')
     const body = (await request.json()) as Partial<DbStaffMember>
+    // A manager runs the rota; switching a person off is the owner's call.
+    if (body.is_active !== undefined && caller.role !== 'owner') {
+      return apiError(403, 'FORBIDDEN', 'Only the owner can deactivate a staff member.')
+    }
     if (body.name !== undefined) member.name = body.name.trim()
     if (body.role_title !== undefined) member.role_title = body.role_title.trim()
     if (body.store_id !== undefined) member.store_id = body.store_id

@@ -40,13 +40,27 @@ export function errorHandler(err: FastifyError | Error, req: FastifyRequest, rep
       .send({ error: { code: 'VALIDATION_ERROR', message: `${where}${first?.message ?? 'Invalid input.'}` } })
   }
   const fe = err as FastifyError
-  if (fe.statusCode === 429) {
+  const status = typeof fe.statusCode === 'number' ? fe.statusCode : 500
+  if (status === 429) {
     return reply.status(429).send({
       error: { code: 'RATE_LIMITED', message: 'Too many attempts — wait a minute and try again.' },
     })
   }
   if (fe.validation) {
     return reply.status(400).send({ error: { code: 'VALIDATION_ERROR', message: fe.message } })
+  }
+  // Fastify's own client errors — a body that is not JSON, an empty one, a
+  // payload too large. Answering 500 would blame the server for the caller's
+  // mistake, tell the till the wrong thing, and bury a real fault in the logs.
+  if (status >= 400 && status < 500) {
+    return reply.status(status).send({
+      error: {
+        code: status === 404 ? 'NOT_FOUND' : 'VALIDATION_ERROR',
+        message: fe.code?.startsWith('FST_ERR_CTP')
+          ? 'The request body could not be read as JSON.'
+          : fe.message,
+      },
+    })
   }
   req.log.error({ err }, 'unhandled error')
   return reply

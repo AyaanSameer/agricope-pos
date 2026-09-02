@@ -61,9 +61,9 @@ Agricope, not for a business.
 | 11 | Catalog | `/catalog` | manager, owner | yes |
 | 12 | Shifts & cash drawer | `/shifts` | all | yes |
 | 13 | Reports | `/reports` | manager, owner | yes |
-| 14 | Staff | `/staff` | manager, owner | yes |
-| 15 | Users | `/users` | manager, owner | yes |
-| 16 | Settings | `/settings` | manager, owner | yes |
+| 14 | Staff | `/staff` | manager, owner (deactivate/delete: owner) | yes |
+| 15 | Users | `/users` | **owner only** | yes |
+| 16 | Settings | `/settings` | **owner only** | yes |
 | 17 | Platform console | `/admin` | platform admin only | no (own chrome) |
 | 18 | Public receipt | `/r/:token` | customer, no login | no |
 
@@ -99,8 +99,11 @@ Agricope, not for a business.
 | Screen | Cashier | Manager | Owner |
 |---|:--:|:--:|:--:|
 | Register, Tables, Open tab, Orders, Charge, Customers, Kitchen, Receipt, Shifts | ✅ | ✅ | ✅ |
-| Catalog, Reports, Staff, Users, Settings | ❌ | ✅ | ✅ |
-| Delete a user login | ❌ | ❌ | ✅ |
+| Catalog, Reports, Staff | ❌ | ✅ | ✅ |
+| Users, Settings | ❌ | ❌ | ✅ |
+| Deactivate or delete a login | ❌ | ❌ | ✅ |
+| Deactivate or delete a staff member | ❌ | ❌ | ✅ |
+| Add, edit, check in/out a staff member | ❌ | ✅ | ✅ |
 | Manage tables (add/edit/remove) | ❌ | ❌ | ✅ |
 | Approve by PIN (discounts over threshold, void, refund, pull fired item, credit limit) | ❌ | ✅ | ✅ |
 
@@ -149,11 +152,11 @@ Fixed left sidebar, full height and sticky; only the nav list scrolls. Three lab
 ```
 SELL       Register · Tables* · Orders · Customers · Kitchen*†
 MANAGE     Catalog‡ · Shifts · Reports‡ · Staff‡
-ADMIN      Users‡ · Settings‡
+ADMIN      Users§ · Settings§
 ```
 
 `*` restaurant branches only · `†` also hidden when the branch prints tickets instead of using a
-screen · `‡` manager and owner only.
+screen · `‡` manager and owner only · `§` **owner only** — a manager's hub has no ADMIN row at all.
 
 Sidebar top: logomark + "Agricope", then a branch chip with a status dot.
 Sidebar bottom, in order: **Switch user · PIN** button, current user's name and role, single
@@ -443,7 +446,9 @@ Workforce attendance. **Distinct from Users: staff need no login.**
     "In since HH:MM" (green) or "Off floor" (grey).
   - Middle: "Today · 3h 20m" and the day's entries as "09:12–13:04 · 14:00–now", or
     "no entries today".
-  - Actions: **Check in** (primary) or **Check out** (secondary), plus **Edit**.
+  - Actions: **Check in** (primary) or **Check out** (secondary), plus **Edit** — a manager
+    gets these. **Deactivate / Restore** and **Delete** appear for the owner alone, and
+    Delete only once the person is deactivated. The form's "Active" checkbox is owner-only too.
   - Inactive staff are greyed and cannot be checked in.
 - **Staff form modal:** Name, Role ("Fry cook, Counter, Cleaner…"), Branch select (or "All
   branches"), and an "Active — can be checked in" checkbox.
@@ -469,7 +474,7 @@ Till logins for this business.
 
 Branch settings, one card per branch (only the active branch when a till is open).
 
-- Header: "Settings", sub-line "Branch settings · owner & manager only".
+- Header: "Settings", sub-line "Branch & business settings · owner only".
 - **Branch card:** name, "{type} · {address}", and a type pill (Retail / Restaurant).
 - **Kitchen output block** — title, explanation, then a **radio group of two large option cards**:
   - **KDS board** — "Live tickets on a screen at the pass, bumped by the kitchen."

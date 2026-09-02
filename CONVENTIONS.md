@@ -84,7 +84,7 @@ Lists take `?page=1&limit=50` and return `{ "data": [...], "total": n, "page": n
 // → 401 { "error": { "code": "INVALID_PIN", … } }
 ```
 PINs are write-only: `GET /users` returns `has_pin`, never the PIN itself.
-Users CRUD (`GET/POST /users`, `PATCH /users/:id`) is owner/manager only → `403 FORBIDDEN`.
+Users CRUD (`GET/POST /users`, `PATCH /users/:id`, `DELETE`) is **owner only** → `403 FORBIDDEN`.
 
 ## Totals — the one agreed order of operations (both sides compute identically)
 ```
@@ -121,7 +121,7 @@ ticket status — Reports: summary · top-items · credit-aging.
 Tables, Register, Orders and Kitchen — no Customers, no Shifts (they never hold the
 drawer) and no back office. Demo PINs stay one digit per role: 1111 owner ·
 2222 manager · 3333 cashier · 4444 waiter. Only the owner may delete a login or
-manage tables; Users and Settings are owner + manager.
+manage tables; Users and Settings are **owner only** — a manager never sees them.
 
 ## Reports windows (Phase 14 — new, mirror in Swagger)
 `GET /reports/summary` and `GET /reports/top-items` take `?range=today|7d|month`
@@ -187,8 +187,8 @@ and the delete is refused until the off-switch has been used:
 |---|---|---|---|
 | Business | `PATCH /admin/businesses/:id {is_active:false}` — nobody can sign in (`403 BUSINESS_SUSPENDED` at login; issued tokens stop working) | `DELETE /admin/businesses/:id` — erases the tenant and every order under it | platform admin |
 | Branch | `PATCH /admin/businesses/:id/stores/:sid {is_active:false}` — vanishes from the till's branch picker | `DELETE …/stores/:sid` — **refused with `409 HAS_HISTORY` if the branch ever took an order**; it stays deactivated so the history survives | platform admin |
-| Login | `PATCH /users/:id {is_active:false}` | `DELETE /users/:id` — not yourself | owner (managers may deactivate) |
-| Staff | `PATCH /staff/:id {is_active:false}` | `DELETE /staff/:id` — attendance goes with them | owner (managers may deactivate) |
+| Login | `PATCH /users/:id {is_active:false}` | `DELETE /users/:id` — not yourself | owner (the whole screen is owner-only) |
+| Staff | `PATCH /staff/:id {is_active:false}` | `DELETE /staff/:id` — attendance goes with them | owner (a manager runs the rota but cannot switch a person off) |
 
 Deleting while still active answers `409 STILL_ACTIVE`. Names are snapshotted on
 orders, payments, ledger entries and shifts, so deleting a login never blanks a

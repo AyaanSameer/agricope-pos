@@ -138,7 +138,7 @@ export default function App() {
           <Route
             path="/users"
             element={
-              <RequireRole roles={['owner', 'manager']}>
+              <RequireRole roles={['owner']}>
                 <UsersPage />
               </RequireRole>
             }
@@ -154,7 +154,7 @@ export default function App() {
           <Route
             path="/settings"
             element={
-              <RequireRole roles={['owner', 'manager']}>
+              <RequireRole roles={['owner']}>
                 <SettingsPage />
               </RequireRole>
             }

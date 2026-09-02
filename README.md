@@ -67,7 +67,7 @@ React 19 · Vite · TypeScript · TanStack Query · React Router · MSW · big.j
 
 ## Phase status (see frontend-workflow doc)
 - [x] Phase 0 — foundations & contract: auth against mock, routing, brand theming, `money.ts`, conventions written down
-- [x] Phase 1 — auth & org: PIN cashier switch, owner store picker, users admin (owner/manager), role-guarded routes
+- [x] Phase 1 — auth & org: PIN cashier switch, owner store picker, users admin (owner only), role-guarded routes
 - [x] Phase 2 — catalog: categories & products admin (CRUD, soft-delete, barcode, kitchen-station field), live register grid
 - [x] Phase 3 — counter sales & payments ★: cart, charge screen, cash tendered/change, split payments, orders history
 - [x] Phase 4 — receipts & barcode: 80mm print stylesheet, public `/r/:token` e-receipt, QR + WhatsApp share, scan listener
@@ -143,8 +143,8 @@ Start `npm run dev`, open http://localhost:5173, then:
 6. *Tables* → seat a table, add a round, *Send to kitchen* — this branch is set to
    **Ticket printer** in *Settings*, so a printable 80mm kitchen ticket pops instead of
    the KDS. Flip the toggle in *Settings* and the Kitchen screen comes back.
-7. As the owner (PIN `1111`): *Users* → Delete removes a login entirely (managers can only
-   deactivate). Drumsticks' users, PINs, staff and menu are invisible to the demo business,
+7. As the owner (PIN `1111`): *Users* and *Settings* appear on the hub at all — a manager
+   never sees either. Deactivate a login, then Delete it. Drumsticks' users, PINs, staff and menu are invisible to the demo business,
    and vice versa.
 
 **As platform staff** — `admin@agricope.qa` / `demo123`

@@ -96,7 +96,8 @@ export function StaffPage() {
         name: d.name,
         role_title: d.role_title,
         store_id: d.store_id,
-        is_active: d.is_active,
+        // Only the owner may set this; sending it as a manager is refused.
+        ...(isOwner ? { is_active: d.is_active } : {}),
       }
       return d.id ? updateStaff(d.id, input) : createStaff(input)
     },
@@ -239,15 +240,18 @@ export function StaffPage() {
               >
                 Edit
               </button>
-              <button
-                type="button"
-                className="btn-secondary"
-                disabled={setActive.isPending}
-                onClick={() => setActive.mutate({ id: s.id, is_active: !s.is_active })}
-              >
-                {s.is_active ? 'Deactivate' : 'Restore'}
-              </button>
-              {/* Only the owner removes a person outright, and only once they are off. */}
+              {/* Switching a person off — and removing them — is the owner's
+                  call. A manager keeps the rota: add, edit, check in and out. */}
+              {isOwner && (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={setActive.isPending}
+                  onClick={() => setActive.mutate({ id: s.id, is_active: !s.is_active })}
+                >
+                  {s.is_active ? 'Deactivate' : 'Restore'}
+                </button>
+              )}
               {isOwner && !s.is_active && (
                 <button
                   type="button"
@@ -307,14 +311,16 @@ export function StaffPage() {
                 ))}
               </select>
             </label>
-            <label className="staff-check">
-              <input
-                type="checkbox"
-                checked={draft.is_active ?? true}
-                onChange={(e) => setDraft({ ...draft, is_active: e.target.checked })}
-              />
-              Active — can be checked in
-            </label>
+            {isOwner && (
+              <label className="staff-check">
+                <input
+                  type="checkbox"
+                  checked={draft.is_active ?? true}
+                  onChange={(e) => setDraft({ ...draft, is_active: e.target.checked })}
+                />
+                Active — can be checked in
+              </label>
+            )}
             {error && <div className="staff-error">{error}</div>}
             <div className="staff-form-actions">
               <button type="button" className="btn-secondary" onClick={() => setDraft(null)}>
