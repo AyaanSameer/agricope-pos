@@ -172,7 +172,13 @@ export async function catalogRoutes(app: FastifyInstance, ctx: Ctx) {
     if (!body.name?.trim() || body.price === undefined || body.price === '') throw invalid('Name and price are required.')
     if (!MONEY_RE.test(String(body.price))) throw invalid('Price must be a decimal string like "4.50".')
     if (body.price_online && !MONEY_RE.test(String(body.price_online))) throw invalid('Online price must be a decimal string like "4.50".')
-    if (body.barcode && (await one('select 1 from products where business_id = $1 and barcode = $2', [caller.business_id, body.barcode]))) {
+    if (
+      body.barcode &&
+      (await one(
+        "select 1 from products where business_id = $1 and barcode = $2 and coalesce(store_id, '') = coalesce($3::text, '')",
+        [caller.business_id, body.barcode, body.store_id ?? null],
+      ))
+    ) {
       throw invalid('Another product already has that barcode.')
     }
     if (body.store_id) {
@@ -221,7 +227,13 @@ export async function catalogRoutes(app: FastifyInstance, ctx: Ctx) {
     const { id } = req.params as { id: string }
     const product = await loadProduct(ctx.db, caller.business_id, id)
     const body = productBody.parse(req.body)
-    if (body.barcode && (await one('select 1 from products where business_id = $1 and barcode = $2 and id <> $3', [caller.business_id, body.barcode, product.id]))) {
+    if (
+      body.barcode &&
+      (await one(
+        "select 1 from products where business_id = $1 and barcode = $2 and id <> $3 and coalesce(store_id, '') = coalesce($4::text, '')",
+        [caller.business_id, body.barcode, product.id, body.store_id === undefined ? product.store_id : body.store_id],
+      ))
+    ) {
       throw invalid('Another product already has that barcode.')
     }
     if (body.price !== undefined && !MONEY_RE.test(String(body.price))) throw invalid('Price must be a decimal string like "4.50".')
@@ -269,6 +281,99 @@ export async function catalogRoutes(app: FastifyInstance, ctx: Ctx) {
       else if (body.category_id !== undefined) await setCategories(tx, product.id, body.category_id ? [body.category_id] : [], caller.business_id)
     })
     return productOut(await loadProduct(ctx.db, caller.business_id, product.id))
+  })
+
+  /**
+   * Stand a branch's catalogue up from one that already exists. Copies the
+   * source branch's own products — not the "all branches" ones, which the
+   * target already sells — and skips any name the target already carries, so
+   * running it twice does not double the menu.
+   *
+   * Kitchen routing is remapped by station NAME, because stations belong to a
+   * branch: a product sent to the source's "Grill" lands on the target's
+   * "Grill" if it has one, and on nothing if it does not.
+   */
+  app.post('/catalog/copy', async (req) => {
+    const caller = await requireRole(ctx, req, ['owner'], 'Only the owner can copy a catalogue.')
+    const body = z.object({ from_store_id: z.string().optional(), to_store_id: z.string().optional() }).parse(req.body)
+    if (!body.from_store_id || !body.to_store_id) throw invalid('Both a source and a target branch are required.')
+    if (body.from_store_id === body.to_store_id) throw invalid('Pick two different branches.')
+    const branches = await many<{ id: string }>('select id from stores where business_id = $1 and id = any($2)', [
+      caller.business_id,
+      [body.from_store_id, body.to_store_id],
+    ])
+    if (branches.length !== 2) throw invalid('Both branches must belong to this business.')
+    const biz = await one<{ shared_catalog: boolean }>('select shared_catalog from businesses where id = $1', [caller.business_id])
+    if (biz?.shared_catalog) {
+      throw conflict(
+        'CATALOG_IS_SHARED',
+        'This business runs one catalogue for every branch, so there is nothing to copy. Switch to a catalogue per branch first.',
+      )
+    }
+
+    return withTx(async (tx) => {
+      const source = await many<ProductRow & { store_id: string }>(
+        `${PRODUCT_SELECT} where p.business_id = $1 and p.store_id = $2 order by p.created_at, p.id`,
+        [caller.business_id, body.from_store_id],
+        tx,
+      )
+      const taken = new Set(
+        (
+          await many<{ name: string }>('select lower(name) as name from products where business_id = $1 and store_id = $2', [
+            caller.business_id,
+            body.to_store_id,
+          ], tx)
+        ).map((r) => r.name),
+      )
+      const targetStations = new Map(
+        (
+          await many<{ id: string; name: string }>('select id, lower(name) as name from kitchen_stations where store_id = $1', [body.to_store_id], tx)
+        ).map((r) => [r.name, r.id]),
+      )
+      const sourceStations = new Map(
+        (
+          await many<{ id: string; name: string }>('select id, lower(name) as name from kitchen_stations where store_id = $1', [body.from_store_id], tx)
+        ).map((r) => [r.id, r.name]),
+      )
+
+      let copied = 0
+      let skipped = 0
+      for (const p of source) {
+        if (taken.has(p.name.toLowerCase())) {
+          skipped++
+          continue
+        }
+        const stationName = p.kitchen_station_id ? sourceStations.get(p.kitchen_station_id) : undefined
+        const station = stationName ? (targetStations.get(stationName) ?? null) : null
+        const made = await one<{ id: string }>(
+          `insert into products (business_id, store_id, name, name_ar, description, barcode, price, price_online, tax_rate,
+                                 is_combo, offer, offer_online, option_groups, kitchen_station_id, is_active)
+           values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) returning id`,
+          [
+            caller.business_id,
+            body.to_store_id,
+            p.name,
+            p.name_ar,
+            p.description,
+            p.barcode,
+            p.price,
+            p.price_online,
+            p.tax_rate,
+            p.is_combo,
+            p.offer ? JSON.stringify(p.offer) : null,
+            p.offer_online ? JSON.stringify(p.offer_online) : null,
+            JSON.stringify(p.option_groups ?? []),
+            station,
+            p.is_active,
+          ],
+          tx,
+        )
+        // Categories are business-wide, so the placements carry over as they are.
+        await setCategories(tx, made!.id, p.category_ids, caller.business_id)
+        copied++
+      }
+      return { copied, skipped }
+    })
   })
 
   app.get('/kitchen/stations', async (req) => {

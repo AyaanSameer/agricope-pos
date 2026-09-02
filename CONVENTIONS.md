@@ -205,6 +205,16 @@ administrator's own password (min 8 chars, current re-checked).
   applies the filter **only while sharing is off**, so turning it back on
   restores every assignment instead of losing it. Owner-only, like the rest of
   `/business-settings`.
+- **`POST /catalog/copy {from_store_id, to_store_id}`** stands one branch's
+  catalogue up from another's. Owner only. Copies the source's **own** products
+  (not the "all branches" ones, which the target already sells), skips any name
+  the target already carries — so running it twice cannot double a menu — and
+  remaps kitchen routing by station **name**, since stations belong to a branch.
+  Returns `{copied, skipped}`. Refused with `409 CATALOG_IS_SHARED` while the
+  business runs one catalogue for every branch.
+- **Barcodes are unique per (business, branch), not per business.** Two shops
+  stocking the same tin each carry it; `coalesce(store_id, '')` keeps
+  "all branches" unique business-wide.
 - **Kitchen stations are CRUD.** `POST /kitchen/stations {store_id, name}`,
   `PATCH /kitchen/stations/:id {name}`, `DELETE /kitchen/stations/:id` — owner
   only (`Only the owner can change kitchen stations.`). Names are unique per

@@ -574,3 +574,32 @@
   .editor-body { grid-template-columns: 1fr; }
   .editor-head, .editor-foot { padding-left: var(--pad); padding-right: var(--pad); }
 }
+
+/* A per-branch catalogue: which branch's list is on screen, and how to seed it. */
+.cat-branches { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cat-branches > *:first-child { flex: 1 1 240px; min-width: 0; }
+.cat-copy { flex: none; white-space: nowrap; }
+.cat-branch-note {
+  margin: 0;
+  font-size: calc(12.5px * var(--fs));
+  color: var(--ink-3);
+}
+.cat-copy-result {
+  background: var(--leaf-plate);
+  color: var(--forest);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: calc(12.5px * var(--fs));
+}
+.cat-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(10, 40, 28, 0.5);
+}
+.cat-copy-card { width: min(460px, 100%); display: flex; flex-direction: column; gap: 14px; padding: 24px; }
+.cat-copy-sub { margin: 0; font-size: calc(12.5px * var(--fs)); line-height: 1.55; color: var(--ink-3); }
+.cat-copy-actions { display: flex; gap: 10px; justify-content: flex-end; }

@@ -422,7 +422,7 @@ export const orgHandlers = [
       return apiError(400, 'VALIDATION_ERROR', 'Online price must be a decimal string like "4.50".')
     }
     const own = products.filter((p) => p.business_id === caller.business_id)
-    if (body.barcode && own.some((p) => p.barcode === body.barcode)) {
+    if (body.barcode && own.some((p) => p.barcode === body.barcode && (p.store_id ?? '') === (body.store_id ?? ''))) {
       return apiError(400, 'VALIDATION_ERROR', 'Another product already has that barcode.')
     }
     const optionGroups = parseOptionGroups(body.option_groups)
@@ -468,10 +468,15 @@ export const orgHandlers = [
     )
     if (!product) return apiError(404, 'NOT_FOUND', 'No such product.')
     const body = (await request.json()) as Partial<DbProduct> & { category_id?: string | null }
+    const targetStore = body.store_id === undefined ? product.store_id : body.store_id
     if (
       body.barcode &&
       products.some(
-        (p) => p.business_id === caller.business_id && p.barcode === body.barcode && p.id !== product.id,
+        (p) =>
+          p.business_id === caller.business_id &&
+          p.barcode === body.barcode &&
+          p.id !== product.id &&
+          (p.store_id ?? '') === (targetStore ?? ''),
       )
     ) {
       return apiError(400, 'VALIDATION_ERROR', 'Another product already has that barcode.')
@@ -528,6 +533,62 @@ export const orgHandlers = [
     if (storeId) data = data.filter((s) => s.store_id === storeId)
     data = [...data].sort((a, b) => a.sort_order - b.sort_order)
     return HttpResponse.json({ data, total: data.length, page: 1, limit: 50 })
+  }),
+
+  /**
+   * Stand a branch's catalogue up from one that already exists. Copies the
+   * source's own products, skips names the target already carries, and remaps
+   * kitchen routing by station name.
+   */
+  http.post('/api/v1/catalog/copy', async ({ request }) => {
+    await delay(400)
+    const caller = requireRole(request, ['owner'])
+    if (caller instanceof Response) return caller
+    const body = (await request.json()) as { from_store_id?: string; to_store_id?: string }
+    if (!body.from_store_id || !body.to_store_id) {
+      return apiError(400, 'VALIDATION_ERROR', 'Both a source and a target branch are required.')
+    }
+    if (body.from_store_id === body.to_store_id) {
+      return apiError(400, 'VALIDATION_ERROR', 'Pick two different branches.')
+    }
+    const own = [body.from_store_id, body.to_store_id].every((id) =>
+      stores.some((st) => st.id === id && st.business_id === caller.business_id),
+    )
+    if (!own) return apiError(400, 'VALIDATION_ERROR', 'Both branches must belong to this business.')
+    if (settingsFor(caller.business_id).shared_catalog) {
+      return apiError(
+        409,
+        'CATALOG_IS_SHARED',
+        'This business runs one catalogue for every branch, so there is nothing to copy. Switch to a catalogue per branch first.',
+      )
+    }
+    const taken = new Set(
+      products.filter((p) => p.store_id === body.to_store_id).map((p) => p.name.toLowerCase()),
+    )
+    const stationName = new Map(stations.map((st) => [st.id, st.name.toLowerCase()]))
+    const targetStation = new Map(
+      stations.filter((st) => st.store_id === body.to_store_id).map((st) => [st.name.toLowerCase(), st.id]),
+    )
+    let copied = 0
+    let skipped = 0
+    for (const p of products.filter(
+      (x) => x.business_id === caller.business_id && x.store_id === body.from_store_id,
+    )) {
+      if (taken.has(p.name.toLowerCase())) {
+        skipped++
+        continue
+      }
+      const name = p.kitchen_station_id ? stationName.get(p.kitchen_station_id) : undefined
+      products.push({
+        ...p,
+        id: `p-${Math.random().toString(36).slice(2, 8)}`,
+        store_id: body.to_store_id,
+        kitchen_station_id: name ? (targetStation.get(name) ?? null) : null,
+        option_groups: p.option_groups.map((g) => ({ ...g, choices: g.choices.map((c) => ({ ...c })) })),
+      })
+      copied++
+    }
+    return HttpResponse.json({ copied, skipped })
   }),
 
   /* ---- kitchen stations: the owner shapes each branch's kitchen ---- */

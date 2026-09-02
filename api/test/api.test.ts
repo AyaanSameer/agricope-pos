@@ -444,6 +444,86 @@ describe('the owner chooses how the catalogue is scoped', () => {
     expect(still.body.data.find((p: { id: string }) => p.id === pinned.body.id).store_id).toBe('s-karak')
   })
 
+  it('copies one branch\'s catalogue onto another, skipping what is already there', async () => {
+    await call(app, 'PATCH', '/business-settings', { token: ayaan, body: { shared_catalog: false } })
+    // Karak Corner has a grill; give Al Rayyan one by the same name so routing can follow.
+    await call(app, 'POST', '/kitchen/stations', { token: ayaan, body: { store_id: 's-alrayyan', name: 'Grill' } })
+    const karakOnly = await call(app, 'POST', '/products', {
+      token: ayaan,
+      body: {
+        name: 'Karak house grill',
+        price: '45.00',
+        store_id: 's-karak',
+        kitchen_station_id: 'st-grill',
+        barcode: '9001',
+        category_ids: ['c-grill'],
+      },
+    })
+    expect(karakOnly.status).toBe(201)
+    // A name Al Rayyan already carries, so the copy must leave it alone.
+    await call(app, 'POST', '/products', {
+      token: ayaan,
+      body: { name: 'Shared name', price: '5.00', store_id: 's-karak', category_ids: [] },
+    })
+    await call(app, 'POST', '/products', {
+      token: ayaan,
+      body: { name: 'Shared name', price: '9.99', store_id: 's-alrayyan', category_ids: [] },
+    })
+
+    const all = await call(app, 'GET', '/products?include_inactive=true', { token: ayaan })
+    const karakOwn = all.body.data.filter((p: { store_id: string | null }) => p.store_id === 's-karak').length
+
+    const res = await call(app, 'POST', '/catalog/copy', {
+      token: ayaan,
+      body: { from_store_id: 's-karak', to_store_id: 's-alrayyan' },
+    })
+    expect(res.status).toBe(200)
+    // Everything Karak owns except the one name Al Rayyan already carries.
+    expect(res.body).toEqual({ copied: karakOwn - 1, skipped: 1 })
+
+    const alrayyan = await call(app, 'GET', '/products?store_id=s-alrayyan&include_inactive=true', { token: ayaan })
+    const copied = alrayyan.body.data.find((p: { name: string }) => p.name === 'Karak house grill')
+    expect(copied.store_name).toBe('Al Rayyan Store')
+    expect(copied.price).toBe('45.00')
+    expect(copied.barcode).toBe('9001') // the same barcode is fine at a different branch
+    expect(copied.station_name).toBe('Grill') // routing followed the station NAME
+    expect(copied.category_ids).toEqual(['c-grill'])
+    expect(copied.id).not.toBe(karakOnly.body.id)
+    // The name it already had kept its own price.
+    const kept = alrayyan.body.data.find((p: { name: string }) => p.name === 'Shared name')
+    expect(kept.price).toBe('9.99')
+
+    // Running it again copies nothing.
+    const again = await call(app, 'POST', '/catalog/copy', {
+      token: ayaan,
+      body: { from_store_id: 's-karak', to_store_id: 's-alrayyan' },
+    })
+    expect(again).toMatchObject({ body: { copied: 0, skipped: karakOwn } })
+  })
+
+  it('refuses to copy while one catalogue serves every branch, and refuses a manager', async () => {
+    await call(app, 'PATCH', '/business-settings', { token: ayaan, body: { shared_catalog: true } })
+    const shared = await call(app, 'POST', '/catalog/copy', {
+      token: ayaan,
+      body: { from_store_id: 's-karak', to_store_id: 's-alrayyan' },
+    })
+    expect(shared.status).toBe(409)
+    expect(shared.body.error.code).toBe('CATALOG_IS_SHARED')
+
+    const maryam = (await tillSession(app, 'demo@agricope.qa', 's-alrayyan', '9999')).access_token
+    const refused = await call(app, 'POST', '/catalog/copy', {
+      token: maryam,
+      body: { from_store_id: 's-karak', to_store_id: 's-alrayyan' },
+    })
+    expect(refused.status).toBe(403)
+
+    const foreign = await call(app, 'POST', '/catalog/copy', {
+      token: ayaan,
+      body: { from_store_id: 's-karak', to_store_id: 's-drumsticks' },
+    })
+    expect(foreign.status).toBe(400)
+  })
+
   it('refuses a branch that is not this business\'s', async () => {
     const res = await call(app, 'POST', '/products', {
       token: ayaan,

@@ -132,3 +132,12 @@ export function renameStation(id: string, name: string): Promise<Station> {
 export function deleteStation(id: string): Promise<void> {
   return api<void>(`/kitchen/stations/${id}`, { method: 'DELETE' })
 }
+
+/**
+ * Stand a branch's catalogue up from another branch of the same business.
+ * Copies the source's own products, skips names the target already carries,
+ * and remaps kitchen routing by station name. Owner only.
+ */
+export function copyCatalog(from_store_id: string, to_store_id: string): Promise<{ copied: number; skipped: number }> {
+  return api('/catalog/copy', { method: 'POST', body: JSON.stringify({ from_store_id, to_store_id }) })
+}
