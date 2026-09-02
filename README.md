@@ -21,16 +21,27 @@ REST API described in `CONVENTIONS.md` (mocked in-browser until the real backend
   schema, and what still has to be built before the system can be "live".
 
 ## Repo layout
-- `app/` — the React application (Vite + TypeScript)
+- `app/` — the React application (Vite + TypeScript). Runs on in-browser mocks by default.
+- `api/` — the REST API (Fastify + Postgres) that replaces the mocks in production. See `api/README.md`.
 - `docs/` — design and architecture documents
+- `Dockerfile` — one image: the API serving the built frontend from the same origin
 
 ## Run it
+
+**Frontend only, on mocks** — no database, nothing to install but Node:
 ```bash
 cd app
 npm install
 npm run dev
 ```
-The app runs against **MSW mocks** by default (no backend needed).
+
+**The whole system, on a real database** — Postgres 14+ required:
+```bash
+cd api && createdb agricope_pos && cp .env.example .env   # set JWT_SECRET and PIN_PEPPER
+npm install && npm run migrate && npm run seed && npm run dev   # API on :3000
+```
+then in `app/.env.local` put `VITE_USE_MOCKS=false` and run `npm run dev` there — Vite
+proxies `/api` to the API. Same screens, same seed world, real persistence.
 
 **Signing in: one login per business — the PIN says who you are.**
 Sign in with the business account, pick the branch the till serves, then type your PIN.
@@ -79,6 +90,14 @@ cd app
 npm test            # unit tests — money math (big.js): split payments, weighed goods, rounding
 npm run typecheck   # strict TypeScript across the app
 ```
+```bash
+cd api
+npm test            # integration tests against a real Postgres (needs createdb agricope_pos_test)
+```
+The API suite drives the real server through every flow money depends on — split
+payments, credit limits, PIN approvals, refunds, the Z report, tenant isolation,
+deactivate-then-delete — and pins the API's money code to the frontend's byte for byte.
+`.github/workflows/ci.yml` runs both on every push and pull request.
 
 ### Manual walkthrough (runs fully on mocks — no backend needed)
 Start `npm run dev`, open http://localhost:5173, then:

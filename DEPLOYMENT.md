@@ -1,9 +1,8 @@
 # Deployment & workflow
 
 How this repo is organised, how changes reach production, and where the
-backend lives. The frontend is finished against the mock API; the real
-backend implements `CONVENTIONS.md` against the Postgres schema
-(`docs/SCHEMA-ALIGNMENT.md`).
+backend lives. The frontend runs on in-browser mocks for development
+and the demo; `api/` is the real backend, implementing `CONVENTIONS.md` on Postgres.
 
 ## 1 · Branches
 
@@ -43,40 +42,33 @@ npm run build        # what CI/production will run — must be clean
 
 Then walk through the flows your change touches (the README has scripted
 walkthroughs; mock data reseeds on every page reload). To exercise the real
-API instead, put `VITE_USE_MOCKS=false` in `app/.env.local` and run the
-backend locally — same commands, real data.
+API instead, put `VITE_USE_MOCKS=false` in `app/.env.local` and run `npm run dev`
+in `api/` (see `api/README.md`) — same commands, real data.
 
 The path to live is always: branch → green checks locally → PR → review →
 merge to `main` → staging → tag → production. Nothing deploys from a
 working branch.
 
-## 3 · First push to the organisation
+## 3 · The repository
 
-Create an **empty** repo in the org (no README/license — the repo brings
-its own), then:
-
-```bash
-cd "/Applications/Agricope/POS System"
-git remote add origin git@github.com:<org>/agricope-pos.git
-git push -u origin main
-git push origin --tags
-```
-
-Then in GitHub → Settings → Branches, add the protection rule for `main`.
+`main` is on GitHub at `AyaanSameer/agricope-pos` (public — see `docs/DEMO.md`).
+Protect it: Settings → Branches → require a pull request and the `CI` checks.
 
 ## 4 · CI
 
-Add `.github/workflows/ci.yml` running on every PR: `npm ci`, `npm test`,
-`npm run build` inside `app/`. Make it a required status check. (Two extra
-jobs later: deploy-staging on merge to `main`, deploy-production on tag.)
+`.github/workflows/ci.yml` runs on every push and pull request: the
+frontend's tests and production build, and the API's integration suite
+against a Postgres service container. `deploy-demo.yml` republishes the
+mock-mode demo to GitHub Pages on every push to `main`.
 
 ## 5 · Hosting
 
 ### The database (and the API that owns it)
 
 **`docs/GCP-SETUP.md` is the runbook** — exact commands for Cloud SQL in
-`me-central1` (Doha), loading the eleven migrations, secrets, and the Cloud Run
-deploy. It also states plainly what is not yet built.
+`me-central1` (Doha), secrets, and the Cloud Run deploy of the image the
+root `Dockerfile` builds. The API applies its own migrations (`api/migrations/`)
+at boot.
 
 The short version: Cloud SQL for PostgreSQL in `me-central1` (the only major-cloud
 region inside Qatar) with the Node API on Cloud Run beside it, reaching the

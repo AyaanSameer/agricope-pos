@@ -178,6 +178,25 @@ resolved unit price and the chosen option labels; `option_ids` go up, labels com
 - **No demo affordances in the UI.** Seeded credentials live only in the mock world
   and are documented in the README; the login screen shows none.
 
+## Lifecycle: deactivate first, delete second (2026-09-02)
+
+Every removable thing has a reversible off-switch and an irreversible delete,
+and the delete is refused until the off-switch has been used:
+
+| Thing | Off | Delete | Who |
+|---|---|---|---|
+| Business | `PATCH /admin/businesses/:id {is_active:false}` — nobody can sign in (`403 BUSINESS_SUSPENDED` at login; issued tokens stop working) | `DELETE /admin/businesses/:id` — erases the tenant and every order under it | platform admin |
+| Branch | `PATCH /admin/businesses/:id/stores/:sid {is_active:false}` — vanishes from the till's branch picker | `DELETE …/stores/:sid` — **refused with `409 HAS_HISTORY` if the branch ever took an order**; it stays deactivated so the history survives | platform admin |
+| Login | `PATCH /users/:id {is_active:false}` | `DELETE /users/:id` — not yourself | owner (managers may deactivate) |
+| Staff | `PATCH /staff/:id {is_active:false}` | `DELETE /staff/:id` — attendance goes with them | owner (managers may deactivate) |
+
+Deleting while still active answers `409 STILL_ACTIVE`. Names are snapshotted on
+orders, payments, ledger entries and shifts, so deleting a login never blanks a
+receipt or a report.
+
+`POST /admin/change-password {current_password, new_password}` — the platform
+administrator's own password (min 8 chars, current re-checked).
+
 ## Open questions for the next contract sync
 1. How does an order-level discount apportion across lines for per-line tax?
 2. Is service charge taxable?
