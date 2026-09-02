@@ -24,9 +24,12 @@ Then in `../app`, put `VITE_USE_MOCKS=false` in `.env.local` and run
 `DATABASE_URL` can just as well be a Neon branch's connection string — the
 API does not care where Postgres lives, only that the string reaches it.
 
-`npm run seed -- --reset` wipes and reseeds. It refuses to run on a database
-that already holds a business unless you pass `--reset`, so it cannot be
-pointed at production by accident.
+`npm run seed -- --reset` wipes and reseeds. Two things stop it reaching a
+real database. It refuses a database that already holds a business unless you
+pass `--reset`; and it refuses any host that is not on this machine unless you
+name that host on the command line, because `--reset` is muscle memory and a
+live database deserves better than muscle memory. Loopback and a plain Unix
+socket count as local. A Cloud SQL proxy socket does not.
 
 ## Loading a real menu into production
 

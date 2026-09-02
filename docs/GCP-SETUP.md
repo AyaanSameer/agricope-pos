@@ -158,8 +158,10 @@ Then load the menu:
 cd "/Applications/Agricope/POS System/api" && DATABASE_URL='postgres://pos_app:THE_POS_APP_PASSWORD@127.0.0.1:5432/pos' npm run import:catalogue -- --business drumsticks@agricope.qa --branch "Barwa Village"
 ```
 
-Stop the proxy when done. **Never run `npm run seed` against this database**
-— it refuses if a business exists, but do not rely on that.
+Stop the proxy when done. **Never run `npm run seed` against this database.**
+It refuses a non-local host unless you type that host after `--wipe-remote`,
+and refuses a database that already holds a business unless you pass
+`--reset`. Both are seatbelts, not permission.
 
 ## 6 · Releases
 

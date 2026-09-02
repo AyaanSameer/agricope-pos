@@ -195,6 +195,12 @@ business's shared-or-per-branch catalogue setting, and skips anything already
 there by name — so running it twice adds nothing. Change the admin password
 from the console after the first sign-in.
 
+**Never `npm run seed` against this database.** It writes three fake
+businesses whose every password is `demo123`, and with `--reset` it deletes
+what is there first. The script now refuses any host that is not on your
+machine unless you type that host after `--wipe-remote`, so the accident takes
+a deliberate act. Do not make that act.
+
 ## 6 · Day to day
 
 - **Work on a branch:** `feature/<slug>`, `fix/<slug>`, `chore/<slug>`. One

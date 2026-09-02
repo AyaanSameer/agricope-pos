@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { parse } from 'pg-connection-string'
-import { normalizeDatabaseUrl } from '../src/db.js'
+import { databaseHost, isLocalDatabase, normalizeDatabaseUrl } from '../src/db.js'
 
 /**
  * The owner keeps ONE connection string. psql and pg_dump need
@@ -42,5 +42,49 @@ describe('database url', () => {
     const normalized = normalizeDatabaseUrl(`${neon}&sslrootcert=system&channel_binding=require`)
     expect(normalized).toContain('channel_binding=require')
     expect(normalized).not.toContain('sslrootcert')
+  })
+})
+
+/**
+ * The seed writes three demo businesses whose every password is demo123, and
+ * with --reset it truncates first. It must be able to tell the developer's own
+ * Postgres from the business's live database before it does either.
+ */
+describe('is the database on this machine', () => {
+  it('knows loopback', () => {
+    expect(isLocalDatabase('postgres://localhost:5432/agricope_pos')).toBe(true)
+    expect(isLocalDatabase('postgres://user:pw@127.0.0.1:5432/agricope_pos')).toBe(true)
+    expect(isLocalDatabase('postgres://[::1]:5432/agricope_pos')).toBe(true)
+  })
+
+  it('knows a hosted database is not', () => {
+    expect(isLocalDatabase('postgres://u:p@ep-x.eu-central-1.aws.neon.tech/neondb?sslmode=verify-full')).toBe(false)
+    expect(isLocalDatabase('postgres://u:p@db.example.com:5432/pos')).toBe(false)
+  })
+
+  it('does not mistake the Cloud SQL socket for a local Postgres', () => {
+    // It looks like a file path, but the database is a managed instance.
+    expect(isLocalDatabase('postgres://pos_app:pw@/pos?host=/cloudsql/proj:me-central1:agricope-pos')).toBe(false)
+    expect(isLocalDatabase('postgres://ayaan@/agricope_pos?host=/tmp')).toBe(true)
+  })
+
+  it('reports the host the guard makes you type', () => {
+    expect(databaseHost('postgres://u:p@ep-x.eu-central-1.aws.neon.tech/neondb')).toBe('ep-x.eu-central-1.aws.neon.tech')
+    expect(databaseHost('postgres://localhost:5432/agricope_pos')).toBe('localhost')
+  })
+
+  it('reads a libpq keyword string too', () => {
+    expect(isLocalDatabase('host=localhost dbname=agricope_pos')).toBe(true)
+    expect(isLocalDatabase('host=ep-x.eu-central-1.aws.neon.tech dbname=neondb')).toBe(false)
+  })
+
+  it('allows a plain local socket', () => {
+    expect(isLocalDatabase('postgres:///agricope_pos')).toBe(true)
+  })
+
+  it('refuses a string it cannot read, rather than assuming it is safe', () => {
+    // A guard that fails open is not a guard.
+    expect(isLocalDatabase('')).toBe(false)
+    expect(isLocalDatabase('not a connection string at all')).toBe(false)
   })
 })

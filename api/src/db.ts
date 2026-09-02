@@ -37,6 +37,63 @@ export function normalizeDatabaseUrl(databaseUrl: string): string {
   }
 }
 
+const SOCKET_SENTINEL = 'socket.invalid'
+
+/**
+ * Where a connection string points, as far as we can tell. `recognised` is
+ * false only when the string is neither a URL nor a libpq keyword string; a
+ * guard cannot treat "I have no idea" as "it is fine".
+ *
+ * An empty `host` means a plain Unix socket on this machine, which is what
+ * `postgres:///agricope_pos` asks for.
+ */
+function locate(databaseUrl: string): { recognised: boolean; host: string } {
+  const trimmed = databaseUrl.trim()
+  if (!trimmed) return { recognised: false, host: '' }
+
+  // A libpq keyword string: `host=localhost dbname=agricope_pos`.
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)) {
+    if (!/(?:^|\s)(?:host|dbname|user|port)=/.test(trimmed)) return { recognised: false, host: '' }
+    return { recognised: true, host: /(?:^|\s)host=(\S+)/.exec(trimmed)?.[1] ?? '' }
+  }
+
+  // The socket form, `postgres://user:pw@/db?host=/path`, has an empty
+  // authority, which the URL parser rejects outright. Lend it a hostname so
+  // the query string can still be read, then take the sentinel back out.
+  const parseable = trimmed
+    .replace(/^([a-z][a-z0-9+.-]*:\/\/)\//i, `$1${SOCKET_SENTINEL}/`)
+    .replace(/^([a-z][a-z0-9+.-]*:\/\/[^/]*@)\//i, `$1${SOCKET_SENTINEL}/`)
+  try {
+    const url = new URL(parseable)
+    const hostname = url.hostname === SOCKET_SENTINEL ? '' : url.hostname
+    return { recognised: true, host: hostname || url.searchParams.get('host') || '' }
+  } catch {
+    return { recognised: false, host: '' }
+  }
+}
+
+/**
+ * The host a connection string points at, for the message that asks someone
+ * to type it back. '' for a Unix socket or a string we could not read.
+ */
+export function databaseHost(databaseUrl: string): string {
+  return locate(databaseUrl).host
+}
+
+/**
+ * Is this a database on this machine? Loopback and a plain Unix socket count.
+ * A socket under /cloudsql does not: that is the Cloud SQL proxy, a managed
+ * database wearing a local costume. Neither does a string we cannot read,
+ * because a guard that fails open is not a guard.
+ */
+export function isLocalDatabase(databaseUrl: string): boolean {
+  const { recognised, host } = locate(databaseUrl)
+  if (!recognised) return false
+  if (host.startsWith('/')) return !host.includes('cloudsql')
+  if (!host) return true // a plain local socket
+  return ['localhost', '127.0.0.1', '::1', '[::1]'].includes(host)
+}
+
 let pool: pg.Pool | null = null
 
 export function connect(databaseUrl: string): pg.Pool {

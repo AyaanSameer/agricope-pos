@@ -2,7 +2,7 @@ import Big from 'big.js'
 import { fileURLToPath } from 'node:url'
 import type { PoolClient } from 'pg'
 import { hashPassword, hashPin } from '../src/auth.js'
-import { close, connect, one, withTx } from '../src/db.js'
+import { close, connect, databaseHost, isLocalDatabase, one, withTx } from '../src/db.js'
 import { createOrder, insertItems, loadOrder, loadProductsForSale, recompute, saveTotals, snapshotItem } from '../src/services/orders.js'
 import type { LoadedOrder, OrderType } from '../src/services/orders.js'
 import { loadDrumsticksCatalogue } from './catalogue.js'
@@ -17,8 +17,42 @@ import { loadDrumsticksCatalogue } from './catalogue.js'
  *
  * Every password is demo123. PINs are in README.md. None of this belongs in
  * a production database; production starts empty and the console creates
- * the first business.
+ * the first business. That is why this script refuses a database it cannot
+ * see on this machine unless the host is named on the command line.
  */
+
+/**
+ * A destructive command must not be re-runnable from shell history against a
+ * database it was never meant for. Naming the host is the same promise the
+ * console asks of an owner deleting a business: type the thing you are about
+ * to destroy. `--reset` alone is muscle memory; `--wipe-remote <host>` is not.
+ */
+function assertSeedable(url: string): void {
+  if (isLocalDatabase(url)) return
+  const host = databaseHost(url)
+  const where = host || 'a database this script cannot identify'
+  const i = process.argv.indexOf('--wipe-remote')
+  const named = i === -1 ? undefined : process.argv[i + 1]
+  if (host && named === host) {
+    console.warn(`! Seeding the remote database at ${host} — demo tenants, demo123 passwords and fake orders.`)
+    return
+  }
+  console.error(
+    `Refusing to seed ${where}, which is not a database on this machine.\n\n` +
+      'The demo world it writes has three fake businesses whose every password is\n' +
+      'demo123. On a live database that is a break-in waiting to happen, and with\n' +
+      '--reset it first deletes whatever is already there.\n\n' +
+      'A real database gets its data another way:\n' +
+      '  npm run create:admin     -- --name … --email … --password …\n' +
+      '  npm run import:catalogue -- --business … --branch …\n\n' +
+      (!host
+        ? 'Set DATABASE_URL to a connection string this script can read, or point it at your own Postgres.'
+        : named === undefined
+          ? `If you truly mean this one, name it:\n  npm run seed -- ${[...process.argv.slice(2), '--wipe-remote', host].join(' ')}`
+          : `--wipe-remote said "${named}", but this connection string points at "${host}".`),
+  )
+  process.exit(1)
+}
 
 const minutesAgo = (m: number) => new Date(Date.now() - m * 60_000)
 
@@ -339,6 +373,7 @@ async function main() {
     console.error('DATABASE_URL and PIN_PEPPER must be set')
     process.exit(1)
   }
+  assertSeedable(url)
   connect(url)
   const reset = process.argv.includes('--reset')
   const existing = await one<{ n: number }>('select count(*)::int as n from businesses')
