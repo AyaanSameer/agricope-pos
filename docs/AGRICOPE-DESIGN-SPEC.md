@@ -481,14 +481,17 @@ Branch settings, one card per branch (only the active branch when a till is open
   in place. A branch with none says so — it makes no kitchen work.
 - **Catalogue** is business-wide, two option cards: "One catalogue, every branch"
   and "A catalogue per branch". The second makes a **Sold at** field appear on the
-  product editor — a **Branch** select naming the one branch whose list it belongs
-  to, defaulting to whichever branch is on screen — and adds a branch rail to the
+  Catalog screen a branch rail — one chip per branch, **always exactly one
+  chosen** — and adds a **Copy a catalogue** group to Settings (From / Into). The
+  product editor has no branch field: the list you are in is the branch, so
+  anything added lands there and nowhere else. It adds a branch rail to the
   Catalog screen: **Whole catalogue** followed by one chip per branch. Choosing a
-  branch shows that branch's own catalogue and nothing else, with a line saying so,
-  and reveals **Copy from another branch**. That opens a small dialog: choose the
-  source, and its products are duplicated in **alongside** what the branch already
-  has — never replacing it — skipping any name already present. A green line
-  reports how many were copied and how many were skipped.
+  branch shows that branch's own catalogue and nothing else, with a line saying so
+  and pointing at Settings for copying. The rail opens on the till's own branch
+  where there is one, the first otherwise; there is no "everything" view, because
+  a product must belong to a branch. Settings' **Copy a catalogue** duplicates one
+  branch's products into another **alongside** what is already there — never
+  replacing it — skipping any name already present, and reports how many landed.
 - **Branch card:** name, "{type} · {address}", and a type pill (Retail / Restaurant).
 - **Kitchen output block** — title, explanation, then a **radio group of two large option cards**:
   - **KDS board** — "Live tickets on a screen at the pass, bumped by the kitchen."

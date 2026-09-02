@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Big from 'big.js'
@@ -11,8 +11,8 @@ import {
   updateProduct,
 } from '../../api/catalog'
 import type { OptionGroup, Product, ProductInput } from '../../api/catalog'
-import { copyCatalog } from '../../api/catalog'
 import { getBusinessSettings, listStores } from '../../api/org'
+import { useAuth } from '../../auth/AuthContext'
 import { ApiError } from '../../api/client'
 import { fmt } from '../../lib/money'
 import { offerActive, resolveUnitPrice } from '../../lib/pricing'
@@ -176,6 +176,7 @@ function draftToInput(d: Draft): ProductInput {
 
 export function CatalogPage() {
   const queryClient = useQueryClient()
+  const { activeStore } = useAuth()
   const [search, setSearch] = useState('')
   const [categoryId, setCategoryId] = useState<string | null>(null)
   const [showInactive, setShowInactive] = useState(false)
@@ -183,11 +184,8 @@ export function CatalogPage() {
   const [error, setError] = useState<string | null>(null)
   const [addingCategory, setAddingCategory] = useState(false)
   const [newCategory, setNewCategory] = useState('')
-  /** null = the whole catalogue; otherwise the branch whose list is on screen */
+  /** the branch whose catalogue is on screen; null only while it is still loading */
   const [branchId, setBranchId] = useState<string | null>(null)
-  const [copyFrom, setCopyFrom] = useState<string | null>(null)
-  const [copyOpen, setCopyOpen] = useState(false)
-  const [copyResult, setCopyResult] = useState<string | null>(null)
 
   const categoriesQuery = useQuery({ queryKey: ['categories'], queryFn: listCategories })
   const stationsQuery = useQuery({ queryKey: ['stations'], queryFn: () => listStations() })
@@ -195,15 +193,27 @@ export function CatalogPage() {
   const bizQuery = useQuery({ queryKey: ['business-settings'], queryFn: getBusinessSettings })
   const storesQuery = useQuery({ queryKey: ['stores'], queryFn: listStores })
   const perBranch = bizQuery.data ? !bizQuery.data.shared_catalog : false
+  const branches = storesQuery.data?.data ?? []
+
+  // With a catalogue per branch the page always shows one branch's list, so it
+  // opens on the till's own branch when there is one and the first otherwise.
+  useEffect(() => {
+    if (!perBranch || branchId || branches.length === 0) return
+    const mine = branches.find((b) => b.id === activeStore?.id)
+    setBranchId((mine ?? branches[0]).id)
+  }, [perBranch, branchId, branches, activeStore?.id])
+
+  const scoped = !perBranch || !!branchId
   const productsQuery = useQuery({
     queryKey: ['products', { search, categoryId, showInactive, branchId }],
+    // Never ask for the whole catalogue while it is meant to be one branch's.
+    enabled: bizQuery.isSuccess && scoped,
     queryFn: () =>
       listProducts({
         search: search || undefined,
         category_id: categoryId ?? undefined,
         include_inactive: showInactive,
-        // The branch chips ask the server for exactly what that till sells.
-        store_id: branchId ?? undefined,
+        store_id: perBranch ? (branchId ?? undefined) : undefined,
       }),
   })
 
@@ -226,24 +236,6 @@ export function CatalogPage() {
   const toggleActive = useMutation({
     mutationFn: (p: Product) => updateProduct(p.id, { is_active: !p.is_active }),
     onSuccess: invalidateProducts,
-  })
-
-  const copy = useMutation({
-    mutationFn: () => copyCatalog(copyFrom!, branchId!),
-    onSuccess: (r) => {
-      invalidateProducts()
-      setCopyOpen(false)
-      setCopyFrom(null)
-      setCopyResult(
-        r.copied === 0
-          ? 'Nothing to copy — that branch had no products of its own, or this one already carries them all.'
-          : `Copied ${r.copied} product${r.copied === 1 ? '' : 's'}${r.skipped ? `, skipped ${r.skipped} already here` : ''}.`,
-      )
-    },
-    onError: (err) => {
-      setCopyOpen(false)
-      setError(err instanceof ApiError ? err.message : 'Could not copy — try again.')
-    },
   })
 
   const addCategory = useMutation({
@@ -318,8 +310,6 @@ export function CatalogPage() {
   const preview = draft && draft.price ? resolveUnitPrice(draftPriced!, 'store') : null
   const previewOnline = draft && draft.price ? resolveUnitPrice(draftPriced!, 'online') : null
 
-  const branches = storesQuery.data?.data ?? []
-
   return (
     <div className="page page-wide">
       <div className="cat-top">
@@ -340,19 +330,11 @@ export function CatalogPage() {
         </button>
       </div>
 
-      {/* A per-branch catalogue is a different list per till, so say which one
-          is on screen and let the owner stand a new one up from an existing. */}
+      {/* Each branch keeps its own list, so the page always shows exactly one. */}
       {perBranch && (
         <div className="cat-branches">
           <ChipRail label="branches">
-            <button
-              type="button"
-              className={branchId === null ? 'chip active' : 'chip'}
-              onClick={() => setBranchId(null)}
-            >
-              Whole catalogue
-            </button>
-            {(storesQuery.data?.data ?? []).map((st) => (
+            {branches.map((st) => (
               <button
                 key={st.id}
                 type="button"
@@ -363,32 +345,15 @@ export function CatalogPage() {
               </button>
             ))}
           </ChipRail>
-          {branchId && (
-            <button
-              type="button"
-              className="btn-secondary cat-copy"
-              onClick={() => {
-                setCopyResult(null)
-                setError(null)
-                setCopyFrom(null)
-                setCopyOpen(true)
-              }}
-            >
-              Copy from another branch
-            </button>
-          )}
         </div>
       )}
       {perBranch && branchId && (
         <p className="cat-branch-note">
-          <strong>
-            {shortBranch((storesQuery.data?.data ?? []).find((s) => s.id === branchId)?.name ?? '')}
-          </strong>
-          ’s own catalogue. Adding a product here puts it on this branch; copying brings another
-          branch’s list in alongside what is already here.
+          <strong>{shortBranch(branches.find((s) => s.id === branchId)?.name ?? '')}</strong>’s own
+          catalogue. Anything added here goes on this branch alone — to bring another branch’s list
+          in alongside it, use <strong>Settings → Copy a catalogue</strong>.
         </p>
       )}
-      {copyResult && <div className="cat-copy-result">{copyResult}</div>}
 
       <div className="cat-toolbar">
         <div className="cat-search-wrap">
@@ -610,25 +575,6 @@ export function CatalogPage() {
                 <div className="editor-block">
                   <div className="block-label">Routing &amp; scanning</div>
                 </div>
-                {perBranch && (
-                  <div className="editor-row">
-                    <label className="field">
-                      <span>Branch</span>
-                      {/* Each branch keeps its own list, so a product sits on
-                          exactly one. Copy is how a list reaches a second shop. */}
-                      <select
-                        value={draft.store_id ?? ''}
-                        onChange={(e) => setDraft({ ...draft, store_id: e.target.value || null })}
-                        required
-                      >
-                        <option value="">Choose a branch…</option>
-                        {branches.map((st) => (
-                          <option key={st.id} value={st.id}>{st.name}</option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                )}
                 <div className="editor-row">
                   <label className="field">
                     <span>Kitchen station</span>
@@ -993,47 +939,6 @@ export function CatalogPage() {
         </div>
       )}
     
-      {/* Copy: pick the branch to take the list from. Names already here are
-          skipped, so running it twice cannot double the menu. */}
-      {copyOpen && branchId && (
-        <div className="cat-modal" role="dialog" aria-modal="true">
-          <form
-            className="card cat-copy-card"
-            onSubmit={(e) => {
-              e.preventDefault()
-              if (copyFrom) copy.mutate()
-            }}
-          >
-            <h3>Copy a catalogue into {shortBranch(branches.find((b) => b.id === branchId)?.name ?? '')}</h3>
-            <p className="cat-copy-sub">
-              Takes the other branch’s own products — names, prices, offers, options and category
-              placements. Anything this branch already sells by the same name is left alone, and
-              kitchen routing follows station names where they match.
-            </p>
-            <label className="field">
-              <span>Copy from</span>
-              <select value={copyFrom ?? ''} onChange={(e) => setCopyFrom(e.target.value || null)}>
-                <option value="">Choose a branch…</option>
-                {branches
-                  .filter((b) => b.id !== branchId)
-                  .map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-              </select>
-            </label>
-            <div className="cat-copy-actions">
-              <button type="button" className="btn-secondary" onClick={() => setCopyOpen(false)}>
-                Cancel
-              </button>
-              <button type="submit" className="btn-primary" disabled={!copyFrom || copy.isPending}>
-                {copy.isPending ? 'Copying…' : 'Copy products'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
 </div>
   )
 }

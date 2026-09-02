@@ -565,6 +565,26 @@ describe('the owner chooses how the catalogue is scoped', () => {
     await call(app, 'PATCH', '/business-settings', { token: ayaan, body: { shared_catalog: true } })
   })
 
+  it('a product added on one branch appears on that branch alone', async () => {
+    await call(app, 'PATCH', '/business-settings', { token: ayaan, body: { shared_catalog: false } })
+    const made = await call(app, 'POST', '/products', {
+      token: ayaan,
+      body: { name: 'Karak-only muffin', price: '6.00', store_id: 's-karak', category_ids: [] },
+    })
+    expect(made.status).toBe(201)
+    expect(made.body.store_name).toBe('Karak Corner')
+
+    const onKarak = await call(app, 'GET', '/products?store_id=s-karak', { token: yusuf })
+    expect(onKarak.body.data.some((p: { id: string }) => p.id === made.body.id)).toBe(true)
+    // The other branch's till never sees it — not in its list, not by search.
+    const onAlRayyan = await call(app, 'GET', '/products?store_id=s-alrayyan', { token: sara })
+    expect(onAlRayyan.body.data.some((p: { id: string }) => p.id === made.body.id)).toBe(false)
+    const bySearch = await call(app, 'GET', '/products?store_id=s-alrayyan&search=muffin', { token: sara })
+    expect(bySearch.body.data).toEqual([])
+
+    await call(app, 'PATCH', '/business-settings', { token: ayaan, body: { shared_catalog: true } })
+  })
+
   it('a product needs a branch once each branch keeps its own list', async () => {
     await call(app, 'PATCH', '/business-settings', { token: ayaan, body: { shared_catalog: false } })
     const res = await call(app, 'POST', '/products', {

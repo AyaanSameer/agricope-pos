@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createStation, deleteStation, listStations, renameStation } from '../../api/catalog'
+import { copyCatalog, createStation, deleteStation, listStations, renameStation } from '../../api/catalog'
 import type { Station } from '../../api/catalog'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import {
@@ -184,6 +184,8 @@ export function SettingsPage() {
               busy={saveBiz.isPending}
               onSave={(shared_catalog) => saveBiz.mutate({ shared_catalog })}
             />
+
+            {!bizQuery.data.shared_catalog && <CopyCatalogGroup />}
 
             <ReceiptGroup
               key={`rc-${bizQuery.data.receipt_footer}`}
@@ -531,6 +533,97 @@ function StationsGroup({ storeId }: { storeId: string }) {
         />
       )}
     </div>
+  )
+}
+
+/**
+ * Standing one branch's catalogue up from another's. It ADDS: whatever the
+ * target already sells keeps its place and its own prices, and a name it
+ * already has is left alone — so running this twice changes nothing.
+ */
+function CopyCatalogGroup() {
+  const queryClient = useQueryClient()
+  const [from, setFrom] = useState('')
+  const [into, setInto] = useState('')
+  const [result, setResult] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const storesQuery = useQuery({ queryKey: ['stores'], queryFn: listStores })
+  const branches = storesQuery.data?.data ?? []
+
+  const copy = useMutation({
+    mutationFn: () => copyCatalog(from, into),
+    onSuccess: (r) => {
+      setError(null)
+      queryClient.invalidateQueries({ queryKey: ['products'] })
+      const target = branches.find((b) => b.id === into)?.name ?? 'that branch'
+      setResult(
+        r.copied === 0
+          ? `Nothing to copy — ${target} already carries everything on that list.`
+          : `Copied ${r.copied} product${r.copied === 1 ? '' : 's'} into ${target}${
+              r.skipped ? `, and left ${r.skipped} already there alone` : ''
+            }.`,
+      )
+    },
+    onError: (err) => {
+      setResult(null)
+      setError(err instanceof ApiError ? err.message : 'Could not copy — try again.')
+    },
+  })
+
+  function submit(e: FormEvent) {
+    e.preventDefault()
+    if (from && into && from !== into) copy.mutate()
+  }
+
+  return (
+    <form className="settings-block" onSubmit={submit}>
+      <div className="settings-block-head">
+        <div className="settings-block-title">Copy a catalogue</div>
+        <p className="settings-block-sub">
+          Give a branch another branch’s products to start from. They arrive as that branch’s own,
+          free to be repriced afterwards without touching the original.
+        </p>
+      </div>
+      <div className="settings-fields">
+        <label className="settings-field">
+          <span>From</span>
+          <select value={from} onChange={(e) => setFrom(e.target.value)}>
+            <option value="">Choose a branch…</option>
+            {branches.map((b) => (
+              <option key={b.id} value={b.id}>{b.name}</option>
+            ))}
+          </select>
+        </label>
+        <label className="settings-field">
+          <span>Into</span>
+          <select value={into} onChange={(e) => setInto(e.target.value)}>
+            <option value="">Choose a branch…</option>
+            {branches
+              .filter((b) => b.id !== from)
+              .map((b) => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+          </select>
+        </label>
+      </div>
+      <div className="settings-effect">
+        <span className="settings-effect-tag">Effect</span>
+        <span className="settings-effect-text">
+          Adds to the target, never replaces · products it already sells by the same name keep
+          their own prices · prices diverge freely afterwards
+        </span>
+      </div>
+      {result && <div className="settings-flash ok">{result}</div>}
+      {error && <div className="settings-flash err">{error}</div>}
+      {from && into && (
+        <div className="settings-save-row">
+          <button type="submit" className="btn-primary settings-save" disabled={copy.isPending}>
+            {copy.isPending ? 'Copying…' : 'Copy catalogue'}
+          </button>
+        </div>
+      )}
+    </form>
   )
 }
 

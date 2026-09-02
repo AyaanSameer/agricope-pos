@@ -210,6 +210,9 @@ administrator's own password (min 8 chars, current re-checked).
   Products that already name a branch keep it, and a branch named while the list
   was shared is remembered, so the setting can be flipped back and forth without
   losing anything. A business with no branches is refused.
+- **Copy lives in Settings, not the Catalog.** It is an owner's action between
+  two branches, so it sits under the Catalogue choice as *Copy a catalogue* with
+  a From and an Into, and is hidden entirely while one list serves every branch.
 - **Copy is a merge, never a replace.** `POST /catalog/copy` adds the source
   branch's products to the target as INDEPENDENT rows, skipping any name the
   target already has. Whatever the second branch added on its own stays exactly
