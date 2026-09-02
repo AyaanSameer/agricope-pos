@@ -28,25 +28,44 @@ import { apiError, requireRole } from './http'
 
 const MONEY_RE = /^\d+(\.\d{1,2})?$/
 
+/** A product belongs to one branch's catalogue, or to none while the list is shared. */
+function resolveBranch(
+  businessId: string,
+  given: string | null | undefined,
+  fallback: string | null,
+): string | null | Response {
+  const storeId = given === undefined ? fallback : given
+  if (storeId) {
+    if (!stores.some((s) => s.id === storeId && s.business_id === businessId)) {
+      return apiError(400, 'VALIDATION_ERROR', 'That branch does not belong to this business.')
+    }
+    // Remembered even while the list is shared, so the setting is reversible.
+    return storeId
+  }
+  if (!settingsFor(businessId).shared_catalog) {
+    return apiError(400, 'VALIDATION_ERROR', 'This business keeps a catalogue per branch, so a product needs a branch.')
+  }
+  return null
+}
+
 /**
- * A barcode must resolve to one product at the till that scans it, so two may
- * share one only if no branch sells both. An empty branch set means every
- * branch, and therefore overlaps everything. Returns the clashing name.
+ * A barcode must resolve to one product at the till that scans it — so it may
+ * repeat across branches, never within one. A product on no branch sits on
+ * every till and clashes with all of them. Returns the clashing name.
  */
 function barcodeClash(
   businessId: string,
   barcode: string | null | undefined,
-  storeIds: string[],
+  storeId: string | null,
   exceptId: string | null,
 ): string | null {
   if (!barcode) return null
-  const everywhere = storeIds.length === 0
   const hit = products.find(
     (p) =>
       p.business_id === businessId &&
       p.barcode === barcode &&
       p.id !== exceptId &&
-      (everywhere || p.store_ids.length === 0 || p.store_ids.some((id) => storeIds.includes(id))),
+      (storeId === null || p.store_id === null || p.store_id === storeId),
   )
   return hit ? hit.name : null
 }
@@ -270,7 +289,19 @@ export const orgHandlers = [
     }
     // Per-branch assignments are kept, not cleared, so turning sharing back off
     // restores what the owner had.
-    if (body.shared_catalog !== undefined) st.shared_catalog = body.shared_catalog
+    if (body.shared_catalog !== undefined) {
+      if (body.shared_catalog === false) {
+        // Otherwise every existing product would be on no branch, and no till.
+        const first = stores.find((s) => s.business_id === caller.business_id)
+        if (!first) {
+          return apiError(400, 'VALIDATION_ERROR', 'Add a branch before giving each one its own catalogue.')
+        }
+        for (const p of products) {
+          if (p.business_id === caller.business_id && p.store_id === null) p.store_id = first.id
+        }
+      }
+      st.shared_catalog = body.shared_catalog
+    }
     return HttpResponse.json(st)
   }),
 
@@ -422,7 +453,7 @@ export const orgHandlers = [
     )
     // A branch-scoped catalogue only exists once the owner has asked for one.
     if (storeId && !settingsFor(caller.business_id).shared_catalog) {
-      data = data.filter((p) => p.store_ids.length === 0 || p.store_ids.includes(storeId))
+      data = data.filter((p) => p.store_id === storeId)
     }
     if (barcode) data = data.filter((p) => p.barcode === barcode)
     if (categoryId) data = data.filter((p) => p.category_ids.includes(categoryId))
@@ -444,9 +475,11 @@ export const orgHandlers = [
     if (body.price_online && !MONEY_RE.test(String(body.price_online))) {
       return apiError(400, 'VALIDATION_ERROR', 'Online price must be a decimal string like "4.50".')
     }
-    const clash = barcodeClash(caller.business_id, body.barcode ?? null, body.store_ids ?? [], null)
+    const branch = resolveBranch(caller.business_id, body.store_id, null)
+    if (branch instanceof Response) return branch
+    const clash = barcodeClash(caller.business_id, body.barcode ?? null, branch, null)
     if (clash) {
-      return apiError(400, 'VALIDATION_ERROR', `${clash} already has that barcode at one of these branches.`)
+      return apiError(400, 'VALIDATION_ERROR', `${clash} already has that barcode on this branch.`)
     }
     const optionGroups = parseOptionGroups(body.option_groups)
     if (optionGroups instanceof Response) return optionGroups
@@ -475,7 +508,7 @@ export const orgHandlers = [
       offer_online: offerOnline,
       option_groups: optionGroups,
       kitchen_station_id: body.kitchen_station_id ?? null,
-      store_ids: body.store_ids ?? [],
+      store_id: branch,
       is_active: body.is_active ?? true,
     }
     products.push(product)
@@ -491,14 +524,16 @@ export const orgHandlers = [
     )
     if (!product) return apiError(404, 'NOT_FOUND', 'No such product.')
     const body = (await request.json()) as Partial<DbProduct> & { category_id?: string | null }
+    const branch = resolveBranch(caller.business_id, body.store_id, product.store_id)
+    if (branch instanceof Response) return branch
     const clash = barcodeClash(
       caller.business_id,
       body.barcode !== undefined ? body.barcode : product.barcode,
-      body.store_ids ?? product.store_ids,
+      branch,
       product.id,
     )
     if (clash) {
-      return apiError(400, 'VALIDATION_ERROR', `${clash} already has that barcode at one of these branches.`)
+      return apiError(400, 'VALIDATION_ERROR', `${clash} already has that barcode on this branch.`)
     }
     if (body.price !== undefined && !MONEY_RE.test(String(body.price))) {
       return apiError(400, 'VALIDATION_ERROR', 'Price must be a decimal string like "4.50".')
@@ -534,7 +569,7 @@ export const orgHandlers = [
     if (body.tax_rate !== undefined) product.tax_rate = String(body.tax_rate)
     if (body.is_combo !== undefined) product.is_combo = body.is_combo
     if (body.kitchen_station_id !== undefined) product.kitchen_station_id = body.kitchen_station_id
-    if (body.store_ids !== undefined) product.store_ids = body.store_ids
+    product.store_id = branch
     if (body.is_active !== undefined) product.is_active = body.is_active
     return HttpResponse.json(toPublicProduct(product))
   }),
@@ -581,11 +616,10 @@ export const orgHandlers = [
         'This business runs one catalogue for every branch, so there is nothing to copy. Switch to a catalogue per branch first.',
       )
     }
-    const sellsAtTarget = (p: DbProduct) =>
-      p.store_ids.length === 0 || p.store_ids.includes(body.to_store_id!)
+    // What the target already sells stays exactly as it is — this adds, never replaces.
     const taken = new Set(
       products
-        .filter((p) => p.business_id === caller.business_id && sellsAtTarget(p))
+        .filter((p) => p.business_id === caller.business_id && p.store_id === body.to_store_id)
         .map((p) => p.name.toLowerCase()),
     )
     const stationName = new Map(stations.map((st) => [st.id, st.name.toLowerCase()]))
@@ -595,10 +629,7 @@ export const orgHandlers = [
     let copied = 0
     let skipped = 0
     for (const p of products.filter(
-      (x) =>
-        x.business_id === caller.business_id &&
-        x.store_ids.includes(body.from_store_id!) &&
-        !x.store_ids.includes(body.to_store_id!),
+      (x) => x.business_id === caller.business_id && x.store_id === body.from_store_id,
     )) {
       if (taken.has(p.name.toLowerCase())) {
         skipped++
@@ -608,7 +639,7 @@ export const orgHandlers = [
       products.push({
         ...p,
         id: `p-${Math.random().toString(36).slice(2, 8)}`,
-        store_ids: [body.to_store_id],
+        store_id: body.to_store_id,
         kitchen_station_id: name ? (targetStation.get(name) ?? null) : null,
         option_groups: p.option_groups.map((g) => ({ ...g, choices: g.choices.map((c) => ({ ...c })) })),
       })

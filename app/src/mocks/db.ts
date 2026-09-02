@@ -227,8 +227,8 @@ export interface DbOptionGroup {
 export interface DbProduct {
   id: string
   business_id: string
-  /** the branches that sell it; [] = every branch. Only consulted when sharing is off. */
-  store_ids: string[]
+  /** the branch whose catalogue it belongs to; null while the list is shared */
+  store_id: string | null
   name: string
   name_ar: string | null
   description: string | null
@@ -280,7 +280,7 @@ function demoProduct(
   return {
     id: p.id,
     business_id: 'b-demo',
-    store_ids: [],
+    store_id: null,
     name: p.name,
     name_ar: null,
     description: null,
@@ -318,7 +318,7 @@ export const products: DbProduct[] = [
   ...drumsticksItems.map((d): DbProduct => ({
     id: d.id,
     business_id: 'b-drumsticks',
-    store_ids: [],
+    store_id: null,
     name: d.name,
     name_ar: d.name_ar,
     description: d.description,
@@ -376,8 +376,8 @@ export function toPublicProduct(p: DbProduct) {
     option_groups: p.option_groups,
     kitchen_station_id: p.kitchen_station_id,
     station_name: stationName(p.kitchen_station_id),
-    store_ids: p.store_ids,
-    store_names: p.store_ids.map((id) => storeName(id) ?? '').filter(Boolean),
+    store_id: p.store_id,
+    store_name: storeName(p.store_id),
     is_active: p.is_active,
   }
 }

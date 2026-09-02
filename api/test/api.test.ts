@@ -416,13 +416,13 @@ describe('the owner chooses how the catalogue is scoped', () => {
     const settings = await call(app, 'GET', '/business-settings', { token: ayaan })
     expect(settings.body.shared_catalog).toBe(true)
 
-    // A product pinned to Karak Corner is still visible at Al Rayyan while sharing is on.
+    // A branch named on a product is remembered but ignored while sharing is on.
     const pinned = await call(app, 'POST', '/products', {
       token: ayaan,
-      body: { name: 'Karak-only special', price: '11.00', store_ids: ['s-karak'], kitchen_station_id: null, category_ids: [] },
+      body: { name: 'Karak-only special', price: '11.00', store_id: 's-karak', kitchen_station_id: null, category_ids: [] },
     })
     expect(pinned.status).toBe(201)
-    expect(pinned.body.store_names).toEqual(['Karak Corner'])
+    expect(pinned.body.store_name).toBe('Karak Corner')
     const sharedView = await call(app, 'GET', '/products?store_id=s-alrayyan', { token: sara })
     expect(sharedView.body.data.some((p: { id: string }) => p.id === pinned.body.id)).toBe(true)
 
@@ -441,7 +441,7 @@ describe('the owner chooses how the catalogue is scoped', () => {
     const again = await call(app, 'GET', `/products?store_id=s-alrayyan`, { token: sara })
     expect(again.body.data.some((p: { id: string }) => p.id === pinned.body.id)).toBe(true)
     const still = await call(app, 'GET', '/products?include_inactive=true', { token: ayaan })
-    expect(still.body.data.find((p: { id: string }) => p.id === pinned.body.id).store_ids).toEqual(['s-karak'])
+    expect(still.body.data.find((p: { id: string }) => p.id === pinned.body.id).store_id).toBe('s-karak')
   })
 
   it('copies one branch\'s catalogue onto another, skipping what is already there', async () => {
@@ -453,7 +453,7 @@ describe('the owner chooses how the catalogue is scoped', () => {
       body: {
         name: 'Karak house grill',
         price: '45.00',
-        store_ids: ['s-karak'],
+        store_id: 's-karak',
         kitchen_station_id: 'st-grill',
         barcode: '9001',
         category_ids: ['c-grill'],
@@ -463,17 +463,15 @@ describe('the owner chooses how the catalogue is scoped', () => {
     // A name Al Rayyan already carries, so the copy must leave it alone.
     await call(app, 'POST', '/products', {
       token: ayaan,
-      body: { name: 'Shared name', price: '5.00', store_ids: ['s-karak'], category_ids: [] },
+      body: { name: 'Shared name', price: '5.00', store_id: 's-karak', category_ids: [] },
     })
     await call(app, 'POST', '/products', {
       token: ayaan,
-      body: { name: 'Shared name', price: '9.99', store_ids: ['s-alrayyan'], category_ids: [] },
+      body: { name: 'Shared name', price: '9.99', store_id: 's-alrayyan', category_ids: [] },
     })
 
     const all = await call(app, 'GET', '/products?include_inactive=true', { token: ayaan })
-    const karakOwn = all.body.data.filter(
-      (p: { store_ids: string[] }) => p.store_ids.includes('s-karak') && !p.store_ids.includes('s-alrayyan'),
-    ).length
+    const karakOwn = all.body.data.filter((p: { store_id: string | null }) => p.store_id === 's-karak').length
 
     const res = await call(app, 'POST', '/catalog/copy', {
       token: ayaan,
@@ -485,9 +483,9 @@ describe('the owner chooses how the catalogue is scoped', () => {
 
     const alrayyan = await call(app, 'GET', '/products?store_id=s-alrayyan&include_inactive=true', { token: ayaan })
     const copied = alrayyan.body.data.find((p: { name: string }) => p.name === 'Karak house grill')
-    expect(copied.store_names).toEqual(['Al Rayyan Store'])
+    expect(copied.store_name).toBe('Al Rayyan Store')
     expect(copied.price).toBe('45.00')
-    expect(copied.barcode).toBe('9001') // the same barcode is fine at a branch that had no claim on it
+    expect(copied.barcode).toBe('9001') // the same barcode is fine on a different branch
     expect(copied.station_name).toBe('Grill') // routing followed the station NAME
     expect(copied.category_ids).toEqual(['c-grill'])
     expect(copied.id).not.toBe(karakOnly.body.id)
@@ -501,6 +499,22 @@ describe('the owner chooses how the catalogue is scoped', () => {
       body: { from_store_id: 's-karak', to_store_id: 's-alrayyan' },
     })
     expect(again).toMatchObject({ body: { copied: 0, skipped: karakOwn } })
+
+    // What Al Rayyan had of its own before the copy is all still there, and a
+    // product added to it afterwards survives a second copy untouched.
+    const extra = await call(app, 'POST', '/products', {
+      token: ayaan,
+      body: { name: 'Al Rayyan only', price: '7.00', store_id: 's-alrayyan', category_ids: [] },
+    })
+    expect(extra.status).toBe(201)
+    await call(app, 'POST', '/catalog/copy', { token: ayaan, body: { from_store_id: 's-karak', to_store_id: 's-alrayyan' } })
+    const finalList = await call(app, 'GET', '/products?store_id=s-alrayyan&include_inactive=true', { token: ayaan })
+    const names = finalList.body.data.map((p: { name: string }) => p.name)
+    expect(names).toContain('Al Rayyan only')
+    expect(names).toContain('Karak house grill')
+    expect(names.filter((n: string) => n === 'Karak house grill')).toHaveLength(1)
+    // Its own price for the shared name is still its own.
+    expect(finalList.body.data.find((p: { name: string }) => p.name === 'Shared name').price).toBe('9.99')
   })
 
   it('refuses to copy while one catalogue serves every branch, and refuses a manager', async () => {
@@ -526,98 +540,72 @@ describe('the owner chooses how the catalogue is scoped', () => {
     expect(foreign.status).toBe(400)
   })
 
-  it('lets two branches share a product while a third does not', async () => {
+  it('gives every product a branch when per-branch is switched on', async () => {
+    // Turning the switch would otherwise leave the whole catalogue on no
+    // branch, and therefore on no till.
+    await call(app, 'PATCH', '/business-settings', { token: ayaan, body: { shared_catalog: true } })
+    // A product created while the list is shared names no branch.
+    const drifting = await call(app, 'POST', '/products', {
+      token: ayaan,
+      body: { name: 'Sold everywhere for now', price: '2.00', category_ids: [] },
+    })
+    expect(drifting.status).toBe(201)
+    expect(drifting.body.store_id).toBeNull()
+
     await call(app, 'PATCH', '/business-settings', { token: ayaan, body: { shared_catalog: false } })
-    // A third branch, so "some but not all" is a real distinction.
-    const admin = await loginAdmin(app)
-    await call(app, 'POST', '/admin/businesses/b-demo/stores', {
-      token: admin,
-      body: { name: 'Msheireb Kiosk', type: 'retail' },
-    })
-    const stores = await call(app, 'GET', '/stores', { token: ayaan })
-    const kiosk = stores.body.data.find((s: { name: string }) => s.name === 'Msheireb Kiosk').id
-
-    // One row, sold at two of the three.
-    const shared = await call(app, 'POST', '/products', {
-      token: ayaan,
-      body: { name: 'House blend beans', price: '32.00', store_ids: ['s-alrayyan', 's-karak'], category_ids: [] },
-    })
-    expect(shared.status).toBe(201)
-    expect(shared.body.store_names).toEqual(['Al Rayyan Store', 'Karak Corner'])
-
-    const sells = async (store: string) => {
-      const res = await call(app, 'GET', `/products?store_id=${store}`, { token: ayaan })
-      return res.body.data.some((p: { id: string }) => p.id === shared.body.id)
-    }
-    expect(await sells('s-alrayyan')).toBe(true)
-    expect(await sells('s-karak')).toBe(true)
-    expect(await sells(kiosk)).toBe(false)
-
-    // Repricing the one row moves both branches at once — the point of sharing.
-    await call(app, 'PATCH', `/products/${shared.body.id}`, { token: ayaan, body: { price: '35.00' } })
-    for (const store of ['s-alrayyan', 's-karak']) {
-      const res = await call(app, 'GET', `/products?store_id=${store}&search=House blend`, { token: ayaan })
-      expect(res.body.data[0].price).toBe('35.00')
-    }
-
-    // Adding the third branch later is a tick, not a copy.
-    const widened = await call(app, 'PATCH', `/products/${shared.body.id}`, {
-      token: ayaan,
-      body: { store_ids: ['s-alrayyan', 's-karak', kiosk] },
-    })
-    expect(widened.body.store_names).toHaveLength(3)
-    expect(await sells(kiosk)).toBe(true)
-
-    // Put the branch list back — later tests assert on it.
-    await call(app, 'PATCH', `/admin/businesses/b-demo/stores/${kiosk}`, { token: admin, body: { is_active: false } })
-    const removed = await call(app, 'DELETE', `/admin/businesses/b-demo/stores/${kiosk}`, { token: admin })
-    expect(removed.status).toBe(200)
-    // The shared product survives, minus the branch that went.
-    const after = await call(app, 'GET', `/products?include_inactive=true&search=House blend`, { token: ayaan })
-    expect(after.body.data[0].store_ids.sort()).toEqual(['s-alrayyan', 's-karak'])
+    const after = await call(app, 'GET', '/products?include_inactive=true', { token: ayaan })
+    expect(after.body.data.filter((p: { store_id: string | null }) => p.store_id === null)).toEqual([])
+    // They land on the first branch, which the owner then copies outward.
+    const alrayyan = await call(app, 'GET', '/products?store_id=s-alrayyan&include_inactive=true', { token: ayaan })
+    expect(alrayyan.body.data.some((p: { name: string }) => p.name === 'Sold everywhere for now')).toBe(true)
+    // And a till now sees only its own branch's list.
+    const karak = await call(app, 'GET', '/products?store_id=s-karak', { token: yusuf })
+    expect(karak.body.data.some((p: { name: string }) => p.name === 'Sold everywhere for now')).toBe(false)
 
     await call(app, 'PATCH', '/business-settings', { token: ayaan, body: { shared_catalog: true } })
   })
 
-  it('keeps a barcode unambiguous at any till that could scan it', async () => {
+  it('a product needs a branch once each branch keeps its own list', async () => {
+    await call(app, 'PATCH', '/business-settings', { token: ayaan, body: { shared_catalog: false } })
+    const res = await call(app, 'POST', '/products', {
+      token: ayaan,
+      body: { name: 'Homeless item', price: '3.00', category_ids: [] },
+    })
+    expect(res.status).toBe(400)
+    expect(res.body.error.message).toBe('This business keeps a catalogue per branch, so a product needs a branch.')
+    await call(app, 'PATCH', '/business-settings', { token: ayaan, body: { shared_catalog: true } })
+  })
+
+  it('keeps a barcode unambiguous on the branch that scans it', async () => {
     await call(app, 'PATCH', '/business-settings', { token: ayaan, body: { shared_catalog: false } })
     const a = await call(app, 'POST', '/products', {
       token: ayaan,
-      body: { name: 'Cola A', price: '3.00', barcode: '7777', store_ids: ['s-alrayyan'], category_ids: [] },
+      body: { name: 'Cola A', price: '3.00', barcode: '7777', store_id: 's-alrayyan', category_ids: [] },
     })
     expect(a.status).toBe(201)
-    // A different branch may carry the same barcode — no till sees both.
+    // Another branch may carry the same barcode — no till sees both.
     const b = await call(app, 'POST', '/products', {
       token: ayaan,
-      body: { name: 'Cola B', price: '4.00', barcode: '7777', store_ids: ['s-karak'], category_ids: [] },
+      body: { name: 'Cola B', price: '4.00', barcode: '7777', store_id: 's-karak', category_ids: [] },
     })
     expect(b.status).toBe(201)
-    // A branch that already has it may not have it twice.
+    // The same branch may not have it twice.
     const clash = await call(app, 'POST', '/products', {
       token: ayaan,
-      body: { name: 'Cola C', price: '5.00', barcode: '7777', store_ids: ['s-alrayyan'], category_ids: [] },
+      body: { name: 'Cola C', price: '5.00', barcode: '7777', store_id: 's-alrayyan', category_ids: [] },
     })
     expect(clash.status).toBe(400)
-    expect(clash.body.error.message).toBe('Cola A already has that barcode at one of these branches.')
-    // Neither may an "every branch" product, which every till would see.
-    const everywhere = await call(app, 'POST', '/products', {
-      token: ayaan,
-      body: { name: 'Cola D', price: '5.00', barcode: '7777', store_ids: [], category_ids: [] },
-    })
-    expect(everywhere.status).toBe(400)
-    // Widening Cola B onto Al Rayyan would collide with Cola A, so it is refused.
-    const widen = await call(app, 'PATCH', `/products/${b.body.id}`, {
-      token: ayaan,
-      body: { store_ids: ['s-karak', 's-alrayyan'] },
-    })
-    expect(widen.status).toBe(400)
+    expect(clash.body.error.message).toBe('Cola A already has that barcode on this branch.')
+    // Moving Cola B onto Al Rayyan would collide with Cola A, so it is refused.
+    const moved = await call(app, 'PATCH', `/products/${b.body.id}`, { token: ayaan, body: { store_id: 's-alrayyan' } })
+    expect(moved.status).toBe(400)
     await call(app, 'PATCH', '/business-settings', { token: ayaan, body: { shared_catalog: true } })
   })
 
   it('refuses a branch that is not this business\'s', async () => {
     const res = await call(app, 'POST', '/products', {
       token: ayaan,
-      body: { name: 'Trespasser', price: '1.00', store_ids: ['s-drumsticks'], kitchen_station_id: null, category_ids: [] },
+      body: { name: 'Trespasser', price: '1.00', store_id: 's-drumsticks', kitchen_station_id: null, category_ids: [] },
     })
     expect(res.status).toBe(400)
   })

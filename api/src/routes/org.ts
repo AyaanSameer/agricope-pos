@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import type { Ctx } from '../app.js'
 import { PIN_RE, hashPin, requireBusiness, requireRole } from '../auth.js'
-import { many, one } from '../db.js'
+import { many, one, withTx } from '../db.js'
 import type { Queryable } from '../db.js'
 import { conflict, forbidden, invalid, notFound } from '../errors.js'
 import { paginated, rate, storeOut, userRecordOut } from '../serialize.js'
@@ -158,9 +158,26 @@ export async function orgRoutes(app: FastifyInstance, ctx: Ctx) {
       await ctx.db.query('update businesses set discount_approval_percent = $2 where id = $1', [caller.business_id, n])
     }
     if (body.shared_catalog !== undefined) {
-      // Per-branch assignments are kept, not cleared, so turning sharing back
-      // off restores what the owner had rather than losing it.
-      await ctx.db.query('update businesses set shared_catalog = $2 where id = $1', [caller.business_id, body.shared_catalog])
+      await withTx(async (tx) => {
+        if (body.shared_catalog === false) {
+          // Turning it off would otherwise leave every existing product on no
+          // branch and therefore on no till. They go to the first branch, which
+          // the owner then copies outward — the effect line says so before the
+          // switch is thrown. Products that already have a branch keep it, so
+          // flipping back and forth loses nothing.
+          const first = await one<{ id: string }>(
+            'select id from stores where business_id = $1 order by store_number limit 1',
+            [caller.business_id],
+            tx,
+          )
+          if (!first) throw invalid('Add a branch before giving each one its own catalogue.')
+          await tx.query('update products set store_id = $2 where business_id = $1 and store_id is null', [
+            caller.business_id,
+            first.id,
+          ])
+        }
+        await tx.query('update businesses set shared_catalog = $2 where id = $1', [caller.business_id, body.shared_catalog])
+      })
     }
     return settings(caller.business_id)
   })

@@ -107,9 +107,9 @@ export interface ProductRow {
   is_active: boolean
   category_ids: string[]
   category_name?: string | null
-  /** the branches that sell it; [] = every branch */
-  store_ids: string[]
-  store_names?: string[]
+  /** the branch whose catalogue it belongs to; null while the list is shared */
+  store_id: string | null
+  store_name?: string | null
 }
 
 export function productOut(p: ProductRow) {
@@ -131,8 +131,8 @@ export function productOut(p: ProductRow) {
     option_groups: p.option_groups ?? [],
     kitchen_station_id: p.kitchen_station_id,
     station_name: p.station_name ?? null,
-    store_ids: p.store_ids ?? [],
-    store_names: p.store_names ?? [],
+    store_id: p.store_id,
+    store_name: p.store_name ?? null,
     is_active: p.is_active,
   }
 }

@@ -604,20 +604,3 @@
 .cat-copy-sub { margin: 0; font-size: calc(12.5px * var(--fs)); line-height: 1.55; color: var(--ink-3); }
 .cat-copy-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
-/* "Sold at" is a set of branches, so it reads as chips you tick. */
-.cat-branch-picks { display: flex; flex-wrap: wrap; gap: 8px; }
-.cat-branch-pick {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 7px 11px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface);
-  font-size: calc(12.5px * var(--fs));
-  cursor: pointer;
-  white-space: nowrap;
-}
-.cat-branch-pick.on { border-color: var(--leaf); background: var(--leaf-plate-4); font-weight: 500; }
-.cat-branch-pick input { margin: 0; }
-.cat-branch-hint { font-size: calc(11.5px * var(--fs)); color: var(--hint); }

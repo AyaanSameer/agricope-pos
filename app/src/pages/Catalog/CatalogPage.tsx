@@ -55,7 +55,7 @@ interface Draft {
   offer_online_ends: string
   option_groups: GroupDraft[]
   kitchen_station_id: string | null
-  store_ids: string[]
+  store_id: string | null
   is_active: boolean
 }
 
@@ -77,7 +77,7 @@ const EMPTY: Draft = {
   offer_online_ends: '',
   option_groups: [],
   kitchen_station_id: null,
-  store_ids: [],
+  store_id: null,
   is_active: true,
 }
 
@@ -134,7 +134,7 @@ function productToDraft(p: Product): Draft {
     offer_online_ends: p.offer_online?.ends_at ? p.offer_online.ends_at.slice(0, 10) : '',
     option_groups: p.option_groups.map(groupToDraft),
     kitchen_station_id: p.kitchen_station_id,
-    store_ids: p.store_ids,
+    store_id: p.store_id,
     is_active: p.is_active,
   }
 }
@@ -168,7 +168,7 @@ function draftToInput(d: Draft): ProductInput {
       : null,
     option_groups: draftToGroups(d.option_groups),
     kitchen_station_id: d.kitchen_station_id,
-    store_ids: d.store_ids,
+    store_id: d.store_id,
     is_active: d.is_active,
   }
 }
@@ -328,7 +328,12 @@ export function CatalogPage() {
           className="btn-primary cat-add"
           onClick={() => {
             setError(null)
-            setDraft({ ...EMPTY, category_ids: categoryId ? [categoryId] : [] })
+            setDraft({
+              ...EMPTY,
+              category_ids: categoryId ? [categoryId] : [],
+              // Adding while a branch is on screen puts it on that branch.
+              store_id: branchId,
+            })
           }}
         >
           + Add product
@@ -376,11 +381,11 @@ export function CatalogPage() {
       )}
       {perBranch && branchId && (
         <p className="cat-branch-note">
-          What{' '}
           <strong>
             {shortBranch((storesQuery.data?.data ?? []).find((s) => s.id === branchId)?.name ?? '')}
-          </strong>{' '}
-          sells — its own products and the ones marked “All branches”.
+          </strong>
+          ’s own catalogue. Adding a product here puts it on this branch; copying brings another
+          branch’s list in alongside what is already here.
         </p>
       )}
       {copyResult && <div className="cat-copy-result">{copyResult}</div>}
@@ -607,48 +612,21 @@ export function CatalogPage() {
                 </div>
                 {perBranch && (
                   <div className="editor-row">
-                    <div className="field">
-                      <span>Sold at</span>
-                      {/* A set, not one branch: two shops can share a product
-                          while a third does not, without a second row. */}
-                      <div className="cat-branch-picks">
-                        <label
-                          className={draft.store_ids.length === 0 ? 'cat-branch-pick on' : 'cat-branch-pick'}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={draft.store_ids.length === 0}
-                            onChange={() => setDraft({ ...draft, store_ids: [] })}
-                          />
-                          All branches
-                        </label>
-                        {branches.map((st) => {
-                          const on = draft.store_ids.includes(st.id)
-                          return (
-                            <label key={st.id} className={on ? 'cat-branch-pick on' : 'cat-branch-pick'}>
-                              <input
-                                type="checkbox"
-                                checked={on}
-                                onChange={() =>
-                                  setDraft({
-                                    ...draft,
-                                    store_ids: on
-                                      ? draft.store_ids.filter((id) => id !== st.id)
-                                      : [...draft.store_ids, st.id],
-                                  })
-                                }
-                              />
-                              {shortBranch(st.name)}
-                            </label>
-                          )
-                        })}
-                      </div>
-                      <span className="cat-branch-hint">
-                        {draft.store_ids.length === 0
-                          ? 'Every branch sells this — untick to narrow it.'
-                          : `Only ${draft.store_ids.length} of ${branches.length} branches sell this.`}
-                      </span>
-                    </div>
+                    <label className="field">
+                      <span>Branch</span>
+                      {/* Each branch keeps its own list, so a product sits on
+                          exactly one. Copy is how a list reaches a second shop. */}
+                      <select
+                        value={draft.store_id ?? ''}
+                        onChange={(e) => setDraft({ ...draft, store_id: e.target.value || null })}
+                        required
+                      >
+                        <option value="">Choose a branch…</option>
+                        {branches.map((st) => (
+                          <option key={st.id} value={st.id}>{st.name}</option>
+                        ))}
+                      </select>
+                    </label>
                   </div>
                 )}
                 <div className="editor-row">

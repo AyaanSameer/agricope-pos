@@ -200,21 +200,24 @@ administrator's own password (min 8 chars, current re-checked).
 ## The owner's two catalogue choices (2026-09-02)
 
 - **`business_settings.shared_catalog`** (boolean, default `true`). True = one
-  catalogue for every branch. False = **`product_stores` decides**: a product
-  names the SET of branches that sell it, and **no rows means every branch**.
-  So two branches can share a product while a third does not, from one row —
-  reprice it once and both move. On the wire this is `store_ids: string[]`
-  (with `store_names` for display); `[]` = everywhere. `GET /products?store_id=`
-  applies the filter **only while sharing is off**, so turning it back on
-  restores every assignment instead of losing it. Owner-only.
-- **Sharing a product and copying one are different tools.** Ticking a second
-  branch keeps ONE row: change the price and every branch that sells it moves.
-  `POST /catalog/copy` makes INDEPENDENT rows: right when a branch should start
-  from another's list and then diverge.
-- **A barcode must be unambiguous at any till that could scan it.** Two products
-  may share one only when no branch sells both — set overlap, which no unique
-  index can express, so the API checks it inside the write transaction and
-  answers `400` naming the product that already holds it.
+  catalogue for every branch, and `products.store_id` is not consulted. False =
+  **every branch keeps its own list**: a product belongs to exactly one branch,
+  `store_id` is required, and `GET /products?store_id=` returns strictly that
+  branch's products. Owner-only.
+- **Switching it off assigns the unassigned.** Every product still without a
+  branch is given the business's first branch, inside the same transaction —
+  otherwise the whole catalogue would belong to no branch and appear on no till.
+  Products that already name a branch keep it, and a branch named while the list
+  was shared is remembered, so the setting can be flipped back and forth without
+  losing anything. A business with no branches is refused.
+- **Copy is a merge, never a replace.** `POST /catalog/copy` adds the source
+  branch's products to the target as INDEPENDENT rows, skipping any name the
+  target already has. Whatever the second branch added on its own stays exactly
+  as it is, keeps its own prices, and survives being copied into again — the
+  second run reports `copied: 0`. Prices diverge freely afterwards.
+- **A barcode must be unambiguous on the branch that scans it.** It may repeat
+  across branches but never within one, so the API checks it inside the write
+  transaction and answers `400` naming the product that already holds it.
 - **`POST /catalog/copy {from_store_id, to_store_id}`** stands one branch's
   catalogue up from another's. Owner only. Copies the source's **own** products
   (not the "all branches" ones, which the target already sells, nor any the

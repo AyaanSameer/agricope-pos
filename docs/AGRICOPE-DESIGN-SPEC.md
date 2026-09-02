@@ -481,15 +481,14 @@ Branch settings, one card per branch (only the active branch when a till is open
   in place. A branch with none says so — it makes no kitchen work.
 - **Catalogue** is business-wide, two option cards: "One catalogue, every branch"
   and "A catalogue per branch". The second makes a **Sold at** field appear on the
-  product editor — a row of tick-chips, "All branches" plus one per branch, so a
-  product can be sold at some branches and not others from a single row (the hint
-  underneath reads "Only 2 of 3 branches sell this") — and adds a branch rail to the
+  product editor — a **Branch** select naming the one branch whose list it belongs
+  to, defaulting to whichever branch is on screen — and adds a branch rail to the
   Catalog screen: **Whole catalogue** followed by one chip per branch. Choosing a
-  branch shows exactly what that till sells — its own products plus the ones
-  marked "All branches" — with a line saying so, and reveals **Copy from another
-  branch**. That opens a small dialog: choose the source, and its own products are
-  duplicated in, skipping any name already there. A green line reports how many
-  were copied and how many were skipped.
+  branch shows that branch's own catalogue and nothing else, with a line saying so,
+  and reveals **Copy from another branch**. That opens a small dialog: choose the
+  source, and its products are duplicated in **alongside** what the branch already
+  has — never replacing it — skipping any name already present. A green line
+  reports how many were copied and how many were skipped.
 - **Branch card:** name, "{type} · {address}", and a type pill (Retail / Restaurant).
 - **Kitchen output block** — title, explanation, then a **radio group of two large option cards**:
   - **KDS board** — "Live tickets on a screen at the pass, bumped by the kitchen."
