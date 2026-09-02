@@ -12,7 +12,7 @@
   --surface: #ffffff;
   --surface-warm: #f8f5e8;
   --border: #e4dfcb;
-  --ink: #0f172a;
+  --ink: #1a1f17;
   --ink-2: #575649;
   --ink-3: #6e6c5c;
   --hint: #9c998a;
@@ -44,10 +44,10 @@
   --gold-ink-dark: #4a3a00;
   --cta-hover: #c23d19;
 
-  --scrim-sheet: rgba(15, 23, 42, 0.42);
-  --scrim-panel: rgba(15, 23, 42, 0.45);
-  --scrim-modal: rgba(15, 23, 42, 0.48);
-  --scrim-confirm: rgba(15, 23, 42, 0.5);
+  --scrim-sheet: rgba(26, 31, 23, 0.42);
+  --scrim-panel: rgba(26, 31, 23, 0.45);
+  --scrim-modal: rgba(26, 31, 23, 0.48);
+  --scrim-confirm: rgba(26, 31, 23, 0.5);
   --scrim-pin: rgba(6, 48, 31, 0.6);
 
   --font-mono: 'Roboto Mono', ui-monospace, SFMono-Regular, monospace;
@@ -240,7 +240,7 @@ input:focus, select:focus, button:focus-visible {
   height: 20px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 1px 3px rgba(26, 31, 23, 0.18);
   transition: left 0.15s;
 }
 .toggle.on { background: var(--forest); }
