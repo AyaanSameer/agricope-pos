@@ -36,7 +36,13 @@ async function enableMocking() {
   })
 }
 
-enableMocking().then(() => {
+enableMocking()
+  .catch((err: unknown) => {
+    // A till whose service worker will not register should still show the
+    // app — requests then fail loudly, rather than the screen staying blank.
+    console.error('[mocks] service worker unavailable — running without mocks', err)
+  })
+  .then(() => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
